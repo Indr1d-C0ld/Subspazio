@@ -44,13 +44,14 @@
 </section>
 
 <section class="roadmap">
-  <h2>Roadmap</h2>
-  <ol>
-    <li><strong>Fase 0 — Fondamenta.</strong> Account, approvazione admin, clock. <em>In corso.</em></li>
-    <li>Fase 1 — Universo: settori, warp, navigazione, turni.</li>
-    <li>Fase 2 — Economia: porti, commercio, banca.</li>
-    <li>Fase 3 — Navi, hardware, combattimento.</li>
-    <li>Fase 4 — Pianeti, Genesi, Citadel.</li>
-    <li>Fase 5 — Corporazioni, radio subspaziale, classifiche, Ferrengi.</li>
-  </ol>
+  <h2>Cosa c'è nel gioco</h2>
+  <ul>
+    <li><strong>Universo &amp; navigazione</strong> — settori con warp (sensi unici, vicoli ciechi), Federazione protetta, StarDock, fog-of-war, autopilota, turni giornalieri.</li>
+    <li><strong>Economia</strong> — porti con prezzi dinamici domanda/offerta, contrattazione a offerta/controproposta, banca IGB, mercato nero.</li>
+    <li><strong>Combattimento</strong> — cantiere e hardware, scontri fra navi, assalto ai porti, mine e caccia dispiegati, capsula di salvataggio, gradi e allineamento.</li>
+    <li><strong>Pianeti</strong> — siluri Genesi, tipi M/K/O/L/C/H/U, coloni e produzione, Citadel, cannone Quasar, assalto planetario.</li>
+    <li><strong>Mondo vivo</strong> — classifiche, radio subspaziale, NPC Ferrengi/pirati/mercanti, eventi globali.</li>
+    <li><strong>Meta</strong> — stagioni con ladder e albo d'oro, traguardi, corporazioni e alleanze, contratti e taglie fra giocatori.</li>
+    <li><strong>Tecnologia</strong> — aggiornamenti in tempo reale (mappa live, avvisi), installabile come app, interfaccia web + skin terminale.</li>
+  </ul>
 </section>

@@ -4,6 +4,18 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-08-29 — Homepage aggiornata + `user:passwd`
+
+- **[views/home.php](views/home.php)** — la sezione "Roadmap" mostrava
+  ancora "Fase 0 — In corso" e arrivava solo alla Fase 5. Sostituita con
+  "Cosa c'è nel gioco": elenco sintetico delle aree presenti.
+- **[assets/css/app.css](assets/css/app.css)** — `.roadmap` stila anche
+  `<ul>`.
+- **[bin/console.php](bin/console.php)** — nuovo `user:passwd <username>`
+  per reimpostare la password di un utente (prompt nascosto o 2º
+  argomento; min 10 caratteri; incrementa `session_epoch` per invalidare
+  le sessioni). Recupero dell'accesso admin.
+
 ## 2026-08-29 — Layout responsive per smartphone/tablet (desktop invariato)
 
 Reso il gioco pienamente usabile su smartphone e tablet in portrait, senza

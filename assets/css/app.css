@@ -135,8 +135,10 @@ form.inline { display: inline; }
 .big { font-size: 3.5rem; margin: 0; color: var(--accent); }
 
 /* Roadmap */
-.roadmap ol { line-height: 1.9; padding-left: 1.2rem; }
+.roadmap ol, .roadmap ul { line-height: 1.8; padding-left: 1.2rem; }
+.roadmap li { margin: .2rem 0; }
 .roadmap li em { color: var(--accent); font-style: normal; }
+.roadmap li strong { color: var(--ink); }
 
 
 /* ---- Gioco: status bar ---- */

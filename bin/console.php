@@ -108,6 +108,27 @@ try {
             out($n > 0 ? "Attivato: {$username}" : "Nessuna modifica per '{$username}'.");
             break;
 
+        case 'user:passwd':
+            $username = $args[0] ?? '';
+            $u = Database::first('SELECT id, username FROM users WHERE username = ?', [$username]);
+            if ($u === null) {
+                out("Utente '{$username}' inesistente. Vedi: user:list");
+                exit(1);
+            }
+            $pw1 = $args[1] ?? prompt('Nuova password (min 10): ', true);
+            $pw2 = isset($args[1]) ? $args[1] : prompt('Conferma password: ', true);
+            if (strlen($pw1) < 10 || $pw1 !== $pw2) {
+                out('Password troppo corta o non coincidente.');
+                exit(1);
+            }
+            // invalida le sessioni attive di quell'utente
+            Database::run(
+                'UPDATE users SET password_hash = ?, session_epoch = session_epoch + 1 WHERE id = ?',
+                [hashPassword($pw1), $u['id']]
+            );
+            out("Password di '{$username}' aggiornata. Le sessioni aperte sono state invalidate.");
+            break;
+
         case 'user:list':
             $rows = Database::all(
                 'SELECT id, username, email, status, role, created_at, last_login_at
@@ -273,6 +294,7 @@ try {
             out('  bank:accrue                     matura gli interessi bancari');
             out('  make:admin <username> [email]    crea o promuove un amministratore');
             out('  user:approve <username>          attiva un account');
+            out('  user:passwd <username>           reimposta la password (invalida le sessioni)');
             out('  user:list                       elenca gli utenti');
             out('  config:get [chiave]             legge la configurazione di gioco');
             out('  config:set <chiave> <valore>    scrive un valore di configurazione');
