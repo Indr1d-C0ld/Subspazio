@@ -44,6 +44,9 @@ pre { background: #0f1626; border: 1px solid var(--line); border-radius: var(--r
 .topbar nav { display: flex; align-items: center; gap: 1rem; }
 .topbar .who { color: var(--ink-soft); font-size: .9rem; }
 .topbar .cta { color: var(--accent-2); }
+/* hamburger: inattivo sopra il breakpoint mobile, non tocca il desktop */
+.nav-toggle { display: none; }
+.nav-burger { display: none; }
 
 /* Layout */
 .wrap { width: 100%; max-width: 60rem; margin: 2rem auto; padding: 0 1.4rem; flex: 1; }
@@ -135,9 +138,6 @@ form.inline { display: inline; }
 .roadmap ol { line-height: 1.9; padding-left: 1.2rem; }
 .roadmap li em { color: var(--accent); font-style: normal; }
 
-@media (max-width: 540px) {
-  .topbar { flex-direction: column; gap: .6rem; }
-}
 
 /* ---- Gioco: status bar ---- */
 .statusbar {
@@ -258,7 +258,6 @@ form.inline { display: inline; }
 .radio-log .rl-at { color: var(--ink-soft); font-size: .75rem; }
 .radio-log .ch-system .rl-ch, .radio-log .ch-fedcomm .rl-ch { color: var(--warn); }
 .radio-log .ch-private .rl-ch { color: var(--accent-2); }
-@media (max-width: 640px) { .radio-log li { grid-template-columns: 3rem 1fr; } .radio-log .rl-at { display: none; } }
 
 /* ---- Realtime: toast, campanella ---- */
 #toast-host { position: fixed; right: 1rem; bottom: 1rem; z-index: 999; display: flex; flex-direction: column; gap: .5rem; max-width: min(24rem, 90vw); }
@@ -351,21 +350,94 @@ form.inline { display: inline; }
 .ach-pts { font-size: .72rem; color: var(--ink-soft); }
 
 /* ---- Mobile / touch ---- */
-@media (max-width: 640px) {
-  .topbar { padding: .6rem .8rem; }
-  .topbar nav { flex-wrap: wrap; gap: .5rem .8rem; font-size: .92rem; }
-  .wrap { margin: 1rem auto; padding: 0 .8rem; }
+/* =========================================================================
+   Adattamento a smartphone / tablet in portrait (<= 820px).
+   Tutto confinato qui: la vista desktop (> 820px) resta invariata.
+   ========================================================================= */
+@media (max-width: 820px) {
+  /* --- Navbar: menu a comparsa (hamburger, pure CSS) --- */
+  .topbar { padding: .6rem .9rem; position: relative; flex-wrap: wrap; }
+  .nav-burger {
+    display: inline-block; cursor: pointer; font-size: 1.4rem; line-height: 1;
+    color: var(--ink); padding: .1rem .4rem; user-select: none;
+  }
+  .topbar > nav#topnav { display: none; }
+  #nav-toggle:checked ~ nav#topnav {
+    display: flex; flex-direction: column; align-items: stretch; gap: .1rem;
+    width: 100%; margin-top: .6rem; padding-top: .6rem;
+    border-top: 1px solid var(--line);
+  }
+  #topnav a, #topnav .who, #topnav form.inline { padding: .6rem .2rem; }
+  #topnav a { border-bottom: 1px solid var(--line); }
+  #topnav .bell-wrap { display: inline-block; }
+  #topnav .who { color: var(--ink-soft); font-size: .85rem; }
+
+  /* --- Contenitori --- */
+  .wrap { margin: 1rem auto; padding: 0 .7rem; }
   .panel { padding: 1rem; }
-  .statusbar { gap: .2rem .9rem; }
-  .tbl { display: block; overflow-x: auto; white-space: nowrap; }
-  .tbl.compact { white-space: normal; }
-  .btn, button.btn { padding: .55rem 1rem; }
-  .btn.xs { padding: .45rem .7rem; font-size: .82rem; }
-  .warps .btn.warp { min-height: 2.4rem; }
-  #toast-host { left: .5rem; right: .5rem; bottom: .5rem; max-width: none; }
+  .panel.narrow { max-width: 100%; }
   .game-grid { gap: 1rem; }
-  .hg-controls input, .tools input, .upg-grid input.qty { font-size: 16px; } /* niente zoom iOS */
-  .alert-panel { position: fixed; left: .5rem; right: .5rem; top: 3.5rem; width: auto; }
+  .hero h1 { font-size: 2rem; }
+
+  /* --- Status bar: griglia compatta invece di riga larga --- */
+  .statusbar { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem .6rem; padding: .7rem .8rem; }
+  .statusbar .k { font-size: .62rem; }
+  .statusbar .v { font-size: .95rem; }
+  .statusbar > div:has(a) { grid-column: 1 / -1; }
+
+  /* --- Form "a riga" -> impilati e a tutta larghezza --- */
+  .row, .stack label, .tools .row, .upg-grid .row, .hg-controls,
+  .radio-compose .row, .combat-tools .row {
+    flex-direction: column; align-items: stretch; gap: .5rem;
+  }
+  .upg-grid { grid-template-columns: 1fr; }
+  .row label, .tools label, .upg-grid label, .hg-controls label { width: 100%; }
+  input[type="text"], input[type="number"], input[type="email"], input[type="password"],
+  select, textarea, .cfg-group input[type=text], .cfg-group input.qty,
+  .tools input, .upg-grid input.qty, .hg-controls input, .qty {
+    width: 100%; font-size: 16px; /* 16px = niente auto-zoom su iOS */
+  }
+  .radio-compose .row { flex-direction: row; flex-wrap: wrap; }
+
+  /* --- Pulsanti: tap target piu' generosi --- */
+  .btn, button.btn { padding: .6rem 1rem; }
+  .btn.xs { padding: .5rem .8rem; font-size: .84rem; }
+  .warps { gap: .45rem; }
+  .warps .btn.warp { min-height: 2.6rem; min-width: 3.2rem; }
+  form.inline .btn.xs { margin: .1rem 0; }
+
+  /* --- Tabelle: scorrimento orizzontale in un contenitore --- */
+  .tbl { display: block; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+  .tbl.compact { white-space: normal; font-size: .8rem; }
+  .port-table td .qty { width: 4.5rem; }
+
+  /* --- Mappa stellare --- */
+  #starmap { min-height: 260px; }
+
+  /* --- Traguardi, note, registro --- */
+  .ach-grid { grid-template-columns: 1fr; }
+  .registro-links { font-size: .8rem; line-height: 2; }
+  .fav-nav { font-size: .8rem; }
+
+  /* --- Overlay: a tutta larghezza --- */
+  #toast-host { left: .5rem; right: .5rem; bottom: .5rem; max-width: none; }
+  .alert-panel { position: fixed; left: .5rem; right: .5rem; top: 3.6rem; width: auto; max-height: 70vh; }
+  .mod-more { position: fixed; left: .8rem; right: .8rem; z-index: 30; }
+
+  /* --- Terminale --- */
+  #terminal { font-size: .82rem; max-height: 66vh; }
+  #term-cmd { font-size: 16px; }
+
+  /* --- Radio log --- */
+  .radio-log li { grid-template-columns: 3rem 1fr; }
+  .radio-log .rl-at { display: none; }
+}
+
+@media (max-width: 380px) {
+  .statusbar { grid-template-columns: repeat(2, 1fr); gap: .4rem .5rem; }
+  .hero h1 { font-size: 1.7rem; }
+  .sector-head h1 { font-size: 1.3rem; }
+  .registro-links a { display: inline-block; }
 }
 
 @media (prefers-color-scheme: light) {

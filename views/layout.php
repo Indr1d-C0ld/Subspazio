@@ -23,7 +23,9 @@ $errors = is_array($errors) ? $errors : [];
 <body>
 <header class="topbar">
   <a class="brand" href="<?= e(url('/')) ?>"><?= e(config('app.name', 'SubSpazio')) ?></a>
-  <nav>
+  <input type="checkbox" id="nav-toggle" class="nav-toggle">
+  <label for="nav-toggle" class="nav-burger" aria-label="Menu">☰</label>
+  <nav id="topnav">
     <a href="<?= e(url('/')) ?>">Home</a>
     <?php if ($u !== null): ?>
       <?php if (($u['status'] ?? '') === 'active'): ?>

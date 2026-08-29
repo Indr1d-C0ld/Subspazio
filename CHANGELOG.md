@@ -4,6 +4,38 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-08-29 — Layout responsive per smartphone/tablet (desktop invariato)
+
+Reso il gioco pienamente usabile su smartphone e tablet in portrait, senza
+modificare la vista da monitor PC. Tutte le regole nuove sono confinate in
+`@media (max-width: 820px)` e `(max-width: 380px)`; nel foglio base sono
+state aggiunte solo due regole che nascondono i nuovi elementi.
+
+- **[views/layout.php](views/layout.php)** — aggiunto il toggle
+  "hamburger" nella `.topbar` (checkbox `#nav-toggle` + `label.nav-burger`,
+  pure CSS, nessun JS); la `<nav>` ha ora `id="topnav"`.
+
+- **[assets/css/app.css](assets/css/app.css)**
+  - `.nav-toggle` / `.nav-burger`: `display:none` nel foglio base
+    (inattivi sul desktop); rimosso il vecchio `@media (max-width: 540px)`
+    che impilava la topbar.
+  - Nuovo `@media (max-width: 820px)`: navbar come menu a comparsa
+    verticale (`#nav-toggle:checked ~ nav#topnav`); `.statusbar` da riga a
+    griglia 3 colonne; tutti i form `.row`/`.stack`/`.upg-grid`/
+    `.hg-controls` impilati con input a tutta larghezza e `font-size:16px`
+    (anti-zoom iOS); tabelle `display:block; overflow-x:auto`; tap target
+    dei warp più grandi; overlay (`#toast-host`, `.alert-panel`,
+    `.mod-more`) a tutta larghezza; ritocchi a `#starmap`, terminale,
+    `.ach-grid`, `.registro-links`. Assorbito il breakpoint isolato di
+    `.radio-log`.
+  - Nuovo `@media (max-width: 380px)`: `.statusbar` a 2 colonne, titoli
+    più piccoli.
+
+  La mappa stellare ha già `touch-action:none` e gestione Pointer Events
+  (pan + pinch-zoom); il `viewport` meta era già presente nel layout.
+  Verificato a 375×812: nessun overflow orizzontale su plancia, cantiere,
+  contratti; hamburger funzionante; input a 16px.
+
 ## 2026-08-29 — Import iniziale
 
 Prima pubblicazione del progetto. Copia del deployment live (solo codice
