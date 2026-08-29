@@ -1,0 +1,39 @@
+# SubSpazio — routing + hardening (il vhost ha AllowOverride All)
+
+Options -Indexes +FollowSymLinks
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /subspazio/
+
+    # Blocca qualsiasi segmento che inizia con "." (.git, .env, .htaccess...).
+    RewriteRule (^|/)\.(?!well-known/) - [F,L]
+
+    # Blocca l'accesso web alle directory non pubbliche.
+    RewriteRule ^(src|db|bin|config|deploy|storage|views|tests)(/|$) - [F,L]
+
+    # Tutto cio' che non e' un file/dir reale passa dal front controller.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# File sensibili per estensione / dotfile.
+<FilesMatch "(^\.|\.(md|sql|lock|log|example|dist)$|^composer\.(json|lock)$)">
+    Require all denied
+</FilesMatch>
+
+# Ma consenti gli asset statici (ridondante con -f, esplicito per chiarezza).
+<FilesMatch "\.(css|js|svg|png|jpg|jpeg|gif|webp|ico|woff2?|webmanifest)$">
+    Require all granted
+</FilesMatch>
+
+# PWA
+AddType application/manifest+json .webmanifest
+<IfModule mod_headers.c>
+    <FilesMatch "sw\.js$">
+        Header set Service-Worker-Allowed "/"
+        Header set Cache-Control "no-cache"
+    </FilesMatch>
+</IfModule>

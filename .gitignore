@@ -1,0 +1,17 @@
+# Configurazione con segreti (vive FUORI dal DocumentRoot; vedi README)
+/config/config.php
+*.local.php
+
+# Runtime
+/storage/logs/*
+/storage/*.lock
+!/storage/logs/.gitkeep
+
+# Dipendenze (se in futuro si usa Composer)
+/vendor/
+
+# OS / editor
+.idea/
+.vscode/
+*.swp
+.DS_Store
