@@ -4,7 +4,8 @@
     <?= csrf_field() ?>
     <label>
       <span>Nome utente o email</span>
-      <input type="text" name="login" value="<?= e(old('login')) ?>" autocomplete="username" required autofocus>
+      <input type="text" name="login" value="<?= e(old('login')) ?>" autocomplete="username"
+             autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="text" required autofocus>
     </label>
     <label>
       <span>Password</span>

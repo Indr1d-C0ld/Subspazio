@@ -20,7 +20,7 @@ final class Session
         session_name($name);
         session_set_cookie_params([
             'lifetime' => $ttl,
-            'path'     => '/',
+            'path'     => self::cookiePath(),
             'domain'   => '',
             'secure'   => $https,
             'httponly' => true,
@@ -32,7 +32,12 @@ final class Session
         if (!isset($_SESSION['_born'])) {
             $_SESSION['_born'] = $now;
         } elseif ($now - (int) $_SESSION['_born'] > 1800) {
-            session_regenerate_id(true);
+            // Rotazione periodica dell'id. NON distruttiva (false): il vecchio
+            // id resta valido finche' il GC non lo raccoglie, cosi' una
+            // richiesta gia' in volo o un client che tarda a salvare il nuovo
+            // cookie (tipico su mobile: tab sospese, cambio rete) non resta
+            // orfano di sessione.
+            session_regenerate_id(false);
             $_SESSION['_born'] = $now;
         }
 
@@ -56,8 +61,24 @@ final class Session
 
     public static function regenerate(): void
     {
-        session_regenerate_id(true);
+        // false = non elimina subito la vecchia sessione: evita che un client
+        // lento a persistere il nuovo cookie (frequente su mobile) si ritrovi
+        // senza sessione appena dopo il login. Contro la session fixation
+        // basta che l'id cambi; il vecchio id sara' raccolto dal GC.
+        session_regenerate_id(false);
         $_SESSION['_born'] = time();
+    }
+
+    /** Ambito del cookie di sessione: la sottocartella del deploy, non tutto il dominio. */
+    private static function cookiePath(): string
+    {
+        $base = Config::get('app.base_path');
+        if (!is_string($base) || $base === '') {
+            $script = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+            $base = rtrim(dirname($script), '/');
+        }
+        $base = '/' . trim($base, '/');
+        return $base === '/' ? '/' : $base . '/';
     }
 
     public static function flush(): void

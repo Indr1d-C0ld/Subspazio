@@ -7,11 +7,13 @@
       <span>Nome utente</span>
       <input type="text" name="username" value="<?= e(old('username')) ?>"
              pattern="[A-Za-z0-9_]{3,32}" title="3-32 caratteri: lettere, numeri, underscore"
-             autocomplete="username" required autofocus>
+             autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"
+             required autofocus>
     </label>
     <label>
       <span>Email</span>
-      <input type="email" name="email" value="<?= e(old('email')) ?>" autocomplete="email" required>
+      <input type="email" name="email" value="<?= e(old('email')) ?>" autocomplete="email"
+             autocapitalize="none" autocorrect="off" spellcheck="false" required>
     </label>
     <label>
       <span>Password (min. 10 caratteri)</span>

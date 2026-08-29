@@ -4,6 +4,27 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-08-29 — Login affidabile da mobile
+
+Il login falliva da smartphone con credenziali valide su desktop. Tre
+cause lato client, tutte più frequenti su mobile, corrette insieme.
+
+- **[src/Core/Session.php](src/Core/Session.php)**
+  - `session_regenerate_id(true)` → `(false)` (rotazione periodica e
+    `regenerate()` al login): con `true` la vecchia sessione spariva
+    subito e un client lento a salvare/inviare il nuovo cookie — tab
+    sospese, cambio rete durante il redirect post-login — restava senza
+    sessione e rimbalzava sul login senza errore.
+  - cookie di sessione: `path` da `/` a `/subspazio/`, così non concorre
+    con gli altri siti del dominio per il limite del cookie jar (più
+    stretto su mobile). Una tantum: le sessioni col vecchio path vanno
+    rifatte.
+- **[views/auth/login.php](views/auth/login.php)**,
+  **[views/auth/register.php](views/auth/register.php)** — campi
+  login/username/email con `autocapitalize="none"`, `autocorrect="off"`,
+  `spellcheck="false"`: la tastiera mobile capitalizzava/autocorreggeva
+  il testo → «Credenziali non valide» solo da telefono.
+
 ## 2026-08-29 — Tema unico scuro (rimossa la modalità chiara)
 
 In modalità chiara restavano tre combinazioni illeggibili, tutte dovute
