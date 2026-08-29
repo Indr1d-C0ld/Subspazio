@@ -4,6 +4,36 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-08-29 — Restyle sci-fi della UI + leggibilità
+
+Ridisegno del foglio di stile con due obiettivi: correggere i punti in
+cui il testo era poco leggibile (scritte scure su campi scuri) e dare
+alla UI un aspetto più ispirato al tema spaziale. Nessuna classe
+rinominata; la vista desktop e i blocchi `@media` (mobile + modalità
+chiara) restano invariati nel comportamento. Nessun font esterno (CSP).
+
+- **[assets/css/app.css](assets/css/app.css)** — riscritto mantenendo
+  tutti i selettori.
+  - *Leggibilità*: baseline unica per `input`/`select`/`textarea` (sfondo
+    scuro esplicito + colore `--ink`); `option`/`optgroup` con colori
+    espliciti (molti browser non li ereditano dal `<select>`, la tendina
+    risultava illeggibile); `::placeholder` esplicito; `--ink` e
+    `--ink-soft` schiariti (testi secondari da ~4.6:1 a ~8.5:1);
+    `::selection` e scrollbar tematizzate; `:focus-visible` con outline;
+    `pill`/`tag`/`alert` con fondo tinto oltre al bordo.
+  - *Tema*: palette "console di plancia" (ciano/viola su blu-nero);
+    `body` con gradiente spaziale + campo stellato in `::before` (deriva
+    lentissima, spenta con `prefers-reduced-motion`); `.panel` con ombra
+    HUD e barra d'accento sui titoli; `.topbar` sticky a vetro; bottoni
+    con glow; `.card`/`.statusbar`/tabelle con etichette monospazio;
+    `#starmap` a vignetta stellare; `#terminal` con scanline CRT tenue.
+    Font: stack di sistema per il testo, monospazio per dati e terminale.
+  - Modalità chiara: tutti i token ridefiniti, struttura identica.
+- **[sw.js](sw.js)** — `VERSION` `subspazio-v1` → `subspazio-v2`: il
+  service worker rifà il precache del guscio (che include `app.css`) e
+  scarta la cache vecchia, altrimenti la PWA installata mostrerebbe il
+  CSS precedente.
+
 ## 2026-08-29 — Homepage aggiornata + `user:passwd`
 
 - **[views/home.php](views/home.php)** — la sezione "Roadmap" mostrava
