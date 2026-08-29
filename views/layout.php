@@ -9,12 +9,12 @@ $errors = is_array($errors) ? $errors : [];
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="dark light">
+<meta name="color-scheme" content="dark">
 <?php $appName = (string) config('app.name', 'SubSpazio'); ?>
 <title><?= $title === $appName ? e($appName) : e($title) . ' — ' . e($appName) ?></title>
 <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
 <meta name="app-base" content="<?= e(root_url('/')) ?>">
-<meta name="theme-color" content="#0b0f17">
+<meta name="theme-color" content="#070b12">
 <link rel="manifest" href="<?= e(root_url('/manifest.webmanifest')) ?>">
 <link rel="apple-touch-icon" href="<?= e(root_url('/assets/icons/icon-192.png')) ?>">
 <link rel="icon" type="image/png" href="<?= e(root_url('/assets/icons/icon-192.png')) ?>">

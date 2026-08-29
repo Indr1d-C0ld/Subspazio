@@ -4,6 +4,27 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-08-29 — Tema unico scuro (rimossa la modalità chiara)
+
+In modalità chiara restavano tre combinazioni illeggibili, tutte dovute
+al blocco `@media (prefers-color-scheme: light)`: la status bar (sfondo
+scuro fisso, valori che diventavano blu scuro), gli alert/`event-banner`
+(testo chiaro su tinta chiara) e le `pill`/`tag` semantiche (verde/ambra
+chiaro su pastello quasi bianco). Il tema "console di plancia" è scuro
+per natura; invece di mantenere due palette la UI è ora **solo scura** —
+palette già verificata a contrasto WCAG AA.
+
+- **[assets/css/app.css](assets/css/app.css)** — rimosso l'intero blocco
+  `@media (prefers-color-scheme: light)`. `html { color-scheme: dark }`
+  resta: anche col sistema in light i controlli di form, le scrollbar e
+  gli sfondi UA sono in variante scura. Restano i blocchi `@media`
+  mobile e `prefers-reduced-motion`.
+- **[views/layout.php](views/layout.php)** — `<meta name="color-scheme">`
+  `dark light` → `dark`; `theme-color` `#0b0f17` → `#070b12`.
+- **[manifest.webmanifest](manifest.webmanifest)** — `background_color` /
+  `theme_color` `#0b0f17` → `#070b12`.
+- **[sw.js](sw.js)** — `VERSION` `v2` → `v3`.
+
 ## 2026-08-29 — Restyle sci-fi della UI + leggibilità
 
 Ridisegno del foglio di stile con due obiettivi: correggere i punti in

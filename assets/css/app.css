@@ -650,44 +650,10 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 }
 
 /* =========================================================================
-   Modalità chiara (per chi ha il sistema in light). Ridefinisce solo i
-   token: la struttura resta identica.
+   Tema unico scuro. La "console di plancia" è per sua natura scura: una
+   modalità chiara costringeva pill/tag/alert (testo chiaro su tinte
+   chiare) e la status bar (valori scuri su barra scura) a diventare
+   illeggibili. `color-scheme: dark` in cima al foglio fa sì che anche gli
+   utenti col sistema in light ottengano controlli di form, scrollbar e
+   sfondi UA in variante scura, coerenti con la palette.
    ========================================================================= */
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #eef2f9;
-    --bg-soft: #ffffff;
-    --panel: #ffffff;
-    --panel-2: #f3f6fc;
-    --line: #d3dbe9;
-    --line-soft: #e4e9f2;
-    --ink: #14202f;
-    --ink-soft: #4a5a70;
-    --ink-dim: #6b7a90;
-    --accent: #0f7bc4;
-    --accent-ink: #ffffff;
-    --accent-2: #6b3bd1;
-    --ok: #1c9d63;
-    --warn: #b9791b;
-    --err: #d64545;
-    --field-bg: #ffffff;
-    --field-border: #c3cee0;
-    --shadow-panel: 0 1px 2px rgba(20,30,50,.06), 0 12px 30px -18px rgba(20,30,50,.25);
-  }
-  html { color-scheme: light; }
-  body {
-    background:
-      radial-gradient(1100px 720px at 80% -14%, rgba(15,123,196,.08), transparent 60%),
-      radial-gradient(900px 620px at 3% 112%, rgba(107,59,209,.07), transparent 55%),
-      linear-gradient(180deg, #eef2f9, #e7ecf6);
-  }
-  body::before { opacity: .12; }
-  .btn { color: #fff; }
-  .btn.ghost { color: var(--ink); }
-  .btn.danger { color: #fff; }
-  code { color: #0a5c94; }
-  .tbl th { background: rgba(15,123,196,.06); }
-  .tbl tbody tr:hover { background: rgba(15,123,196,.05); }
-  #starmap { background: radial-gradient(120% 120% at 50% 0%, #0c1830 0%, #060a14 70%), #060a14; }
-  #terminal { background: #04070d; }
-}
