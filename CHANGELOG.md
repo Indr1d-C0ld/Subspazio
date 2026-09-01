@@ -4,6 +4,30 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-01 — Mappa stellare 3D (canvas, force-directed)
+
+La mappa 2D restava troppo fitta (coordinate dell'universo raggruppate;
+lo slider "distanza" non separava i punti vicini). Sostituita con una
+vista **3D su `<canvas>`**, nessuna dipendenza.
+
+- **[assets/js/game.js](assets/js/game.js)** — riscritto:
+  - **layout force-directed 3D** dal grafo dei warp (repulsione + molle +
+    gravità, poi normalizzazione del raggio): i settori collegati si
+    distanziano da soli fino a una spaziatura leggibile. Seme
+    deterministico per id → forma stabile.
+  - camera orbitale: trascina = ruota, rotella = zoom verso il
+    puntatore, Shift+trascina / due dita = pan, doppio clic = centra,
+    clic su settore adiacente = movimento.
+  - proiezione prospettica: nodi e archi sfumano con la profondità.
+  - **controlli esterni al riquadro**: slider Rotazione / Inclinazione /
+    Spaziatura; Etichette (`solo qui` / `qui + vicini` / `conosciute + #`,
+    con anti-sovrapposizione); interruttori rotte, «solo esplorati»,
+    «vista 2D»; `+`/`−` e «Adatta». Preferenze in `localStorage`.
+- **[assets/css/app.css](assets/css/app.css)** — `.map-card.map-3d` a
+  tutta larghezza; `#starmap` contenitore del canvas; barra `.map-orbit`;
+  rimosse le regole SVG della vecchia mappa.
+- [sw.js](sw.js): `VERSION` `v4` → `v5`.
+
 ## 2026-09-01 — Date IT, mappa regolabile, eventi più radi, occhio password, fix «rotte»
 
 - **Date/orario in formato italiano** — nuovi helper

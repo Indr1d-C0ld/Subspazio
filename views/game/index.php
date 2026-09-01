@@ -271,7 +271,7 @@ $holdsUsed = (int) $ship['hold_ore'] + (int) $ship['hold_organics']
     </p>
   </section>
 
-  <section class="panel map-card">
+  <section class="panel map-card map-3d">
     <h2>Mappa stellare</h2>
     <div class="map-controls">
       <label>Etichette
@@ -281,14 +281,18 @@ $holdsUsed = (int) $ship['hold_ore'] + (int) $ship['hold_organics']
           <option value="known">conosciute + #</option>
         </select>
       </label>
-      <label>Distanza
-        <input type="range" id="map-spread" min="0.6" max="3" step="0.1" value="1"
-               aria-label="Distanza fra i punti">
-      </label>
+      <label class="chk"><input type="checkbox" id="map-routes" checked> rotte</label>
+      <label class="chk"><input type="checkbox" id="map-explored"> solo esplorati</label>
+      <label class="chk"><input type="checkbox" id="map-2d"> vista 2D</label>
       <span class="spacer"></span>
       <button type="button" class="btn xs ghost" id="map-zoom-out" aria-label="Riduci zoom">−</button>
       <button type="button" class="btn xs ghost" id="map-zoom-in" aria-label="Aumenta zoom">+</button>
       <button type="button" class="btn xs ghost" id="map-fit">Adatta</button>
+    </div>
+    <div class="map-orbit">
+      <label>Rotazione <input type="range" id="map-yaw" min="-180" max="180" step="1" value="26" aria-label="Rotazione orizzontale"></label>
+      <label>Inclinazione <input type="range" id="map-pitch" min="2" max="88" step="1" value="32" aria-label="Inclinazione verticale"></label>
+      <label>Spaziatura <input type="range" id="map-spread" min="0.5" max="2.6" step="0.05" value="1" aria-label="Spaziatura fra i punti"></label>
     </div>
     <div id="starmap"
          data-map-url="<?= e(url('/api/mappa')) ?>"
@@ -302,6 +306,7 @@ $holdsUsed = (int) $ship['hold_ore'] + (int) $ship['hold_organics']
       <span class="dot unk"></span> noto
       <span class="dot dock"></span> StarDock
     </p>
+    <p class="hint map-help">Trascina per ruotare · rotella per lo zoom · Shift+trascina (o due dita) per spostare · clic su un settore adiacente per muoverti · doppio clic per centrarlo.</p>
   </section>
 </div>
 
