@@ -10,7 +10,7 @@
 
 <section class="panel">
   <h1><?= e($b['attacker']) ?> <span class="vs">vs</span> <?= e($b['defender']) ?></h1>
-  <p class="hint"><?= e($b['at']) ?> · tipo <?= e($b['kind']) ?> · <?= (int) $b['rounds'] ?> round · esito <strong><?= e($b['outcome']) ?></strong><?= $b['loot'] ? ' · bottino ' . number_format($b['loot'], 0, ',', '.') . ' cr' : '' ?></p>
+  <p class="hint"><?= e(fmt_dt($b['at'])) ?> · tipo <?= e($b['kind']) ?> · <?= (int) $b['rounds'] ?> round · esito <strong><?= e($b['outcome']) ?></strong><?= $b['loot'] ? ' · bottino ' . number_format($b['loot'], 0, ',', '.') . ' cr' : '' ?></p>
 
   <?php if ($b['trace'] === []): ?>
     <p class="hint">Nessun dettaglio round-per-round per questo scontro (registrato prima dell'aggiornamento replay).</p>

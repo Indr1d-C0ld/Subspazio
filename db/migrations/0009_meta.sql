@@ -77,8 +77,8 @@ INSERT INTO game_config (ckey, cvalue, ctype) VALUES
   ('npc.kill_exp_ferrengi',      '140',              'int'),
   ('npc.kill_exp_pirate',        '70',               'int'),
   ('combat.bounty_mult',         '1',                'float'),
-  ('events.interval_min',        '90',               'int'),
-  ('events.chance_pct',          '55',               'int'),
+  ('events.interval_min',        '240',              'int'),
+  ('events.chance_pct',          '40',               'int'),
   ('events.last_run',            '',                 'string'),
   ('rating.interval_min',        '15',               'int'),
   ('rating.last_run',            '',                 'string')

@@ -116,6 +116,52 @@ if (!function_exists('redirect')) {
     }
 }
 
+if (!function_exists('rome_tz')) {
+    function rome_tz(): \DateTimeZone
+    {
+        static $tz = null;
+        return $tz ??= new \DateTimeZone((string) Config::get('app.timezone', 'Europe/Rome'));
+    }
+}
+
+if (!function_exists('fmt_dt')) {
+    /**
+     * Formatta un istante nel formato italiano, ora di Roma: "GG/MM/AAAA HH:MM".
+     * Accetta stringhe DATETIME del DB (già ora di Roma), timestamp unix o DateTimeInterface.
+     * I valori "naïve" (senza fuso) sono interpretati nel fuso applicativo, non convertiti.
+     */
+    function fmt_dt(mixed $value, bool $withSeconds = false, string $fallback = '—'): string
+    {
+        $fmt = $withSeconds ? 'd/m/Y H:i:s' : 'd/m/Y H:i';
+        try {
+            if ($value instanceof \DateTimeInterface) {
+                $dt = \DateTimeImmutable::createFromInterface($value)->setTimezone(rome_tz());
+            } elseif (is_int($value) || (is_string($value) && ctype_digit($value))) {
+                $dt = (new \DateTimeImmutable('@' . (int) $value))->setTimezone(rome_tz());
+            } else {
+                $s = trim((string) $value);
+                if ($s === '' || str_starts_with($s, '0000-00-00')) {
+                    return $fallback;
+                }
+                // DATETIME del DB: niente fuso nella stringa => è già ora di Roma.
+                $dt = new \DateTimeImmutable($s, rome_tz());
+            }
+        } catch (\Throwable) {
+            return $fallback;
+        }
+        return $dt->format($fmt);
+    }
+}
+
+if (!function_exists('fmt_date')) {
+    /** Solo la data: "GG/MM/AAAA". */
+    function fmt_date(mixed $value, string $fallback = '—'): string
+    {
+        $out = fmt_dt($value, false, $fallback);
+        return $out === $fallback ? $fallback : explode(' ', $out)[0];
+    }
+}
+
 if (!function_exists('auth_user')) {
     /** @return array<string,mixed>|null */
     function auth_user(): ?array

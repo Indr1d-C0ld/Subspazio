@@ -4,7 +4,7 @@
 ?>
 <section class="statusbar">
   <div><span class="k">Stagione in corso</span><span class="v"><?= (int) $current['number'] ?> — <?= e($current['name']) ?></span></div>
-  <div><span class="k">Dal</span><span class="v"><?= e($current['started_at']) ?></span></div>
+  <div><span class="k">Dal</span><span class="v"><?= e(fmt_date($current['started_at'])) ?></span></div>
   <div><a href="<?= e(url('/gioco/classifica')) ?>">Classifica</a></div>
   <div><a href="<?= e(url('/gioco')) ?>">← Plancia</a></div>
 </section>
@@ -21,7 +21,7 @@
         <tr>
           <td>#<?= (int) $h['number'] ?> — <?= e($h['name']) ?></td>
           <td>👑 <strong><?= e($h['winner'] ?? '—') ?></strong></td>
-          <td><?= e($h['ended_at']) ?></td>
+          <td><?= e(fmt_dt($h['ended_at'])) ?></td>
         </tr>
       <?php endforeach; ?>
       </tbody>

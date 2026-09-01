@@ -19,7 +19,7 @@
     <?php foreach ($rows as $r): ?>
       <tr>
         <td><?= (int) $r['id'] ?></td>
-        <td class="nowrap"><?= e($r['at']) ?></td>
+        <td class="nowrap"><?= e(fmt_dt($r['at'])) ?></td>
         <td><?= e($r['kind']) ?></td>
         <td><?= (int) $r['sector'] ?></td>
         <td><?= e($r['role']) ?></td>

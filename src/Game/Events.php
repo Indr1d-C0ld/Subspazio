@@ -26,14 +26,14 @@ final class Events
     {
         self::expireDue();
 
-        $interval = GameConfig::int('events.interval_min', 90);
+        $interval = GameConfig::int('events.interval_min', 240);
         $last = GameConfig::str('events.last_run', '');
         if ($last !== '' && (time() - strtotime($last)) < $interval * 60) {
             return null;
         }
         GameConfig::set('events.last_run', date('Y-m-d H:i:s'));
 
-        if (mt_rand(1, 100) > GameConfig::int('events.chance_pct', 55)) {
+        if (mt_rand(1, 100) > GameConfig::int('events.chance_pct', 40)) {
             return null;
         }
 

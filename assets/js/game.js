@@ -10,10 +10,39 @@
   const mapUrl = host.dataset.mapUrl;
   const moveUrl = host.dataset.moveUrl;
 
+  const LS = {
+    get labels() { return localStorage.getItem('sz_map_labels') || 'known'; },
+    set labels(v) { try { localStorage.setItem('sz_map_labels', v); } catch (e) {} },
+    get spread() { return parseFloat(localStorage.getItem('sz_map_spread')) || 1; },
+    set spread(v) { try { localStorage.setItem('sz_map_spread', String(v)); } catch (e) {} },
+  };
+
   const view = { x: 0, y: 0, k: 1 };
+  let spread = clampSpread(LS.spread);
+  let labelMode = LS.labels;               // none | adj | known
   let data = null;
-  let svg = null;
-  let g = null;
+  let svg = null, gRoot = null;
+  let W = 600, H = 440;
+  let baseProj = null;                     // (x,y) -> [px,py] con spread = 1
+  let cx = 0, cy = 0;                      // centro del box, per lo "spread"
+
+  function clampK(k) { return Math.max(0.35, Math.min(8, k)); }
+  function clampSpread(s) { s = parseFloat(s); if (!isFinite(s)) s = 1; return Math.max(0.6, Math.min(3, Math.round(s * 10) / 10)); }
+
+  // --- controlli (nel markup, non dentro host che viene svuotato) -----------
+  const elLabels = document.getElementById('map-labels');
+  const elSpread = document.getElementById('map-spread');
+  if (elLabels) {
+    elLabels.value = labelMode;
+    elLabels.addEventListener('change', () => { labelMode = elLabels.value; LS.labels = labelMode; if (data) render(); });
+  }
+  if (elSpread) {
+    elSpread.value = String(spread);
+    elSpread.addEventListener('input', () => { spread = clampSpread(elSpread.value); LS.spread = spread; if (data) render(); });
+  }
+  document.getElementById('map-zoom-in')?.addEventListener('click', () => zoomAt(W / 2, H / 2, 1.25));
+  document.getElementById('map-zoom-out')?.addEventListener('click', () => zoomAt(W / 2, H / 2, 0.8));
+  document.getElementById('map-fit')?.addEventListener('click', () => { view.x = 0; view.y = 0; view.k = 1; if (data) render(); });
 
   async function load() {
     try {
@@ -37,26 +66,36 @@
     return { minx: minx - padx, miny: miny - pady, maxx: maxx + padx, maxy: maxy + pady };
   }
 
+  // posizione finale di un settore: proiezione base "allargata" attorno al centro
+  function pos(s) {
+    const p = baseProj(s.x, s.y);
+    return [cx + (p[0] - cx) * spread, cy + (p[1] - cy) * spread];
+  }
+
   function render() {
     host.innerHTML = '';
-    const W = host.clientWidth || 600;
-    const H = Math.max(360, Math.round(W * 0.72));
+    W = host.clientWidth || 600;
+    H = Math.max(380, Math.round(W * 0.78));
+
     const b = bounds(data.sectors);
-    const sx = W / (b.maxx - b.minx);
-    const sy = H / (b.maxy - b.miny);
-    const scale = Math.min(sx, sy);
-    const proj = (px, py) => [(px - b.minx) * scale, (py - b.miny) * scale];
+    const scale = Math.min(W / (b.maxx - b.minx), H / (b.maxy - b.miny));
+    baseProj = (px, py) => [(px - b.minx) * scale, (py - b.miny) * scale];
+    cx = W / 2; cy = H / 2;
 
     svg = document.createElementNS(SVGNS, 'svg');
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
     svg.setAttribute('class', 'starmap-svg');
-    g = document.createElementNS(SVGNS, 'g');
-    svg.appendChild(g);
+    gRoot = document.createElementNS(SVGNS, 'g');
+    svg.appendChild(gRoot);
 
     const byId = {};
     for (const s of data.sectors) byId[s.id] = s;
 
-    // warp
+    // adiacenti al settore corrente (destinazioni di warp da "current")
+    const adj = new Set();
+    for (const [f, t] of data.warps) if (f === data.current) adj.add(t);
+
+    // --- warp (dietro) ---
     const seen = new Set();
     for (const [f, t] of data.warps) {
       const a = byId[f], c = byId[t];
@@ -64,53 +103,66 @@
       const key = f < t ? `${f}-${t}` : `${t}-${f}`;
       if (seen.has(key)) continue;
       seen.add(key);
-      const [x1, y1] = proj(a.x, a.y);
-      const [x2, y2] = proj(c.x, c.y);
+      const [x1, y1] = pos(a);
+      const [x2, y2] = pos(c);
       const line = document.createElementNS(SVGNS, 'line');
       line.setAttribute('x1', x1); line.setAttribute('y1', y1);
       line.setAttribute('x2', x2); line.setAttribute('y2', y2);
-      line.setAttribute('class', 'warp-line');
-      g.appendChild(line);
+      const near = (f === data.current || t === data.current);
+      line.setAttribute('class', near ? 'warp-line adj' : 'warp-line');
+      gRoot.appendChild(line);
     }
 
-    // adiacenti al settore corrente (destinazioni di warp da "current")
-    const adj = new Set();
-    for (const [f, t] of data.warps) if (f === data.current) adj.add(t);
+    // sotto una certa scala effettiva ripieghiamo su "solo vicini" per non
+    // impastare la mappa di etichette
+    const declutter = (view.k * spread) < 0.75;
 
+    // --- nodi (davanti) ---
     for (const s of data.sectors) {
-      const [x, y] = proj(s.x, s.y);
+      const [x, y] = pos(s);
       const node = document.createElementNS(SVGNS, 'g');
       node.setAttribute('class', 'sector-node');
       node.setAttribute('transform', `translate(${x},${y})`);
 
+      const isCur = s.id === data.current;
+      const isAdj = adj.has(s.id);
+
       const dot = document.createElementNS(SVGNS, 'circle');
       let cls = s.visited ? 'vis' : 'unk';
-      if (s.id === data.current) cls = 'cur';
+      if (isCur) cls = 'cur';
       if (s.stardock) cls += ' dock';
-      dot.setAttribute('r', s.id === data.current ? 7 : (s.stardock ? 6 : 4.5));
+      dot.setAttribute('r', isCur ? 7 : (s.stardock ? 6 : 4.5));
       dot.setAttribute('class', 'snode ' + cls);
-      dot.setAttribute('fill', s.visited || s.id === data.current ? s.color : 'transparent');
+      dot.setAttribute('fill', s.visited || isCur ? s.color : 'transparent');
       dot.setAttribute('stroke', s.color);
       node.appendChild(dot);
 
-      if (s.id === data.current || adj.has(s.id) || s.stardock) {
+      // cosa etichettare
+      let showLabel = false;
+      if (isCur) showLabel = true;
+      else if (labelMode === 'adj') showLabel = isAdj;
+      else if (labelMode === 'known') showLabel = declutter ? isAdj : true;
+      // 'none' -> solo il corrente
+
+      if (showLabel) {
+        const known = s.visited || isCur;
         const label = document.createElementNS(SVGNS, 'text');
-        label.setAttribute('class', 'snode-label');
+        label.setAttribute('class', 'snode-label' + (isCur ? ' cur' : (known ? '' : ' dim')));
         label.setAttribute('x', 9);
         label.setAttribute('y', 3);
-        label.textContent = s.id;
+        label.textContent = known && s.name ? s.name : ('#' + s.id);
         node.appendChild(label);
       }
 
       const title = document.createElementNS(SVGNS, 'title');
-      title.textContent = `Settore ${s.id} — ${s.name}${adj.has(s.id) ? ' (warp)' : ''}`;
+      title.textContent = `Settore ${s.id} — ${s.name}${isAdj ? ' (warp)' : ''}`;
       node.appendChild(title);
 
-      if (adj.has(s.id)) {
+      if (isAdj) {
         node.classList.add('clickable');
         node.addEventListener('click', () => move(s.id));
       }
-      g.appendChild(node);
+      gRoot.appendChild(node);
     }
 
     applyTransform();
@@ -119,14 +171,33 @@
   }
 
   function applyTransform() {
-    g.setAttribute('transform', `translate(${view.x},${view.y}) scale(${view.k})`);
+    // clamp morbido: tieni sempre un po' di mappa dentro la cornice
+    const span = Math.max(W, H) * view.k;
+    const m = 60;
+    view.x = Math.max(-span + m, Math.min(W - m, view.x));
+    view.y = Math.max(-span + m, Math.min(H - m, view.y));
+    gRoot.setAttribute('transform', `translate(${view.x},${view.y}) scale(${view.k})`);
+  }
+
+  // zoom mantenendo fermo il punto (px,py) in coordinate viewBox
+  function zoomAt(px, py, factor) {
+    const k2 = clampK(view.k * factor);
+    const f = k2 / view.k;
+    view.x = px - (px - view.x) * f;
+    view.y = py - (py - view.y) * f;
+    view.k = k2;
+    applyTransform();
+  }
+
+  function toViewBox(clientX, clientY) {
+    const r = svg.getBoundingClientRect();
+    return [(clientX - r.left) * (W / r.width), (clientY - r.top) * (H / r.height)];
   }
 
   function enablePanZoom() {
     const pts = new Map();
-    let last = null;      // {x,y} per il pan a un dito
-    let pinch = null;     // {dist} per lo zoom a due dita
-    const clampK = (k) => Math.max(0.3, Math.min(6, k));
+    let last = null;
+    let pinch = null;   // {dist}
     const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
     svg.addEventListener('pointerdown', (e) => {
@@ -139,13 +210,19 @@
       if (!pts.has(e.pointerId)) return;
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pts.size === 1 && last) {
-        view.x += e.clientX - last.x; view.y += e.clientY - last.y;
+        view.x += e.clientX - last.x;
+        view.y += e.clientY - last.y;
         last = { x: e.clientX, y: e.clientY };
         applyTransform();
       } else if (pts.size === 2 && pinch) {
         const [a, b] = [...pts.values()];
         const d = dist(a, b);
-        view.k = clampK(view.k * (d / pinch.dist));
+        const [mx, my] = toViewBox((a.x + b.x) / 2, (a.y + b.y) / 2);
+        const k2 = clampK(view.k * (d / pinch.dist));
+        const f = k2 / view.k;
+        view.x = mx - (mx - view.x) * f;
+        view.y = my - (my - view.y) * f;
+        view.k = k2;
         pinch.dist = d;
         applyTransform();
       }
@@ -160,8 +237,8 @@
 
     svg.addEventListener('wheel', (e) => {
       e.preventDefault();
-      view.k = clampK(view.k * (e.deltaY < 0 ? 1.12 : 0.89));
-      applyTransform();
+      const [px, py] = toViewBox(e.clientX, e.clientY);
+      zoomAt(px, py, e.deltaY < 0 ? 1.12 : 0.893);
     }, { passive: false });
   }
 
@@ -196,7 +273,8 @@
   }
 
   load();
-  window.addEventListener('resize', () => { if (data) render(); });
+  let rt = null;
+  window.addEventListener('resize', () => { if (data) { clearTimeout(rt); rt = setTimeout(render, 150); } });
 
   // esposto per il realtime (live.js): ricarica la mappa senza refresh pagina
   let reloadTimer = null;

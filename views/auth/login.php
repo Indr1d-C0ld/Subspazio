@@ -9,7 +9,11 @@
     </label>
     <label>
       <span>Password</span>
-      <input type="password" name="password" autocomplete="current-password" required>
+      <span class="pw-wrap">
+        <input type="password" name="password" autocomplete="current-password"
+               autocapitalize="none" autocorrect="off" spellcheck="false" required>
+        <button type="button" class="pw-toggle" aria-label="Mostra password" title="Mostra/nascondi">👁</button>
+      </span>
     </label>
     <button type="submit" class="btn">Entra</button>
   </form>

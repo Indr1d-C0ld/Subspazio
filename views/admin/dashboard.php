@@ -31,7 +31,7 @@ $badge = static fn (string $s): string => match ($s) {
         <tr>
           <td>@<?= e($p['username']) ?></td>
           <td><?= e($p['email']) ?></td>
-          <td><?= e($p['created_at']) ?></td>
+          <td><?= e(fmt_dt($p['created_at'])) ?></td>
           <td class="ta-r nowrap">
             <form method="post" action="<?= e(url('/admin/utenti/' . $p['id'] . '/approva')) ?>" class="inline">
               <?= csrf_field() ?><button class="btn xs">Approva</button>
@@ -59,7 +59,7 @@ $badge = static fn (string $s): string => match ($s) {
         <td><?= e($r['email']) ?></td>
         <td><span class="pill <?= $badge((string) $r['status']) ?>"><?= e($r['status']) ?></span></td>
         <td><?= e($r['role']) ?></td>
-        <td><?= e($r['last_login_at'] ?? '—') ?></td>
+        <td><?= e(fmt_dt($r['last_login_at'])) ?></td>
         <td class="ta-r nowrap">
           <?php if ($r['role'] !== 'admin'): ?>
             <?php if (in_array($r['status'], ['pending', 'suspended'], true)): ?>
@@ -93,7 +93,7 @@ $badge = static fn (string $s): string => match ($s) {
         <td><code><?= e($a['action']) ?></code></td>
         <td><?= e($a['actor'] ?? 'sistema') ?></td>
         <td><?= e($a['target_id'] ?? '—') ?></td>
-        <td><?= e($a['created_at']) ?></td>
+        <td><?= e(fmt_dt($a['created_at'])) ?></td>
       </tr>
     <?php endforeach; ?>
     </tbody>

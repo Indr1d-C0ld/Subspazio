@@ -35,7 +35,7 @@ $u = url('/gioco/pianeta/' . (int) $p['id']);
     <div class="card"><span class="k">Tesoreria</span><span class="v"><?= number_format((int) $p['credits'], 0, ',', '.') ?></span></div>
   </div>
   <?php if ($p['citadel_ready_at']): ?>
-    <p class="hint">Citadel liv. <?= (int) $p['citadel_upgrade_to'] ?> pronta il <?= e($p['citadel_ready_at']) ?>.</p>
+    <p class="hint">Citadel liv. <?= (int) $p['citadel_upgrade_to'] ?> pronta il <?= e(fmt_dt($p['citadel_ready_at'])) ?>.</p>
   <?php endif; ?>
 
   <h2>Coloni e produzione</h2>

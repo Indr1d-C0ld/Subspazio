@@ -111,7 +111,7 @@
       panel = document.createElement('div');
       panel.className = 'alert-panel';
       panel.innerHTML = j.items.length
-        ? j.items.map((a) => `<a class="ap-item ${a.read_at ? '' : 'unread'}" href="${a.link ? base + a.link : '#'}"><strong>${esc(a.title)}</strong><span>${esc(a.body)}</span><time>${esc(a.created_at)}</time></a>`).join('')
+        ? j.items.map((a) => `<a class="ap-item ${a.read_at ? '' : 'unread'}" href="${a.link ? base + a.link : '#'}"><strong>${esc(a.title)}</strong><span>${esc(a.body)}</span><time>${esc(fmtDt(a.created_at))}</time></a>`).join('')
         : '<div class="ap-empty">Nessun avviso.</div>';
       bell.parentElement.appendChild(panel);
       await fetch(base + '/api/alerts/letti', { method: 'POST', headers: { 'X-CSRF-Token': csrf } });
@@ -120,6 +120,11 @@
     });
   }
   function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  // DATETIME del DB (già ora di Roma) -> "GG/MM/AAAA HH:MM", indipendente dal fuso del browser
+  function fmtDt(s) {
+    const m = String(s == null ? '' : s).match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+    return m ? `${m[3]}/${m[2]}/${m[1]} ${m[4]}:${m[5]}` : String(s == null ? '' : s);
+  }
 
   window.SubspazioLive = {
     enableNotifications() {

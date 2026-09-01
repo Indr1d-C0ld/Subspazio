@@ -38,7 +38,7 @@ $chLabel = ['radio' => 'RADIO', 'fedcomm' => 'FED', 'corp' => 'CORP', 'private' 
         <span class="rl-ch"><?= $chLabel[$m['channel']] ?? strtoupper($m['channel']) ?></span>
         <span class="rl-from"><?= e($m['from']) ?><?= $m['to'] ? ' (' . e($m['to']) . ')' : '' ?></span>
         <span class="rl-body"><?= e($m['body']) ?></span>
-        <span class="rl-at"><?= e($m['at']) ?></span>
+        <span class="rl-at"><?= e(fmt_dt($m['at'])) ?></span>
       </li>
     <?php endforeach; ?>
     <?php if ($inbox === []): ?><li class="hint">Nessun messaggio.</li><?php endif; ?>

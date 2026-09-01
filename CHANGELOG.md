@@ -4,6 +4,39 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-01 — Date IT, mappa regolabile, eventi più radi, occhio password, fix «rotte»
+
+- **Date/orario in formato italiano** — nuovi helper
+  [`fmt_dt()` / `fmt_date()`](src/Support/helpers.php) (`GG/MM/AAAA HH:MM`,
+  ora di Roma). Sostituiti tutti i punti di stampa nelle viste (rotte,
+  battaglie, radio, dashboard admin, albo d'oro, pianeti, pannello gioco)
+  e nel pannello campanella realtime ([live.js](assets/js/live.js),
+  formattazione via regex lato client).
+- **Mappa stellare** ([game.js](assets/js/game.js),
+  [index.php](views/game/index.php), [app.css](assets/css/app.css)):
+  - zoom **verso il puntatore** (rotella e pinch) — la mappa non
+    "scappa" più verso l'angolo; tasti `+`/`−` e `Adatta`;
+  - barra controlli: **Etichette** (`solo qui` / `qui + vicini` /
+    `conosciute + #` — nome se visitato, altrimenti `#numero`; auto-declutter
+    quando è troppo rimpicciolita) e **Distanza** (slider che allarga la
+    spaziatura fra i punti senza ingrandirli). Entrambe ricordate in
+    `localStorage`;
+  - etichette con contorno leggibile sopra le rotte, linee verso i vicini
+    evidenziate, clamp morbido del pan.
+- **Eventi globali meno frequenti** — default e seed a
+  `events.interval_min=240`, `events.chance_pct=40`
+  ([Events.php](src/Game/Events.php),
+  [0009_meta.sql](db/migrations/0009_meta.sql)): ~1 ogni 10 h. Sul live:
+  `php bin/console.php config:set events.interval_min 240` e
+  `… config:set events.chance_pct 40`.
+- **Login — «mostra password»** — pulsante 👁 accanto al campo
+  ([login.php](views/auth/login.php), [app.js](assets/js/app.js)); campo
+  password con `autocapitalize`/`autocorrect`/`spellcheck` disattivati.
+- **Fix sovrapposizioni pagina «rotte»** ([app.css](assets/css/app.css)) —
+  in `.game-grid` i pannelli ora possono rimpicciolirsi (`min-width:0`) e
+  le tabelle scrollano invece di sforare sulla colonna accanto.
+- [sw.js](sw.js): `VERSION` `v3` → `v4`.
+
 ## 2026-08-29 — Login affidabile da mobile
 
 Il login falliva da smartphone con credenziali valide su desktop. Tre

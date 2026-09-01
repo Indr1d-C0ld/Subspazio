@@ -273,6 +273,23 @@ $holdsUsed = (int) $ship['hold_ore'] + (int) $ship['hold_organics']
 
   <section class="panel map-card">
     <h2>Mappa stellare</h2>
+    <div class="map-controls">
+      <label>Etichette
+        <select id="map-labels">
+          <option value="none">solo qui</option>
+          <option value="adj">qui + vicini</option>
+          <option value="known">conosciute + #</option>
+        </select>
+      </label>
+      <label>Distanza
+        <input type="range" id="map-spread" min="0.6" max="3" step="0.1" value="1"
+               aria-label="Distanza fra i punti">
+      </label>
+      <span class="spacer"></span>
+      <button type="button" class="btn xs ghost" id="map-zoom-out" aria-label="Riduci zoom">−</button>
+      <button type="button" class="btn xs ghost" id="map-zoom-in" aria-label="Aumenta zoom">+</button>
+      <button type="button" class="btn xs ghost" id="map-fit">Adatta</button>
+    </div>
     <div id="starmap"
          data-map-url="<?= e(url('/api/mappa')) ?>"
          data-move-url="<?= e(url('/api/muovi')) ?>"

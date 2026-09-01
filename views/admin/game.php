@@ -35,7 +35,7 @@ $C = static fn (string $k = '') => e(url('/admin/gioco')) . ($k ? '#' . $k : '')
     <?php foreach ($stats['npc'] as $n): ?><?= e($n['kind']) ?> <?= (int) $n['c'] ?> · <?php endforeach; ?>
     Più ricco: <?= $stats['richest'] ? e($stats['richest']['handle']) . ' (' . number_format((int) $stats['richest']['credits'], 0, ',', '.') . ' cr)' : '—' ?> ·
     Top rating: <?= $stats['top_rating'] ? e($stats['top_rating']['handle']) : '—' ?> ·
-    Universo generato: <?= e($stats['universe_at']) ?>
+    Universo generato: <?= e(fmt_dt($stats['universe_at'])) ?>
   </p>
 </section>
 
@@ -97,7 +97,7 @@ $C = static fn (string $k = '') => e(url('/admin/gioco')) . ($k ? '#' . $k : '')
 
 <section class="panel" id="stagione">
   <h2>Stagione</h2>
-  <p>In corso: <strong>#<?= (int) $season['number'] ?> — <?= e($season['name']) ?></strong> (dal <?= e($season['started_at']) ?>).</p>
+  <p>In corso: <strong>#<?= (int) $season['number'] ?> — <?= e($season['name']) ?></strong> (dal <?= e(fmt_date($season['started_at'])) ?>).</p>
   <p class="hint">Chiudendo la stagione: snapshot della top <?= e((string) \App\Game\GameConfig::int('season.snapshot_top', 25)) ?> nell'albo, poi
      tutti i comandanti ripartono da zero (crediti/turni/esperienza), navi e pianeti azzerati.
      I traguardi restano. Universo rigenerato solo se spunti l'opzione.</p>
@@ -165,7 +165,7 @@ $C = static fn (string $k = '') => e(url('/admin/gioco')) . ($k ? '#' . $k : '')
         <td class="ta-r"><?= (int) $p['turns'] ?></td>
         <td class="ta-r"><?= (int) $p['sector_id'] ?></td>
         <td class="ta-r"><?= number_format((int) $p['rating'], 0, ',', '.') ?></td>
-        <td><?= e($p['last_seen_at'] ?? '—') ?></td>
+        <td class="nowrap"><?= e(fmt_dt($p['last_seen_at'])) ?></td>
         <td class="nowrap">
           <?php if ($p['role'] !== 'admin'): ?>
           <form method="post" action="<?= e(url('/admin/gioco/giocatore')) ?>" class="inline">

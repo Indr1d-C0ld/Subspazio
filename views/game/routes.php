@@ -22,7 +22,7 @@
       <tbody>
       <?php foreach ($recent as $r): ?>
         <tr>
-          <td class="nowrap"><?= e($r['at']) ?></td>
+          <td class="nowrap"><?= e(fmt_dt($r['at'])) ?></td>
           <td><?= (int) $r['from'] ?> → <strong><?= (int) $r['to'] ?></strong> <?= $r['to_name'] ? '<small>' . e($r['to_name']) . '</small>' : '' ?></td>
           <td><?= e($r['mode']) ?></td>
           <td class="ta-r"><?= (int) $r['turns'] ?></td>
