@@ -800,14 +800,15 @@ final class Combat
         $dock = (int) (Database::first('SELECT id FROM sectors WHERE is_stardock = 1 LIMIT 1')['id'] ?? 1);
         $hadPod = (int) $ship['escape_pod'] === 1;
         $lost = $hadPod ? 0 : (int) floor((int) $player['credits'] * 0.5);
+        $podHolds = GameConfig::int('hardware.pod_holds', 5);
 
         Database::run(
-            "UPDATE ships SET type_key = 'escape_pod', name = ?, sector_id = ?, holds_total = 0,
+            "UPDATE ships SET type_key = 'escape_pod', name = ?, sector_id = ?, holds_total = ?,
              hold_ore = 0, hold_organics = 0, hold_equipment = 0, hold_colonists = 0,
              fighters = 0, shields = 0, mines_armid = 0, mines_limpet = 0, probes = 0, genesis = 0,
              escape_pod = 0, dev_scanner = 'none', dev_transwarp = 0, dev_cloak = 0
              WHERE id = ?",
-            ['Capsula ' . $player['handle'], $dock, $ship['id']]
+            ['Capsula ' . $player['handle'], $dock, $podHolds, $ship['id']]
         );
         Database::run(
             'UPDATE players SET sector_id = ?, credits = GREATEST(0, credits - ?), deaths = deaths + 1, last_death_at = NOW() WHERE id = ?',
@@ -821,8 +822,9 @@ final class Combat
 
     private static function deathLine(array $d): string
     {
+        $tail = ' Al Cantiere puoi comprare una nave nuova o, se sei a secco, farti dare una nave di soccorso dalla Federazione.';
         return $d['had_pod']
-            ? "NAVE DISTRUTTA. Capsula di salvataggio attivata: sei allo StarDock (settore {$d['dock']})."
-            : "NAVE DISTRUTTA. Nessuna capsula: recuperato allo StarDock, persi {$d['lost_credits']} cr.";
+            ? "NAVE DISTRUTTA. Capsula di salvataggio attivata: sei allo StarDock (settore {$d['dock']})." . $tail
+            : "NAVE DISTRUTTA. Nessuna capsula: recuperato allo StarDock, persi {$d['lost_credits']} cr." . $tail;
     }
 }

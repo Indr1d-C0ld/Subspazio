@@ -24,6 +24,22 @@ $holdsUsed = (int) $ship['hold_ore'] + (int) $ship['hold_organics']
   <div class="alert event-banner">⚡ <strong><?= e($ev['title']) ?></strong> — <?= e($ev['body']) ?></div>
 <?php endforeach; ?>
 
+<?php if (($ship['type_key'] ?? '') === 'escape_pod'): ?>
+<section class="panel pod-notice">
+  <h2>🛟 Capsula di salvataggio</h2>
+  <p>La tua nave è stata distrutta e sei alla deriva in una capsula: niente armi né scudi,
+     solo <strong><?= (int) $ship['holds_total'] ?> stive</strong>. Puoi comunque spostarti e commerciare in piccolo per rimetterti in sesto.</p>
+  <p>
+    <?php if ($look['is_stardock']): ?>
+      Sei allo <strong>StarDock</strong>: al <a class="cta" href="<?= e(url('/gioco/cantiere')) ?>">Cantiere</a>
+      compri una nave nuova &mdash; e se sei senza crediti, richiedi una <strong>nave di soccorso</strong> della Federazione.
+    <?php else: ?>
+      Raggiungi lo <strong>StarDock</strong> (usa il computer di bordo per tracciare la rotta) per rimetterti in sesto al Cantiere.
+    <?php endif; ?>
+  </p>
+</section>
+<?php endif; ?>
+
 <?php if ($created): ?>
 <section class="panel briefing">
   <h2>Briefing comandante</h2>
@@ -37,7 +53,7 @@ $holdsUsed = (int) $ship['hold_ore'] + (int) $ship['hold_organics']
 </section>
 <?php endif; ?>
 
-<div class="game-grid">
+<div class="game-grid plancia-grid">
   <section class="panel sector-card">
     <header class="sector-head">
       <h1>Settore <?= (int) $look['id'] ?></h1>
@@ -230,7 +246,33 @@ $holdsUsed = (int) $ship['hold_ore'] + (int) $ship['hold_organics']
     </details>
     <?php endif; ?>
 
-    <details class="tools">
+  </section>
+
+  <aside class="game-side">
+    <section class="panel side-panel">
+      <h2>Comandi</h2>
+      <div class="side-links">
+        <?php if ($look['is_stardock']): ?>
+          <a class="btn xs" href="<?= e(url('/gioco/porto')) ?>">Porto</a>
+          <a class="btn xs ghost" href="<?= e(url('/gioco/banca')) ?>">Banca</a>
+          <a class="btn xs ghost" href="<?= e(url('/gioco/cantiere')) ?>">Cantiere</a>
+          <a class="btn xs ghost" href="<?= e(url('/gioco/pianeti')) ?>">Coloni</a>
+        <?php elseif (!empty($look['port'])): ?>
+          <a class="btn xs" href="<?= e(url('/gioco/porto')) ?>">Porto</a>
+        <?php endif; ?>
+        <a class="btn xs ghost" href="<?= e(url('/gioco/rotte')) ?>">Rotte</a>
+        <a class="btn xs ghost" href="<?= e(url('/gioco/battaglie')) ?>">Battaglie</a>
+        <a class="btn xs ghost" href="<?= e(url('/gioco/contratti')) ?>">Contratti</a>
+        <a class="btn xs ghost" href="<?= e(url('/gioco/mercato-nero')) ?>">Mercato nero</a>
+        <a class="btn xs ghost" href="<?= e(url('/gioco/corp')) ?>">Corp</a>
+        <a class="btn xs ghost" href="<?= e(url('/gioco/traguardi')) ?>">Traguardi</a>
+        <a class="btn xs ghost" href="<?= e(url('/gioco/classifica')) ?>">Classifica</a>
+        <a class="btn xs ghost" href="<?= e(url('/gioco/albo')) ?>">Albo</a>
+        <a class="btn xs ghost" href="<?= e(url('/terminale')) ?>">Terminale</a>
+      </div>
+    </section>
+
+    <details class="tools" open>
       <summary>Computer di bordo</summary>
       <form method="get" action="<?= e(url('/gioco/rotta')) ?>" class="row">
         <label>Traccia rotta verso settore
@@ -259,17 +301,7 @@ $holdsUsed = (int) $ship['hold_ore'] + (int) $ship['hold_organics']
         <button class="btn xs" type="submit">Salva</button>
       </form>
     </details>
-
-    <p class="registro-links">
-      <a href="<?= e(url('/gioco/battaglie')) ?>">Battaglie</a> ·
-      <a href="<?= e(url('/gioco/rotte')) ?>">Rotte</a> ·
-      <a href="<?= e(url('/gioco/traguardi')) ?>">Traguardi</a> ·
-      <a href="<?= e(url('/gioco/contratti')) ?>">Contratti</a> ·
-      <a href="<?= e(url('/gioco/mercato-nero')) ?>">Mercato nero</a> ·
-      <a href="<?= e(url('/gioco/corp')) ?>">Corp</a> ·
-      <a href="<?= e(url('/gioco/albo')) ?>">Albo</a>
-    </p>
-  </section>
+  </aside>
 
   <section class="panel map-card map-3d">
     <h2>Mappa stellare</h2>

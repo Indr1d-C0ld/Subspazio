@@ -102,6 +102,52 @@ final class Shipyard
     }
 
     /**
+     * Nave di soccorso della Federazione: uno scafo base gratuito quando si e'
+     * in capsula e senza crediti per comprarne uno. Evita che la distruzione
+     * della nave sia un vicolo cieco.
+     *
+     * @param array<string,mixed> $player
+     * @param array<string,mixed> $ship
+     */
+    public static function rescueShip(array $player, array $ship): array
+    {
+        if (!self::atShipyard((int) $player['sector_id'])) {
+            return ['ok' => false, 'error' => 'La nave di soccorso si ritira solo allo StarDock.'];
+        }
+        if (($ship['type_key'] ?? '') !== 'escape_pod') {
+            return ['ok' => false, 'error' => 'Hai gia\' una nave: usa il catalogo del cantiere.'];
+        }
+
+        $wanted = GameConfig::str('hardware.rescue_ship_type', 'scout_marauder');
+        $type = Database::first("SELECT * FROM ship_types WHERE ckey = ? AND ckey <> 'escape_pod'", [$wanted])
+            ?? Database::first("SELECT * FROM ship_types WHERE ckey <> 'escape_pod' ORDER BY base_cost ASC, sort_order ASC LIMIT 1");
+        if ($type === null) {
+            return ['ok' => false, 'error' => 'Nessun modello disponibile.'];
+        }
+        if ((int) $player['credits'] >= (int) $type['base_cost']) {
+            return ['ok' => false, 'error' => 'Puoi permetterti una nave dal catalogo: la nave di soccorso e\' solo per chi e\' a secco.'];
+        }
+
+        Database::run(
+            "UPDATE ships SET type_key = ?, name = ?, holds_total = ?, fighters = ?, shields = ?,
+             hold_ore = 0, hold_organics = 0, hold_equipment = 0, hold_colonists = 0,
+             dev_scanner = 'none', dev_transwarp = 0, dev_cloak = 0
+             WHERE id = ?",
+            [
+                $type['ckey'],
+                'SS ' . $player['handle'],
+                (int) $type['base_holds'],
+                (int) $type['base_fighters'],
+                (int) $type['base_shields'],
+                $ship['id'],
+            ]
+        );
+        Database::run('DELETE FROM ship_limpets WHERE ship_id = ?', [$ship['id']]);
+
+        return ['ok' => true, 'type' => $type['ckey'], 'name' => $type['name']];
+    }
+
+    /**
      * @param array<string,mixed> $player
      * @param array<string,mixed> $ship
      * @param 'holds'|'fighters'|'shields' $kind

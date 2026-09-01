@@ -4,6 +4,37 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-01 — Capsula di salvataggio + riordino della plancia
+
+**Capsula di salvataggio** — non è più un vicolo cieco. Prima: nave
+distrutta → capsula a 0 stive allo StarDock, e senza crediti per
+ricomprare uno scafo si restava bloccati.
+
+- **[db/migrations/0014_escape_pod.sql](db/migrations/0014_escape_pod.sql)**
+  — la capsula ha **5 stive** (`ship_types` e capsule già in volo);
+  nuove chiavi `hardware.pod_holds`, `hardware.rescue_ship_type`. Sul
+  deploy: `php bin/console.php migrate`.
+- **[src/Game/Combat.php](src/Game/Combat.php)** `destroyShip` — la
+  capsula riceve `hardware.pod_holds` stive: si può commerciare in
+  piccolo e risalire.
+- **[src/Game/Shipyard.php](src/Game/Shipyard.php)** `rescueShip` +
+  **[ShipyardController](src/Controllers/ShipyardController.php)** + rotta
+  `POST /gioco/cantiere/soccorso` — **nave di soccorso** della
+  Federazione: scafo base gratuito quando si è in capsula e i crediti
+  non bastano per il modello più economico (la perdita del 50% crediti
+  alla morte resta).
+- **[views/game/shipyard.php](views/game/shipyard.php)** — banner con
+  «Richiedi nave di soccorso»; **[views/game/index.php](views/game/index.php)**
+  — pannello «Capsula di salvataggio» con le istruzioni sulla plancia.
+
+**Riordino della plancia** — con la mappa 3D a tutta larghezza in fondo,
+la colonna destra in alto era vuota. Ora `.plancia-grid`: a sinistra
+(largo) la scheda del settore e tutto ciò che lo riguarda; a destra un
+pannello **«Comandi»** (collegamenti rapidi) più «Computer di bordo» e
+«Nota / preferito»; sotto, la mappa. La griglia di gioco passa a una
+colonna sola sotto gli 820px.
+([app.css](assets/css/app.css)) · [sw.js](sw.js) `v5` → `v6`.
+
 ## 2026-09-01 — Mappa stellare 3D (canvas, force-directed)
 
 La mappa 2D restava troppo fitta (coordinate dell'universo raggruppate;

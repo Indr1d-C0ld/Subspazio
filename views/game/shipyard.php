@@ -19,6 +19,22 @@ $cr = (int) $player['credits'];
 <section class="panel">
   <h1>Cantiere StarDock</h1>
 
+  <?php if (($ship['type_key'] ?? '') === 'escape_pod'):
+    $cheapest = null;
+    foreach ($catalog as $t) { $bc = (int) $t['base_cost']; if ($cheapest === null || $bc < $cheapest) $cheapest = $bc; }
+  ?>
+  <div class="alert event-banner">
+    <strong>Sei in capsula di salvataggio.</strong>
+    Compra uno scafo qui sotto (il piu' economico costa <?= number_format((int) $cheapest, 0, ',', '.') ?> cr).
+    <?php if ($cr < (int) $cheapest): ?>
+      Non hai crediti a sufficienza: la Federazione puo' assegnarti una nave di soccorso.
+      <form method="post" action="<?= e(url('/gioco/cantiere/soccorso')) ?>" class="inline">
+        <?= csrf_field() ?><button class="btn xs" type="submit">Richiedi nave di soccorso</button>
+      </form>
+    <?php endif; ?>
+  </div>
+  <?php endif; ?>
+
   <h2>Potenziamenti</h2>
   <div class="upg-grid">
     <form method="post" action="<?= e(url('/gioco/cantiere/upgrade')) ?>" class="row">

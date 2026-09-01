@@ -57,6 +57,15 @@ final class ShipyardController
         return redirect('/gioco/cantiere');
     }
 
+    public function rescue(Request $request): Response
+    {
+        $res = Shipyard::rescueShip(Ctx::$player, Ctx::$ship);
+        Session::flash($res['ok'] ? 'success' : 'error', $res['ok']
+            ? "La Federazione ti assegna una {$res['name']}. Rimettiti in rotta, comandante."
+            : $res['error']);
+        return redirect('/gioco/cantiere');
+    }
+
     public function upgrade(Request $request): Response
     {
         $res = Shipyard::upgrade(Ctx::$player, Ctx::$ship, $request->str('kind'), $request->int('qty'));

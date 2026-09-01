@@ -337,6 +337,24 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 .game-grid .panel { overflow: hidden; }
 .game-grid .tbl { display: block; overflow-x: auto; max-width: 100%; }
 
+/* Plancia: settore a sinistra (largo), colonna strumenti a destra, mappa
+   a tutta larghezza sotto (vedi .map-card.map-3d). */
+.plancia-grid { grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); }
+.game-side { display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
+.game-side .panel { margin: 0; }
+.game-side > details.tools {
+  margin: 0; border: 1px solid var(--line); border-radius: var(--radius);
+  padding: .75rem 1rem; background: var(--panel); box-shadow: var(--shadow-panel);
+}
+.game-side > details.tools[open] { padding-bottom: 1rem; }
+.side-panel h2 { margin-top: 0; }
+.side-links { display: flex; flex-wrap: wrap; gap: .4rem; }
+.side-links .btn.xs { flex: 0 0 auto; }
+
+.pod-notice { border-color: rgba(255, 207, 107, .55); box-shadow: var(--shadow-panel), 0 0 20px -6px rgba(255, 207, 107, .35); }
+.pod-notice h2 { margin-top: 0; }
+.pod-notice p { margin: .4rem 0 0; }
+
 .briefing { border-color: rgba(107, 226, 255, .5); box-shadow: var(--shadow-panel), var(--glow-accent); }
 .briefing h2 { margin-top: 0; }
 
@@ -614,7 +632,7 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
   .wrap { margin: 1rem auto; padding: 0 .7rem; }
   .panel { padding: 1rem; }
   .panel.narrow { max-width: 100%; }
-  .game-grid { gap: 1rem; }
+  .game-grid, .plancia-grid { grid-template-columns: 1fr; gap: 1rem; }
   .hero h1 { font-size: 2rem; }
 
   .statusbar { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem .6rem; padding: .7rem .8rem; }

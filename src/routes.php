@@ -51,6 +51,7 @@ $router->post('/gioco/banca/{dir}', [BankController::class, 'operate'], $game);
 // Cantiere (HTML)
 $router->get('/gioco/cantiere', [ShipyardController::class, 'show'], $game);
 $router->post('/gioco/cantiere/nave', [ShipyardController::class, 'buyShip'], $game);
+$router->post('/gioco/cantiere/soccorso', [ShipyardController::class, 'rescue'], $game);
 $router->post('/gioco/cantiere/upgrade', [ShipyardController::class, 'upgrade'], $game);
 $router->post('/gioco/cantiere/hardware', [ShipyardController::class, 'hardware'], $game);
 
