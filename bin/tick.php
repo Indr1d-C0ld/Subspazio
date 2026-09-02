@@ -62,6 +62,7 @@ try {
     $tasks['npc'] = Npc::tick();
     $tasks['event'] = Events::tick();
     $tasks['features'] = \App\Game\SectorFeatures::tick();
+    $tasks['factions'] = \App\Game\Faction::tick();
     $tasks['contracts_expired'] = Contracts::expireDue();
 
     // 6) Ricalcolo classifiche (throttlato).

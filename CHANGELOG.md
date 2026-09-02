@@ -4,6 +4,39 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-02 — Fase 10: fazioni & reputazione
+
+Quattro potenze — **Federazione Unita**, **Consorzio Ferrengi**,
+**Egemonia di Korr**, **Liberi Mondi della Frontiera** — con reputazione
+per giocatore da −100 a +100 e 5 soglie di standing. Deploy:
+`php bin/console.php migrate`.
+
+- **[db/migrations/0018_factions.sql](db/migrations/0018_factions.sql)** —
+  `factions` (con rivale), `regions.faction`, `player_reputation`,
+  `faction_log`, `faction_offers` (8 moduli gate friendly/allied); 19
+  chiavi `faction.*`.
+- **[src/Game/Faction.php](src/Game/Faction.php)** *(nuovo)* — `adjust()`
+  con clamp/log/**rivalità**; eventi da commercio, kill NPC (Ferrengi →
+  +fed −ferrengi +frontier; pirata → +fed +frontier; civile → −tutti),
+  kill giocatore, assalto porto/pianeta, lavoro nel profondo.
+  `stardockBlocked()` (fed *ostile* → Cantiere e Banca revocati, la nave
+  di soccorso resta) + `amnesty()`. `offers()`/`buyOffer()` empori allo
+  StarDock. `tick()` — decadimento giornaliero + **cacciatori di taglie**
+  per chi ha rep fed bassa e taglia alta.
+- **Agganci** — [Combat.php](src/Game/Combat.php) (rami `def_destroyed` +
+  `onEnterSector`: Ferrengi/pirati ignorano chi ha rep alta),
+  [Economy::settle](src/Game/Economy.php),
+  [SectorFeatures](src/Game/SectorFeatures.php) (deep),
+  [AwayMissions](src/Game/AwayMissions.php);
+  [ShipyardController](src/Controllers/ShipyardController.php) /
+  [BankController](src/Controllers/BankController.php) gate;
+  [bin/tick.php](bin/tick.php) task `factions`.
+- **UI** — [`/gioco/fazioni`](views/game/factions.php) +
+  [FactionController](src/Controllers/FactionController.php); link e riga
+  reputazione in plancia; comandi terminale `FAC` / `FAC BUY`; CSS
+  `.faction-panel` / `.rep-bar`.
+- [sw.js](sw.js): `VERSION` `v9` → `v10`.
+
 ## 2026-09-02 — Fase 9: scansione & frontiera
 
 La **scansione** diventa un'azione deliberata (costa turni) che rivela

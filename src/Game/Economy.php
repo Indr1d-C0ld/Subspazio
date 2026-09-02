@@ -412,6 +412,8 @@ final class Economy
                 ]
             );
 
+            Faction::onTrade((int) $player['id'], (int) $port['region_id'], (int) $total);
+
             $pdo->commit();
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) {

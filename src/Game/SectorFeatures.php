@@ -280,6 +280,9 @@ final class SectorFeatures
 
             Database::run('UPDATE sector_features SET depleted = 1 WHERE id = ?', [$featureId]);
             Codex::unlock((int) $player['id'], 'wreck_generic');
+            if ($deep) {
+                Faction::onDeepWork((int) $player['id']);
+            }
             $pdo->commit();
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) {
@@ -384,6 +387,9 @@ final class SectorFeatures
             Crew::awardKillXp((int) $player['id'], 30 * (int) $f['richness']);
             $module = Loot::grant((int) $player['id'], 'anomaly', $deep, 'exp');
             Codex::unlock((int) $player['id'], 'anomaly_generic');
+            if ($deep) {
+                Faction::onDeepWork((int) $player['id']);
+            }
             $pdo->commit();
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) {

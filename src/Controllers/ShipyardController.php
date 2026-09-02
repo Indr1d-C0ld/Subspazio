@@ -9,6 +9,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Game\Ctx;
 use App\Game\Economy;
+use App\Game\Faction;
 use App\Game\GameConfig;
 use App\Game\Shipyard;
 use App\Game\TurnManager;
@@ -23,6 +24,10 @@ final class ShipyardController
         if (!Shipyard::atShipyard((int) $player['sector_id'])) {
             Session::flash('error', 'Il cantiere e\' disponibile solo allo StarDock.');
             return redirect('/gioco');
+        }
+        if (($ship['type_key'] ?? '') !== 'escape_pod' && ($block = Faction::stardockBlocked((int) $player['id']))) {
+            Session::flash('error', $block);
+            return redirect('/gioco/fazioni');
         }
 
         return Response::html(view('game/shipyard', [
@@ -48,8 +53,20 @@ final class ShipyardController
         ]));
     }
 
+    private function factionGate(): ?Response
+    {
+        if ((Ctx::$ship['type_key'] ?? '') !== 'escape_pod' && ($b = Faction::stardockBlocked((int) Ctx::$player['id']))) {
+            Session::flash('error', $b);
+            return redirect('/gioco/fazioni');
+        }
+        return null;
+    }
+
     public function buyShip(Request $request): Response
     {
+        if ($r = $this->factionGate()) {
+            return $r;
+        }
         $res = Shipyard::buyShip(Ctx::$player, Ctx::$ship, $request->str('type'));
         Session::flash($res['ok'] ? 'success' : 'error', $res['ok']
             ? "Nuova nave: {$res['name']} (costo {$res['cost']} cr, permuta {$res['trade_in']})."
@@ -68,6 +85,9 @@ final class ShipyardController
 
     public function upgrade(Request $request): Response
     {
+        if ($r = $this->factionGate()) {
+            return $r;
+        }
         $res = Shipyard::upgrade(Ctx::$player, Ctx::$ship, $request->str('kind'), $request->int('qty'));
         Session::flash($res['ok'] ? 'success' : 'error', $res['ok']
             ? "Potenziamento {$res['kind']}: +{$res['qty']} per {$res['cost']} cr."
@@ -77,6 +97,9 @@ final class ShipyardController
 
     public function hardware(Request $request): Response
     {
+        if ($r = $this->factionGate()) {
+            return $r;
+        }
         $res = Shipyard::buyHardware(Ctx::$player, Ctx::$ship, $request->str('item'), $request->int('qty', 1));
         Session::flash($res['ok'] ? 'success' : 'error', $res['ok']
             ? 'Acquistato: ' . $request->str('item') . (isset($res['qty']) ? " x{$res['qty']}" : '') . " per {$res['cost']} cr."

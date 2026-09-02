@@ -56,6 +56,8 @@ final class AwayMissions
                 'xp'      => (int) round(($rw['xp'] ?? 1.0) * (20 + $diff * 3)),
                 'module_pct' => (int) ($rw['module'] ?? 0),
                 'officer_pct' => (int) ($rw['officer'] ?? 0),
+                'faction' => ['contact' => 'fed', 'patrol' => 'hegemony', 'salvage' => 'frontier',
+                              'recon' => 'frontier', 'rescue' => 'fed'][$kind] ?? null,
             ];
             $onSector = mt_rand(1, 100) <= 55;
             Database::run(
@@ -200,6 +202,12 @@ final class AwayMissions
                 );
                 $gotOfficer = $name;
                 $parts[] = "ufficiale recuperato: {$name} ({$role})";
+            }
+
+            if (in_array($outcome, ['triumph', 'success'], true) && !empty($rw['faction'])) {
+                Faction::adjust((int) $player['id'], (string) $rw['faction'],
+                    GameConfig::int('faction.mission_gain', 10), 'missione di fazione');
+                $parts[] = 'reputazione +';
             }
 
             // XP ai partecipanti + lealtà

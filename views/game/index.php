@@ -312,6 +312,7 @@ $holdsUsed = (int) $ship['hold_ore'] + (int) $ship['hold_organics']
         <a class="btn xs ghost" href="<?= e(url('/gioco/moduli')) ?>">Moduli</a>
         <a class="btn xs ghost" href="<?= e(url('/gioco/equipaggio')) ?>">Equipaggio</a>
         <a class="btn xs ghost" href="<?= e(url('/gioco/missioni')) ?>">Missioni</a>
+        <a class="btn xs ghost" href="<?= e(url('/gioco/fazioni')) ?>">Fazioni</a>
         <a class="btn xs ghost" href="<?= e(url('/gioco/codex')) ?>">Codex</a>
         <a class="btn xs ghost" href="<?= e(url('/gioco/rotte')) ?>">Rotte</a>
         <a class="btn xs ghost" href="<?= e(url('/gioco/battaglie')) ?>">Battaglie</a>
@@ -328,6 +329,13 @@ $holdsUsed = (int) $ship['hold_ore'] + (int) $ship['hold_organics']
         Moduli <?= (int) ($ship['mod_count'] ?? 0) ?>/<?= array_sum(\App\Game\ShipStats::slots((string) $ship['type_key'])) ?> ·
         Equipaggio <?= (int) ($ship['crew_count'] ?? 0) ?>/<?= \App\Game\Crew::slots((string) $ship['type_key']) ?> ·
         Leghe <?= number_format((int) ($player['salvage'] ?? 0), 0, ',', '.') ?>
+      </p>
+      <?php $rep = \App\Game\Faction::all((int) $player['id']); ?>
+      <p class="hint mod-summary" style="margin-top:.3rem;border-top:0;padding-top:0;">
+        Rep: Fed <?= $rep['fed'] > 0 ? '+' : '' ?><?= $rep['fed'] ?> ·
+        Ferr <?= $rep['ferrengi'] > 0 ? '+' : '' ?><?= $rep['ferrengi'] ?> ·
+        Egem <?= $rep['hegemony'] > 0 ? '+' : '' ?><?= $rep['hegemony'] ?> ·
+        Front <?= $rep['frontier'] > 0 ? '+' : '' ?><?= $rep['frontier'] ?>
       </p>
     </section>
 

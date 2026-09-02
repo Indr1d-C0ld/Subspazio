@@ -10,6 +10,7 @@ use App\Controllers\CombatController;
 use App\Controllers\CodexController;
 use App\Controllers\CorpController;
 use App\Controllers\CrewController;
+use App\Controllers\FactionController;
 use App\Controllers\GameApiController;
 use App\Controllers\GameController;
 use App\Controllers\HomeController;
@@ -79,6 +80,11 @@ $router->post('/gioco/equipaggio/abilita', [CrewController::class, 'ability'], $
 // Missioni away (HTML)
 $router->get('/gioco/missioni', [MissionController::class, 'index'], $game);
 $router->post('/gioco/missioni/invia', [MissionController::class, 'run'], $game);
+
+// Fazioni & reputazione (HTML)
+$router->get('/gioco/fazioni', [FactionController::class, 'index'], $game);
+$router->post('/gioco/fazioni/compra', [FactionController::class, 'buy'], $game);
+$router->post('/gioco/fazioni/ammenda', [FactionController::class, 'amnesty'], $game);
 
 // Scansione & frontiera (HTML)
 $router->post('/gioco/scansiona', [ScanController::class, 'scan'], $game);

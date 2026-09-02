@@ -155,6 +155,7 @@ final class Combat
                 $drops = Loot::rollKill((int) $atkPlayer['id'], 'pvp', $sectorId,
                     (float) ($tShip['combat_rating'] ?? 1.0), null, $target);
                 Crew::awardKillXp((int) $atkPlayer['id']);
+                Faction::onKillPlayer((int) $atkPlayer['id'], (int) $target['alignment']);
                 self::destroyShip($target);
                 Contracts::onPlayerKilled((int) $target['id'], (int) $atkPlayer['id']);
                 Live::alert((int) $target['id'], 'destroyed', 'Sei stato distrutto', "{$atkPlayer['handle']} ti ha distrutto nel settore {$sectorId}.", '/gioco');
@@ -286,6 +287,7 @@ final class Combat
                 $drops = Loot::rollKill((int) $atkPlayer['id'], 'port', $sectorId,
                     1.0 + (float) ($port['tech_level'] ?? 1) * 0.4);
                 Crew::awardKillXp((int) $atkPlayer['id']);
+                Faction::onPortBust((int) $atkPlayer['id'], (int) ($sector['region_id'] ?? 0));
             }
             if ($destroyedAtk) {
                 self::destroyShip($atkPlayer);
@@ -454,6 +456,12 @@ final class Combat
                     $drops = Loot::rollKill((int) $atkPlayer['id'], 'planet', (int) $p['sector_id'],
                         1.0 + (float) ($p['citadel_level'] ?? 0) * 0.5);
                     Crew::awardKillXp((int) $atkPlayer['id']);
+                    if ($bombard) {
+                        Faction::onPlanetBomb((int) $atkPlayer['id']);
+                    } else {
+                        Faction::adjust((int) $atkPlayer['id'], 'frontier',
+                            -(int) round(GameConfig::int('faction.bomb_loss', 25) / 3), 'assalto planetario', false);
+                    }
 
                     $note = ($bombard ? 'BOMBARDATO' : 'espugnato') . " da {$atkPlayer['handle']}";
                     if ((int) ($p['owner_player_id'] ?? 0) > 0) {
@@ -573,6 +581,7 @@ final class Combat
                 $drops = Loot::rollKill((int) $atkPlayer['id'], 'npc', (int) $npc['sector_id'],
                     (float) $npc['combat_rating'], (string) $npc['kind']);
                 Crew::awardKillXp((int) $atkPlayer['id']);
+                Faction::onKillNpc((int) $atkPlayer['id'], (string) $npc['kind']);
                 Database::run('DELETE FROM npcs WHERE id = ?', [$npcId]);
             } else {
                 Database::run('UPDATE npcs SET fighters = ?, shields = ? WHERE id = ?', [$r['def_ftr'], $r['def_shd'], $npcId]);
@@ -799,8 +808,13 @@ final class Combat
         }
 
         // 3) NPC ostili nel settore
+        $ferrOk = Faction::tierAtLeast($pid, 'ferrengi', 'friendly');
+        $pirOk  = Faction::tierAtLeast($pid, 'frontier', 'allied');
         foreach (($noEngage ? [] : Database::all('SELECT * FROM npcs WHERE sector_id = ? AND aggression > 0', [$sectorId])) as $npc) {
-            if ($npc['kind'] === 'ferrengi' && Ranks::isEvil((int) ($player['alignment'] ?? 0))) {
+            if ($npc['kind'] === 'ferrengi' && (Ranks::isEvil((int) ($player['alignment'] ?? 0)) || $ferrOk)) {
+                continue;
+            }
+            if ($npc['kind'] === 'pirate' && $pirOk && $npc['name'] !== 'Cacciatore di taglie') {
                 continue;
             }
             $freshShip = PlayerService::ship((int) $player['ship_id']);

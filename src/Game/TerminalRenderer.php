@@ -93,6 +93,7 @@ final class TerminalRenderer
             '  MISS         missioni away · MISS RUN <id> <off,off>',
             '  SCAN         scansiona il settore · PROBE <n> sonda un vicino',
             '  SALVAGE/HARVEST/STUDY <id>   sfrutta relitto/deposito/anomalia · CODEX',
+            '  FAC          reputazione fazioni · FAC BUY <id> emporio',
             '  F            forze nel settore',
             '  DF <q> o|d|t [pedaggio]   dispiega caccia · PF recupera · DM a|l <q> dispiega mine',
             '  ATK <handle|#id> [q]     attacca una nave · BUST [q] assalta il porto',
@@ -547,6 +548,23 @@ final class TerminalRenderer
                 default   => SectorFeatures::study($player, $ship, $fid),
             };
             return ['text' => '  ' . ($r['ok'] ? ($r['text'] ?? 'fatto') : $r['error']) . "\n", 'player' => $player, 'changed' => false];
+        }
+        if (preg_match('/^FAC(?:\s+BUY\s+(\d+))?$/i', $raw, $m)) {
+            if (empty($m[1])) {
+                $rep = Faction::all((int) $player['id']);
+                $l = ['  Reputazione fazioni:'];
+                foreach (\App\Core\Database::all('SELECT ckey, name FROM factions') as $f) {
+                    $v = (int) ($rep[$f['ckey']] ?? 0);
+                    $l[] = sprintf('   %-26s %+4d  %s', $f['name'], $v, Faction::TIER_LABEL[Faction::tier($v)]);
+                }
+                foreach (Faction::offers((int) $player['id']) as $o) {
+                    $l[] = sprintf('   [%s] %-30s %s cr %s', $o['id'], $o['label'], number_format((int) $o['price'], 0, ',', '.'), $o['unlocked'] ? '' : '(bloccato)');
+                }
+                $l[] = '  FAC BUY <id> per acquistare (allo StarDock).';
+                return ['text' => implode("\n", $l) . "\n", 'player' => $player, 'changed' => false];
+            }
+            $r = Faction::buyOffer($player, (int) $m[1]);
+            return ['text' => '  ' . ($r['ok'] ? "Acquistato: {$r['name']} ({$r['cost']} cr)." : $r['error']) . "\n", 'player' => $player, 'changed' => false];
         }
         if (strcasecmp($raw, 'CODEX') === 0) {
             $c = Codex::counts((int) $player['id']);

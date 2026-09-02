@@ -681,6 +681,19 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 .codex-entry.got { border-color: rgba(107, 226, 255, .4); }
 .codex-entry p { margin: .3rem 0 0; font-size: .84rem; color: var(--ink-soft); }
 
+/* ------------------------------------------------------- Fazioni (F10) --- */
+.faction-panel { border-left: 3px solid var(--fac, var(--line)); }
+.faction-panel h1 { color: var(--fac, var(--ink)); }
+.rep-bar {
+  position: relative; height: .55rem; margin: .5rem 0 .2rem;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 999px; overflow: hidden;
+}
+.rep-bar > span { display: block; height: 100%; background: var(--fac, var(--accent)); opacity: .8; }
+.rep-bar > b { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--ink-soft); }
+.fac-offer { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.fac-offer .mut { font-size: .8rem; }
+.fac-offer form.inline, .fac-offer .pill { margin-left: auto; }
+
 /* =========================================================================
    Responsive — smartphone / tablet in portrait (<= 820px).
    Confinato qui: la vista desktop (> 820px) resta invariata.

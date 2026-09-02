@@ -9,6 +9,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Game\Bank;
 use App\Game\Ctx;
+use App\Game\Faction;
 use App\Game\GameConfig;
 use App\Game\TurnManager;
 
@@ -26,6 +27,10 @@ final class BankController
             Session::flash('error', 'La Banca Intergalattica opera solo allo StarDock.');
             return redirect('/gioco');
         }
+        if ($block = Faction::stardockBlocked((int) $player['id'])) {
+            Session::flash('error', $block);
+            return redirect('/gioco/fazioni');
+        }
 
         return Response::html(view('game/bank', [
             'title'   => 'Banca Intergalattica',
@@ -37,6 +42,10 @@ final class BankController
 
     public function operate(Request $request, string $dir): Response
     {
+        if ($block = Faction::stardockBlocked((int) Ctx::$player['id'])) {
+            Session::flash('error', $block);
+            return redirect('/gioco/fazioni');
+        }
         $amount = $request->int('amount');
         $res = $dir === 'deposita'
             ? Bank::deposit(Ctx::$player, $amount)
