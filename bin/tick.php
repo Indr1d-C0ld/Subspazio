@@ -61,6 +61,7 @@ try {
     // 5) NPC (movimento, ingaggio, respawn) + eventi globali + contratti scaduti.
     $tasks['npc'] = Npc::tick();
     $tasks['event'] = Events::tick();
+    $tasks['features'] = \App\Game\SectorFeatures::tick();
     $tasks['contracts_expired'] = Contracts::expireDue();
 
     // 6) Ricalcolo classifiche (throttlato).

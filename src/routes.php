@@ -7,6 +7,7 @@ use App\Controllers\AdminGameController;
 use App\Controllers\AuthController;
 use App\Controllers\BankController;
 use App\Controllers\CombatController;
+use App\Controllers\CodexController;
 use App\Controllers\CorpController;
 use App\Controllers\CrewController;
 use App\Controllers\GameApiController;
@@ -20,6 +21,7 @@ use App\Controllers\PlanetController;
 use App\Controllers\PortController;
 use App\Controllers\RadioController;
 use App\Controllers\RegistroController;
+use App\Controllers\ScanController;
 use App\Controllers\ShipyardController;
 use App\Core\Router;
 
@@ -77,6 +79,14 @@ $router->post('/gioco/equipaggio/abilita', [CrewController::class, 'ability'], $
 // Missioni away (HTML)
 $router->get('/gioco/missioni', [MissionController::class, 'index'], $game);
 $router->post('/gioco/missioni/invia', [MissionController::class, 'run'], $game);
+
+// Scansione & frontiera (HTML)
+$router->post('/gioco/scansiona', [ScanController::class, 'scan'], $game);
+$router->post('/gioco/sonda', [ScanController::class, 'probe'], $game);
+$router->post('/gioco/relitto', [ScanController::class, 'salvage'], $game);
+$router->post('/gioco/deposito', [ScanController::class, 'harvest'], $game);
+$router->post('/gioco/anomalia', [ScanController::class, 'study'], $game);
+$router->get('/gioco/codex', [CodexController::class, 'index'], $game);
 
 // Combattimento e dispiegamento (HTML)
 $router->post('/gioco/attacca/nave', [CombatController::class, 'attackShip'], $game);

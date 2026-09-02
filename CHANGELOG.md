@@ -4,6 +4,38 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-02 — Fase 9: scansione & frontiera
+
+La **scansione** diventa un'azione deliberata (costa turni) che rivela
+**relitti**, **depositi**, **anomalie** e **pericoli ambientali** del
+settore — e dei vicini con scanner / Scienziato / modulo. Le regioni di
+frontiera/profonde ne hanno di più e migliori, ma colpiscono
+all'ingresso con **hazard** (radiazioni, tempeste ioniche, pozzi
+gravitazionali). Il **Codex** raccoglie le scoperte. Deploy:
+`php bin/console.php migrate`.
+
+- **[db/migrations/0017_scanning.sql](db/migrations/0017_scanning.sql)** —
+  `sector_features`, `player_feature_state`, `codex_entries` (9) +
+  `player_codex`; 26 chiavi `scan.*`.
+- **[src/Game/SectorFeatures.php](src/Game/SectorFeatures.php)** *(nuovo)*
+  — `tick()` (target per regione, batch cap, scadenze), `scan()` /
+  `probe()` (BFS entro il raggio scanner), `salvage()` / `harvest()` /
+  `study()` (relitto → Leghe + modulo bias deep + chance ufficiale
+  ferito; deposito → crediti + Leghe + carico; anomalia → progresso
+  ripetuto, +bonus Scienziato → risolta), `entryHazards()` (mai letali
+  da sole; ridotti se la hazard è nota).
+- **[src/Game/Codex.php](src/Game/Codex.php)** *(nuovo)* +
+  **[Loot::grant()](src/Game/Loot.php)** riusato da relitti/anomalie.
+- **Agganci** — [`Navigation::look()`](src/Game/Navigation.php) espone le
+  feature scoperte + `region_kind`; `move()` somma il costo del pozzo
+  gravitazionale; [`Combat::onEnterSector()`](src/Game/Combat.php) applica
+  gli hazard; [bin/tick.php](bin/tick.php) task `features`.
+- **UI** — riquadro «Scansione» nella scheda settore;
+  [`/gioco/codex`](views/game/codex.php) +
+  [CodexController](src/Controllers/CodexController.php); comandi
+  terminale `SCAN` / `PROBE` / `SALVAGE|HARVEST|STUDY` / `CODEX`.
+- [sw.js](sw.js): `VERSION` `v8` → `v9`.
+
 ## 2026-09-02 — Fase 8: equipaggio (versione piena)
 
 Ufficiali con **ruolo**, **livello**, **skill** e un'**abilità attiva**;

@@ -99,6 +99,8 @@ final class Navigation
             'note'        => SectorNotes::get((int) $player['id'], $sectorId),
             'pinned'      => SectorNotes::pinned((int) $player['id']),
             'can_attack'  => !((bool) $sector['is_fedspace']) && $playersHere !== [],
+            'region_kind' => $sector['region_kind'] ?? 'core',
+            'features'    => SectorFeatures::visibleFor((int) $player['id'], $sectorId),
         ];
     }
 
@@ -129,6 +131,11 @@ final class Navigation
         } elseif ($cost > 1 && ($wd = (float) ($ship['crew_warp_discount_pct'] ?? 0)) > 0 && mt_rand(1, 100) <= $wd) {
             $cost--;
             $warpNote = 'Il Navigatore ottimizza la rotta: -1 turno.';
+        }
+        $grav = \App\Game\SectorFeatures::gravityTurnPenalty((int) $player['id'], $toSector);
+        if ($grav > 0) {
+            $cost += $grav;
+            $warpNote = trim(($warpNote ?? '') . " Pozzo gravitazionale: +{$grav} turno/i.");
         }
         if ((int) $player['turns'] < $cost) {
             return [

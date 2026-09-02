@@ -188,6 +188,55 @@ $holdsUsed = (int) $ship['hold_ore'] + (int) $ship['hold_organics']
     </div>
     <?php endif; ?>
 
+    <?php $feats = $look['features'] ?? []; $rk = $look['region_kind'] ?? 'core'; ?>
+    <?php if (!$look['is_fedspace']): ?>
+    <div class="scan-box">
+      <div class="scan-head">
+        <strong>Scansione</strong>
+        <?php if ($rk === 'deep'): ?><span class="tag port">frontiera profonda</span>
+        <?php elseif ($rk === 'frontier'): ?><span class="tag">frontiera</span><?php endif; ?>
+        <form method="post" action="<?= e(url('/gioco/scansiona')) ?>" class="inline">
+          <?= csrf_field() ?><button class="btn xs" type="submit">Scansiona il settore</button>
+        </form>
+      </div>
+      <?php if ($feats === []): ?>
+        <p class="hint">Niente di noto qui. Una scansione può rivelare relitti, depositi, anomalie o pericoli — anche nei settori vicini se hai uno scanner o uno Scienziato.</p>
+      <?php else: foreach ($feats as $ft): ?>
+        <p class="force-line feature feature-<?= e($ft['kind']) ?>">
+          <span class="pill <?= $ft['kind'] === 'hazard' ? 'err' : ($ft['kind'] === 'anomaly' ? 'warn' : 'ok') ?>"><?= e($ft['hazard_label'] ?? $ft['label']) ?></span>
+          <span class="mut"><?= e($ft['subtype']) ?><?= $ft['richness'] > 1 ? ' · ricchezza ' . (int) $ft['richness'] : '' ?></span>
+          <?php if ($ft['kind'] === 'wreck'): ?>
+            <form method="post" action="<?= e(url('/gioco/relitto')) ?>" class="inline">
+              <?= csrf_field() ?><input type="hidden" name="feature" value="<?= (int) $ft['id'] ?>">
+              <button class="btn xs" type="submit">Spoglia</button>
+            </form>
+          <?php elseif ($ft['kind'] === 'cache'): ?>
+            <form method="post" action="<?= e(url('/gioco/deposito')) ?>" class="inline">
+              <?= csrf_field() ?><input type="hidden" name="feature" value="<?= (int) $ft['id'] ?>">
+              <button class="btn xs" type="submit">Raccogli</button>
+            </form>
+          <?php elseif ($ft['kind'] === 'anomaly'): ?>
+            <span class="mut"><?= (int) $ft['progress'] ?>/<?= (int) $ft['need'] ?></span>
+            <form method="post" action="<?= e(url('/gioco/anomalia')) ?>" class="inline">
+              <?= csrf_field() ?><input type="hidden" name="feature" value="<?= (int) $ft['id'] ?>">
+              <button class="btn xs" type="submit">Analizza</button>
+            </form>
+          <?php elseif ($ft['kind'] === 'hazard'): ?>
+            <span class="mut">conosciuto — attraversamento mitigato</span>
+          <?php endif; ?>
+        </p>
+      <?php endforeach; endif; ?>
+      <details class="scan-probe">
+        <summary>Sonda un settore adiacente</summary>
+        <form method="post" action="<?= e(url('/gioco/sonda')) ?>" class="row">
+          <?= csrf_field() ?>
+          <label>Settore <input type="number" name="to" min="1" required></label>
+          <button class="btn xs ghost" type="submit">Lancia sonda</button>
+        </form>
+      </details>
+    </div>
+    <?php endif; ?>
+
     <?php if (!$look['is_fedspace']): ?>
     <details class="tools combat-tools">
       <summary>Armi e dispiegamento</summary>
@@ -263,6 +312,7 @@ $holdsUsed = (int) $ship['hold_ore'] + (int) $ship['hold_organics']
         <a class="btn xs ghost" href="<?= e(url('/gioco/moduli')) ?>">Moduli</a>
         <a class="btn xs ghost" href="<?= e(url('/gioco/equipaggio')) ?>">Equipaggio</a>
         <a class="btn xs ghost" href="<?= e(url('/gioco/missioni')) ?>">Missioni</a>
+        <a class="btn xs ghost" href="<?= e(url('/gioco/codex')) ?>">Codex</a>
         <a class="btn xs ghost" href="<?= e(url('/gioco/rotte')) ?>">Rotte</a>
         <a class="btn xs ghost" href="<?= e(url('/gioco/battaglie')) ?>">Battaglie</a>
         <a class="btn xs ghost" href="<?= e(url('/gioco/contratti')) ?>">Contratti</a>

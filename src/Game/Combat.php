@@ -681,6 +681,13 @@ final class Combat
         $mine = static fn (int $ownerId): bool => $ownerId === $pid || Corp::areMates($pid, $ownerId);
         $noEngage = Crew::consumePending($pid, 'no_engage') !== null;
 
+        // hazard ambientali (Fase 9): radiazioni / tempeste ioniche all'ingresso
+        $hz = SectorFeatures::entryHazards($player, $ship);
+        $ship = $hz['ship'];
+        foreach ($hz['events'] as $ev) {
+            $events[] = $ev;
+        }
+
         // 0) Quasar planetari ostili
         foreach (Database::all(
             'SELECT id, name, owner_player_id, corp_id, quasar_level, citadel_level FROM planets

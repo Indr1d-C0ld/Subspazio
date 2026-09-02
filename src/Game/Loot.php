@@ -117,6 +117,53 @@ final class Loot
         return $out;
     }
 
+    /**
+     * Assegna un modulo al giocatore (usato da relitti / anomalie / missioni).
+     * Con $deepBias le fasce alte pesano molto di più.
+     *
+     * @return array{key:string,name:string,rarity:string,label:string}|null
+     */
+    public static function grant(int $playerId, string $source, bool $deepBias = false, ?string $minRarity = null): ?array
+    {
+        try {
+            $weights = self::rarityWeights();
+            if ($deepBias) {
+                $weights = ['civ' => 20, 'mil' => 45, 'exp' => 40, 'xeno' => 16, 'precursor' => 4];
+            }
+            if ($minRarity !== null) {
+                $fi = array_search($minRarity, self::RARITIES, true);
+                if ($fi !== false) {
+                    foreach (self::RARITIES as $idx => $r) {
+                        if ($idx < $fi) {
+                            unset($weights[$r]);
+                        }
+                    }
+                }
+            }
+            $rarity = self::weightedPick($weights) ?? 'civ';
+            $row = null;
+            for ($t = 0; $t < 5 && $row === null; $t++) {
+                $row = Database::first('SELECT ckey, name, rarity, effects FROM item_types WHERE rarity = ? ORDER BY RAND() LIMIT 1', [$rarity]);
+                if ($row === null) {
+                    $ri = array_search($rarity, self::RARITIES, true);
+                    $rarity = is_int($ri) && $ri > 0 ? self::RARITIES[$ri - 1] : 'civ';
+                }
+            }
+            if ($row === null) {
+                return null;
+            }
+            $rolled = self::rollEffects(ShipStats::decode($row['effects']) ?? []);
+            Database::run(
+                'INSERT INTO player_items (player_id, item_key, rolled, source) VALUES (?, ?, ?, ?)',
+                [$playerId, $row['ckey'], json_encode($rolled, JSON_UNESCAPED_UNICODE), $source]
+            );
+            return ['key' => $row['ckey'], 'name' => $row['name'], 'rarity' => $row['rarity'],
+                    'label' => self::RARITY_LABEL[$row['rarity']] ?? $row['rarity']];
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     /** Riga di testo per i messaggi di combattimento. */
     public static function describe(array $drops): string
     {

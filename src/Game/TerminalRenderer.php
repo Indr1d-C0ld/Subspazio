@@ -49,6 +49,10 @@ final class TerminalRenderer
             return $w['to'] . $mark . $oneway;
         }, $look['warps']);
         $l[] = '  Warp a   : ' . (implode(' - ', $warps) ?: '(nessuno)');
+        foreach (($look['features'] ?? []) as $ft) {
+            $tag = $ft['kind'] === 'anomaly' ? " {$ft['progress']}/{$ft['need']}" : ($ft['richness'] > 1 ? " r{$ft['richness']}" : '');
+            $l[] = sprintf('  [%d] %-8s : %s %s%s', $ft['id'], strtoupper($ft['kind']), $ft['hazard_label'] ?? $ft['label'], $ft['subtype'], $tag);
+        }
         $l[] = str_repeat('-', 56);
         if (self::hasUnknown($look['warps'])) {
             $l[] = '  ( * = settore mai visitato )';
@@ -87,6 +91,8 @@ final class TerminalRenderer
             '  MOD          officina moduli · MOD FIT/OFF/SCRAP/UP <id>',
             '  CREW         equipaggio · RECRUIT candidati · CREW HIRE/ASSIGN/BENCH/FIRE/HEAL/USE <id>',
             '  MISS         missioni away · MISS RUN <id> <off,off>',
+            '  SCAN         scansiona il settore · PROBE <n> sonda un vicino',
+            '  SALVAGE/HARVEST/STUDY <id>   sfrutta relitto/deposito/anomalia · CODEX',
             '  F            forze nel settore',
             '  DF <q> o|d|t [pedaggio]   dispiega caccia · PF recupera · DM a|l <q> dispiega mine',
             '  ATK <handle|#id> [q]     attacca una nave · BUST [q] assalta il porto',
@@ -515,6 +521,40 @@ final class TerminalRenderer
             }
             $t = "{$r['label']} (margine {$r['margin']})" . ($r['reward_text'] !== '' ? " — {$r['reward_text']}" : '') . '.';
             return ['text' => '  ' . $t . "\n", 'player' => $player, 'changed' => false];
+        }
+
+        if (strcasecmp($raw, 'SCAN') === 0) {
+            $r = SectorFeatures::scan($player, $ship);
+            if (empty($r['ok'])) {
+                return ['text' => '  ' . $r['error'] . "\n", 'player' => $player, 'changed' => false];
+            }
+            $b = [];
+            foreach ($r['by_kind'] as $k => $n) {
+                $b[] = "{$n} " . strtolower(SectorFeatures::KIND_LABEL[$k] ?? $k);
+            }
+            $t = $r['found'] > 0 ? 'trovati: ' . implode(', ', $b) : 'niente di nuovo';
+            return ['text' => "  Scansione ({$r['sectors']} settori): {$t}. Usa L per la lista.\n", 'player' => $player, 'changed' => false];
+        }
+        if (preg_match('/^PROBE\s+(\d+)$/i', $raw, $m)) {
+            $r = SectorFeatures::probe($player, $ship, (int) $m[1]);
+            return ['text' => '  ' . ($r['ok'] ? "Sonda su {$r['sector']}: {$r['found']} feature." : $r['error']) . "\n", 'player' => $player, 'changed' => false];
+        }
+        if (preg_match('/^(SALVAGE|HARVEST|STUDY)\s+(\d+)$/i', $raw, $m)) {
+            $fid = (int) $m[2];
+            $r = match (strtoupper($m[1])) {
+                'SALVAGE' => SectorFeatures::salvage($player, $ship, $fid),
+                'HARVEST' => SectorFeatures::harvest($player, $ship, $fid),
+                default   => SectorFeatures::study($player, $ship, $fid),
+            };
+            return ['text' => '  ' . ($r['ok'] ? ($r['text'] ?? 'fatto') : $r['error']) . "\n", 'player' => $player, 'changed' => false];
+        }
+        if (strcasecmp($raw, 'CODEX') === 0) {
+            $c = Codex::counts((int) $player['id']);
+            $l = ["  Codex {$c['got']}/{$c['tot']}:"];
+            foreach (Codex::forPlayer((int) $player['id']) as $e) {
+                $l[] = '   ' . ($e['unlocked'] ? '[x] ' . $e['title'] : '[ ] ???');
+            }
+            return ['text' => implode("\n", $l) . "\n", 'player' => $player, 'changed' => false];
         }
 
         if (preg_match('/^DF\s+(\d+)\s+([odt])(?:\s+(\d+))?$/i', $raw, $m)) {
