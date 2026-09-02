@@ -67,6 +67,8 @@ $router->post('/gioco/moduli/installa', [ModuleController::class, 'install'], $g
 $router->post('/gioco/moduli/rimuovi', [ModuleController::class, 'remove'], $game);
 $router->post('/gioco/moduli/smonta', [ModuleController::class, 'scrap'], $game);
 $router->post('/gioco/moduli/potenzia', [ModuleController::class, 'upgrade'], $game);
+$router->post('/gioco/moduli/raffina', [ModuleController::class, 'refine'], $game);
+$router->post('/gioco/moduli/crafta', [ModuleController::class, 'craft'], $game);
 
 // Equipaggio (HTML)
 $router->get('/gioco/equipaggio', [CrewController::class, 'index'], $game);
@@ -92,6 +94,7 @@ $router->post('/gioco/sonda', [ScanController::class, 'probe'], $game);
 $router->post('/gioco/relitto', [ScanController::class, 'salvage'], $game);
 $router->post('/gioco/deposito', [ScanController::class, 'harvest'], $game);
 $router->post('/gioco/anomalia', [ScanController::class, 'study'], $game);
+$router->post('/gioco/giacimento', [ScanController::class, 'mine'], $game);
 $router->get('/gioco/codex', [CodexController::class, 'index'], $game);
 
 // Combattimento e dispiegamento (HTML)
@@ -113,6 +116,7 @@ $router->post('/gioco/pianeta/{id}/tesoreria', [PlanetController::class, 'treasu
 $router->post('/gioco/pianeta/{id}/citadel', [PlanetController::class, 'citadel'], $game);
 $router->post('/gioco/pianeta/{id}/quasar', [PlanetController::class, 'quasar'], $game);
 $router->post('/gioco/pianeta/{id}/guarnigione', [PlanetController::class, 'garrison'], $game);
+$router->post('/gioco/pianeta/{id}/industria', [PlanetController::class, 'industry'], $game);
 $router->post('/gioco/pianeta/{id}/attacca', [PlanetController::class, 'attack'], $game);
 
 $router->post('/gioco/attacca/npc', [CombatController::class, 'attackNpc'], $game);

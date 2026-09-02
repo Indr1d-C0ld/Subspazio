@@ -45,6 +45,7 @@ final class ShipyardController
                 'armid'      => GameConfig::int('hardware.armid_price', 95),
                 'limpet'     => GameConfig::int('hardware.limpet_price', 55),
                 'escape_pod' => GameConfig::int('hardware.escape_pod_price', 3000),
+                'mining_laser' => GameConfig::int('hardware.mining_laser_price', 8000),
                 'scanner_density' => GameConfig::int('hardware.scanner_density_price', 3000),
                 'scanner_holo'    => GameConfig::int('hardware.scanner_holo_price', 12000),
                 'transwarp'  => GameConfig::int('hardware.transwarp_price', 28000),

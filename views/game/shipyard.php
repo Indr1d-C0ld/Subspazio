@@ -64,6 +64,7 @@ $cr = (int) $player['credits'];
       ['armid', 'Mine Armid', $prices['armid'], (int) $ship['mines_armid'], true],
       ['limpet', 'Mine Limpet', $prices['limpet'], (int) $ship['mines_limpet'], true],
       ['escape_pod', 'Capsula di salvataggio', $prices['escape_pod'], (int) $ship['escape_pod'], false],
+      ['mining_laser', 'Laser minerario', $prices['mining_laser'] ?? 8000, (int) ($ship['mining_laser'] ?? 0), false],
       ['scanner_density', 'Scanner di densita\'', $prices['scanner_density'], $ship['dev_scanner'] === 'density' || $ship['dev_scanner'] === 'holo', false],
       ['scanner_holo', 'Scanner olografico', $prices['scanner_holo'], $ship['dev_scanner'] === 'holo', false],
       ['transwarp', 'Motore transwarp', $prices['transwarp'], (int) $ship['dev_transwarp'], false],

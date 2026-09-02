@@ -111,6 +111,16 @@ final class PlanetController
         return redirect('/gioco/pianeta/' . (int) $id);
     }
 
+    public function industry(Request $request, string $id): Response
+    {
+        $res = \App\Game\Industry::togglePlanet(Ctx::$player, (int) $id, $request->str('on') === '1');
+        Session::flash($res['ok'] ? 'success' : 'error', $res['ok']
+            ? ($res['on'] ? "{$res['name']}: modalità industria attivata (produce Componenti dal minerale)."
+                          : "{$res['name']}: modalità industria disattivata.")
+            : $res['error']);
+        return redirect('/gioco/pianeta/' . (int) $id);
+    }
+
     public function pickup(Request $request): Response
     {
         $res = Planets::pickupColonists(Ctx::$player, Ctx::$ship, $request->int('qty'));

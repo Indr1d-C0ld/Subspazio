@@ -95,6 +95,15 @@ $u = url('/gioco/pianeta/' . (int) $p['id']);
       <label>Qta <input type="number" name="qty" min="1" value="1000" class="qty"></label>
       <button class="btn xs" type="submit">OK</button>
     </form>
+    <form method="post" action="<?= e($u . '/industria') ?>" class="row">
+      <?= csrf_field() ?>
+      <label>Industria
+        <?php $ind = (int) ($p['industry'] ?? 0); ?>
+        <span class="mut"><?= $ind ? 'ATTIVA — converte il minerale di scorta in Componenti a ogni tick' : 'spenta — produzione coloni normale' ?></span>
+      </label>
+      <input type="hidden" name="on" value="<?= $ind ? '0' : '1' ?>">
+      <button class="btn xs<?= $ind ? ' ghost' : '' ?>" type="submit"><?= $ind ? 'Disattiva industria' : 'Attiva industria' ?></button>
+    </form>
   </div>
 
   <h2>Citadel</h2>

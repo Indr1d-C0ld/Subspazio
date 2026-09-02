@@ -40,8 +40,9 @@ foreach ($installed as $m) {
 ?>
 <section class="statusbar">
   <div><span class="k">Crediti</span><span class="v"><?= number_format((int) $player['credits'], 0, ',', '.') ?></span></div>
-  <div><span class="k">Leghe di recupero</span><span class="v"><?= number_format((int) ($player['salvage'] ?? 0), 0, ',', '.') ?></span></div>
-  <div><span class="k">Scafo</span><span class="v"><?= e($ship['type_name']) ?></span></div>
+  <div><span class="k">Leghe</span><span class="v"><?= number_format((int) ($player['salvage'] ?? 0), 0, ',', '.') ?></span></div>
+  <div><span class="k">Cristalli</span><span class="v"><?= number_format((int) ($player['crystals'] ?? 0), 0, ',', '.') ?></span></div>
+  <div><span class="k">Componenti</span><span class="v"><?= number_format((int) ($player['components'] ?? 0), 0, ',', '.') ?></span></div>
   <div><span class="k">Moduli</span><span class="v"><?= (int) ($ship['mod_count'] ?? count($installed)) ?>/<?= array_sum($slots) ?></span></div>
   <div><a href="<?= e(url('/gioco')) ?>">← Plancia</a></div>
   <div><a href="<?= e(url('/gioco/cantiere')) ?>">Cantiere</a></div>
@@ -132,3 +133,50 @@ foreach ($installed as $m) {
     <?php endif; ?>
   </section>
 </div>
+
+<section class="panel">
+  <h1>Raffineria &amp; produzione</h1>
+  <?php if (!$at_dock): ?>
+    <p class="hint">Disponibile allo StarDock.</p>
+  <?php else: ?>
+  <p class="hint">Minerale + equipaggiamento → <strong>Componenti</strong>. Componenti + Cristalli + Leghe (e a volte crediti/merci) su ricetta → un modulo preciso.</p>
+
+  <form method="post" action="<?= e(url('/gioco/moduli/raffina')) ?>" class="row">
+    <?= csrf_field() ?>
+    <label>Raffina (× <?= (int) $refine['ore'] ?> minerale + <?= (int) $refine['equ'] ?> equip. per Componente)
+      <input type="number" name="qty" min="1" value="10" class="qty">
+    </label>
+    <button class="btn xs" type="submit">Raffina</button>
+  </form>
+
+  <h2>Ricette</h2>
+  <ul class="mod-list">
+    <?php foreach (($recipes ?? []) as $rc): ?>
+      <li class="fac-offer">
+        <span class="rarity rarity-<?= e($rc['rarity']) ?>"><?= e($rc['item_name']) ?></span>
+        <span class="mut">
+          <?php
+          $c = [];
+          if ((int) $rc['cost_credits'] > 0)    $c[] = number_format((int) $rc['cost_credits'], 0, ',', '.') . ' cr';
+          if ((int) $rc['cost_components'] > 0) $c[] = (int) $rc['cost_components'] . ' Comp.';
+          if ((int) $rc['cost_crystals'] > 0)  $c[] = (int) $rc['cost_crystals'] . ' Crist.';
+          if ((int) $rc['cost_salvage'] > 0)   $c[] = (int) $rc['cost_salvage'] . ' Leghe';
+          if ((int) $rc['cargo_ore'] > 0)      $c[] = (int) $rc['cargo_ore'] . ' min.';
+          if ((int) $rc['cargo_equ'] > 0)      $c[] = (int) $rc['cargo_equ'] . ' equip.';
+          echo e(implode(' · ', $c));
+          if ($rc['min_faction']) echo ' · <span>rep ' . e($rc['min_faction']) . ' ' . e($rc['min_tier']) . '+</span>';
+          ?>
+        </span>
+        <?php if (!$rc['unlocked']): ?>
+          <span class="pill mut">bloccata</span>
+        <?php else: ?>
+          <form method="post" action="<?= e(url('/gioco/moduli/crafta')) ?>" class="inline">
+            <?= csrf_field() ?><input type="hidden" name="recipe" value="<?= e($rc['ckey']) ?>">
+            <button class="btn xs" type="submit"<?= $rc['affordable'] ? '' : ' disabled' ?>>Produci</button>
+          </form>
+        <?php endif; ?>
+      </li>
+    <?php endforeach; ?>
+  </ul>
+  <?php endif; ?>
+</section>

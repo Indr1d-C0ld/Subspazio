@@ -221,6 +221,12 @@ $holdsUsed = (int) $ship['hold_ore'] + (int) $ship['hold_organics']
               <?= csrf_field() ?><input type="hidden" name="feature" value="<?= (int) $ft['id'] ?>">
               <button class="btn xs" type="submit">Analizza</button>
             </form>
+          <?php elseif ($ft['kind'] === 'asteroid'): ?>
+            <span class="mut"><?= (int) $ft['ore_left'] ?> min. residuo</span>
+            <form method="post" action="<?= e(url('/gioco/giacimento')) ?>" class="inline">
+              <?= csrf_field() ?><input type="hidden" name="feature" value="<?= (int) $ft['id'] ?>">
+              <button class="btn xs" type="submit"<?= (int) ($ship['mining_laser'] ?? 0) === 1 ? '' : ' disabled title="Serve un laser minerario"' ?>>Estrai</button>
+            </form>
           <?php elseif ($ft['kind'] === 'hazard'): ?>
             <span class="mut">conosciuto — attraversamento mitigato</span>
           <?php endif; ?>
@@ -328,7 +334,9 @@ $holdsUsed = (int) $ship['hold_ore'] + (int) $ship['hold_organics']
         Scafo: <strong><?= e($ship['type_name']) ?></strong> ·
         Moduli <?= (int) ($ship['mod_count'] ?? 0) ?>/<?= array_sum(\App\Game\ShipStats::slots((string) $ship['type_key'])) ?> ·
         Equipaggio <?= (int) ($ship['crew_count'] ?? 0) ?>/<?= \App\Game\Crew::slots((string) $ship['type_key']) ?> ·
-        Leghe <?= number_format((int) ($player['salvage'] ?? 0), 0, ',', '.') ?>
+        Leghe <?= number_format((int) ($player['salvage'] ?? 0), 0, ',', '.') ?> ·
+        Cristalli <?= number_format((int) ($player['crystals'] ?? 0), 0, ',', '.') ?> ·
+        Componenti <?= number_format((int) ($player['components'] ?? 0), 0, ',', '.') ?>
       </p>
       <?php $rep = \App\Game\Faction::all((int) $player['id']); ?>
       <p class="hint mod-summary" style="margin-top:.3rem;border-top:0;padding-top:0;">

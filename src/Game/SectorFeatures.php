@@ -14,7 +14,8 @@ use App\Core\Database;
 final class SectorFeatures
 {
     public const KIND_LABEL = [
-        'wreck' => 'Relitto', 'cache' => 'Deposito', 'anomaly' => 'Anomalia', 'hazard' => 'Pericolo',
+        'wreck' => 'Relitto', 'cache' => 'Deposito', 'anomaly' => 'Anomalia',
+        'hazard' => 'Pericolo', 'asteroid' => 'Giacimento',
     ];
     public const HAZARD_LABEL = [
         'radiation' => 'Fascia di radiazioni', 'gravity' => 'Pozzo gravitazionale', 'ion_storm' => 'Tempesta ionica',
@@ -33,8 +34,10 @@ final class SectorFeatures
 
             $ttl = GameConfig::int('scan.feature_ttl_hours', 48);
             foreach (['frontier', 'deep'] as $rk) {
-                foreach (['wreck', 'cache', 'anomaly', 'hazard'] as $kind) {
-                    $target = GameConfig::int("scan.{$kind}_target_{$rk}", 0);
+                foreach (['wreck', 'cache', 'anomaly', 'hazard', 'asteroid'] as $kind) {
+                    $target = $kind === 'asteroid'
+                        ? GameConfig::int("mine.asteroid_target_{$rk}", 0)
+                        : GameConfig::int("scan.{$kind}_target_{$rk}", 0);
                     if ($target <= 0) {
                         continue;
                     }
@@ -76,6 +79,7 @@ final class SectorFeatures
             'wreck'   => [['nave', 'stazione', 'ferrengi', 'corsaro'][array_rand(['nave', 'stazione', 'ferrengi', 'corsaro'])], null, null],
             'cache'   => [['minerale', 'equipaggiamento', 'organico', 'misto'][array_rand(['minerale', 'equipaggiamento', 'organico', 'misto'])], null, null],
             'anomaly' => [['gravitazionale', 'spaziale', 'temporale'][array_rand(['gravitazionale', 'spaziale', 'temporale'])], ['need' => $rich * 55], null],
+            'asteroid' => [['ferro', 'silicati', 'metalli rari', 'ghiaccio'][array_rand(['ferro', 'silicati', 'metalli rari', 'ghiaccio'])], ['ore_left' => $rich * ($deep ? 90 : 55)], null],
             'hazard'  => (function () use ($deep) {
                 $st = $deep
                     ? ['radiation', 'gravity', 'ion_storm'][array_rand(['radiation', 'gravity', 'ion_storm'])]
@@ -121,7 +125,6 @@ final class SectorFeatures
         }
         return array_map(static function ($r) {
             $d = $r['data'] ? json_decode((string) $r['data'], true) : [];
-            $need = (int) ($d['need'] ?? 0);
             return [
                 'id'       => (int) $r['id'],
                 'kind'     => $r['kind'],
@@ -129,7 +132,8 @@ final class SectorFeatures
                 'richness' => (int) $r['richness'],
                 'label'    => self::KIND_LABEL[$r['kind']] ?? $r['kind'],
                 'progress' => (int) ($r['progress'] ?? 0),
-                'need'     => $need,
+                'need'     => (int) ($d['need'] ?? 0),
+                'ore_left' => (int) ($d['ore_left'] ?? 0),
                 'resolved' => (bool) $r['resolved'],
                 'hazard_label' => $r['kind'] === 'hazard' ? (self::HAZARD_LABEL[$r['subtype']] ?? $r['subtype']) : null,
             ];
@@ -342,6 +346,70 @@ final class SectorFeatures
         return ['ok' => true, 'text' => implode(' · ', $parts)];
     }
 
+    public static function mine(array $player, array $ship, int $featureId): array
+    {
+        if ((int) ($ship['mining_laser'] ?? 0) !== 1) {
+            return ['ok' => false, 'error' => 'Serve un laser minerario (Cantiere, StarDock).'];
+        }
+        $f = self::owned((int) $player['id'], $featureId, 'asteroid');
+        if ($f === null || (int) $f['sector_id'] !== (int) $player['sector_id']) {
+            return ['ok' => false, 'error' => 'Nessun giacimento scansionato con quell\'id qui.'];
+        }
+        $cost = GameConfig::int('mine.turn_cost', 5);
+        $player = TurnManager::sync($player);
+        if ((int) $player['turns'] < $cost) {
+            return ['ok' => false, 'error' => "Turni insufficienti (servono {$cost})."];
+        }
+        $fresh = Database::first('SELECT * FROM ships WHERE id = ?', [(int) $ship['id']]);
+        $room = (int) ($ship['holds_total'] ?? 0) - Economy::holdsUsed($fresh);
+        if ($room <= 0) {
+            return ['ok' => false, 'error' => 'Stive piene: scarica prima di estrarre.'];
+        }
+        $d = $f['data'] ? json_decode((string) $f['data'], true) : [];
+        $left = (int) ($d['ore_left'] ?? ((int) $f['richness'] * 55));
+        $deep = self::regionKind((int) $f['sector_id']) === 'deep';
+        $mult = $deep ? GameConfig::float('mine.deep_mult', 1.7) : 1.0;
+        $yield = (int) round(GameConfig::int('mine.ore_per_pass_base', 8) * (int) $f['richness'] * $mult * (0.8 + mt_rand() / mt_getrandmax() * 0.5));
+        $yield = min($yield, $room, $left);
+        if ($yield <= 0) {
+            return ['ok' => false, 'error' => 'Il giacimento è esaurito.'];
+        }
+        $crystals = 0;
+        if ($f['subtype'] === 'metalli rari' || mt_rand(1, 100) <= GameConfig::int('mine.crystal_chance_pct', 45)) {
+            $bonus = $f['subtype'] === 'metalli rari' ? 2 : 1;
+            $crystals = mt_rand(GameConfig::int('mine.crystal_per_hit_min', 1), GameConfig::int('mine.crystal_per_hit_max', 4))
+                * $bonus * ($deep ? 2 : 1);
+        }
+
+        $pdo = Database::pdo();
+        $pdo->beginTransaction();
+        try {
+            Database::run('UPDATE players SET turns = turns - ?, crystals = crystals + ? WHERE id = ?',
+                [$cost, $crystals, (int) $player['id']]);
+            Database::run('UPDATE ships SET hold_ore = hold_ore + ? WHERE id = ?', [$yield, (int) $ship['id']]);
+            $newLeft = $left - $yield;
+            if ($newLeft <= 0) {
+                Database::run('UPDATE sector_features SET depleted = 1 WHERE id = ?', [$featureId]);
+            } else {
+                Database::run('UPDATE sector_features SET data = ? WHERE id = ?',
+                    [json_encode(['ore_left' => $newLeft], JSON_UNESCAPED_UNICODE), $featureId]);
+            }
+            Codex::unlock((int) $player['id'], 'asteroid_generic');
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
+        $parts = ["{$yield} minerale"];
+        if ($crystals > 0) {
+            $parts[] = "+{$crystals} Cristalli";
+        }
+        $parts[] = ($newLeft > 0 ? "giacimento: {$newLeft} rimasti" : 'giacimento esaurito');
+        return ['ok' => true, 'text' => implode(' · ', $parts)];
+    }
+
     public static function study(array $player, array $ship, int $featureId): array
     {
         $f = self::owned((int) $player['id'], $featureId, 'anomaly');
@@ -503,11 +571,12 @@ final class SectorFeatures
     private static function codexForFeature(int $playerId, array $f): void
     {
         Codex::unlock($playerId, match ($f['kind']) {
-            'wreck'   => 'wreck_generic',
-            'cache'   => 'cache_generic',
-            'anomaly' => 'anomaly_generic',
-            'hazard'  => 'hazard_' . ($f['subtype'] === 'ion_storm' ? 'ion' : $f['subtype']),
-            default   => 'scan_basics',
+            'wreck'    => 'wreck_generic',
+            'cache'    => 'cache_generic',
+            'anomaly'  => 'anomaly_generic',
+            'asteroid' => 'asteroid_generic',
+            'hazard'   => 'hazard_' . ($f['subtype'] === 'ion_storm' ? 'ion' : $f['subtype']),
+            default    => 'scan_basics',
         });
     }
 }

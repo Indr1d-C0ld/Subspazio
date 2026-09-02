@@ -58,4 +58,11 @@ final class ScanController
         Session::flash($r['ok'] ? ($r['done'] ?? false ? 'success' : 'success') : 'error', $r['ok'] ? $r['text'] : $r['error']);
         return redirect('/gioco');
     }
+
+    public function mine(Request $request): Response
+    {
+        $r = SectorFeatures::mine(Ctx::$player, Ctx::$ship, $request->int('feature'));
+        Session::flash($r['ok'] ? 'success' : 'error', $r['ok'] ? "Estrazione: {$r['text']}." : $r['error']);
+        return redirect('/gioco');
+    }
 }

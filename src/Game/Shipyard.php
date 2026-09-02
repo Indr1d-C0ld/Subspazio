@@ -19,6 +19,7 @@ final class Shipyard
         'armid'            => ['col' => 'mines_armid',  'price' => 'hardware.armid_price',           'cap' => 'hardware.mine_capacity'],
         'limpet'           => ['col' => 'mines_limpet', 'price' => 'hardware.limpet_price',          'cap' => 'hardware.mine_capacity'],
         'escape_pod'       => ['col' => 'escape_pod',   'price' => 'hardware.escape_pod_price',      'flag' => true],
+        'mining_laser'     => ['col' => 'mining_laser', 'price' => 'hardware.mining_laser_price',    'flag' => true],
         'scanner_density'  => ['col' => 'dev_scanner',  'price' => 'hardware.scanner_density_price', 'enum' => 'density'],
         'scanner_holo'     => ['col' => 'dev_scanner',  'price' => 'hardware.scanner_holo_price',    'enum' => 'holo'],
         'transwarp'        => ['col' => 'dev_transwarp', 'price' => 'hardware.transwarp_price',      'flag' => true],

@@ -9,6 +9,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Game\Ctx;
 use App\Game\GameConfig;
+use App\Game\Industry;
 use App\Game\Loot;
 use App\Game\Modules;
 use App\Game\ShipStats;
@@ -32,7 +33,30 @@ final class ModuleController
             'inventory'  => Modules::inventory((int) $player['id']),
             'up_credits' => self::parseTiers(GameConfig::str('loot.upgrade_cost_credits', '')),
             'up_salvage' => self::parseTiers(GameConfig::str('loot.upgrade_cost_salvage', '')),
+            'recipes'    => Industry::recipes($player, $ship),
+            'refine'     => [
+                'ore' => GameConfig::int('craft.refine_ore_per_component', 4),
+                'equ' => GameConfig::int('craft.refine_equ_per_component', 2),
+            ],
         ]));
+    }
+
+    public function refine(Request $request): Response
+    {
+        $res = Industry::refine(Ctx::$player, Ctx::$ship, $request->int('qty', 1));
+        Session::flash($res['ok'] ? 'success' : 'error', $res['ok']
+            ? "Raffinati {$res['components']} Componenti ({$res['ore']} minerale + {$res['equ']} equip.)."
+            : $res['error']);
+        return redirect('/gioco/moduli');
+    }
+
+    public function craft(Request $request): Response
+    {
+        $res = Industry::craft(Ctx::$player, Ctx::$ship, $request->str('recipe'));
+        Session::flash($res['ok'] ? 'success' : 'error', $res['ok']
+            ? "Prodotto: {$res['name']}. È nell'inventario moduli."
+            : $res['error']);
+        return redirect('/gioco/moduli');
     }
 
     public function install(Request $request): Response

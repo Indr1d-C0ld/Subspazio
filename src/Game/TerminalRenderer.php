@@ -92,7 +92,8 @@ final class TerminalRenderer
             '  CREW         equipaggio · RECRUIT candidati · CREW HIRE/ASSIGN/BENCH/FIRE/HEAL/USE <id>',
             '  MISS         missioni away · MISS RUN <id> <off,off>',
             '  SCAN         scansiona il settore · PROBE <n> sonda un vicino',
-            '  SALVAGE/HARVEST/STUDY <id>   sfrutta relitto/deposito/anomalia · CODEX',
+            '  SALVAGE/HARVEST/STUDY/MINE <id>   sfrutta relitto/deposito/anomalia/giacimento · CODEX',
+            '  REFINE <q> · CRAFT [ckey] · INDUSTRY <pianeta> on|off',
             '  FAC          reputazione fazioni · FAC BUY <id> emporio',
             '  F            forze nel settore',
             '  DF <q> o|d|t [pedaggio]   dispiega caccia · PF recupera · DM a|l <q> dispiega mine',
@@ -540,14 +541,37 @@ final class TerminalRenderer
             $r = SectorFeatures::probe($player, $ship, (int) $m[1]);
             return ['text' => '  ' . ($r['ok'] ? "Sonda su {$r['sector']}: {$r['found']} feature." : $r['error']) . "\n", 'player' => $player, 'changed' => false];
         }
-        if (preg_match('/^(SALVAGE|HARVEST|STUDY)\s+(\d+)$/i', $raw, $m)) {
+        if (preg_match('/^(SALVAGE|HARVEST|STUDY|MINE)\s+(\d+)$/i', $raw, $m)) {
             $fid = (int) $m[2];
             $r = match (strtoupper($m[1])) {
                 'SALVAGE' => SectorFeatures::salvage($player, $ship, $fid),
                 'HARVEST' => SectorFeatures::harvest($player, $ship, $fid),
+                'MINE'    => SectorFeatures::mine($player, $ship, $fid),
                 default   => SectorFeatures::study($player, $ship, $fid),
             };
             return ['text' => '  ' . ($r['ok'] ? ($r['text'] ?? 'fatto') : $r['error']) . "\n", 'player' => $player, 'changed' => false];
+        }
+        if (preg_match('/^REFINE\s+(\d+)$/i', $raw, $m)) {
+            $r = Industry::refine($player, $ship, (int) $m[1]);
+            return ['text' => '  ' . ($r['ok'] ? "Raffinati {$r['components']} Componenti." : $r['error']) . "\n", 'player' => $player, 'changed' => false];
+        }
+        if (preg_match('/^CRAFT(?:\s+(\S+))?$/i', $raw, $m)) {
+            if (empty($m[1])) {
+                $l = ['  Ricette (StarDock):'];
+                foreach (Industry::recipes($player, $ship) as $rc) {
+                    $l[] = sprintf('   %-16s %-22s %s cr %dC %dCr %dL %s', $rc['ckey'], $rc['item_name'],
+                        number_format((int) $rc['cost_credits'], 0, ',', '.'), (int) $rc['cost_components'],
+                        (int) $rc['cost_crystals'], (int) $rc['cost_salvage'], $rc['unlocked'] ? ($rc['affordable'] ? '' : '(risorse insuff.)') : '(bloccata)');
+                }
+                $l[] = '  CRAFT <ckey> per produrre · REFINE <q> per i Componenti';
+                return ['text' => implode("\n", $l) . "\n", 'player' => $player, 'changed' => false];
+            }
+            $r = Industry::craft($player, $ship, strtolower($m[1]));
+            return ['text' => '  ' . ($r['ok'] ? "Prodotto: {$r['name']}." : $r['error']) . "\n", 'player' => $player, 'changed' => false];
+        }
+        if (preg_match('/^INDUSTRY\s+(\d+)\s+(ON|OFF)$/i', $raw, $m)) {
+            $r = Industry::togglePlanet($player, (int) $m[1], strtoupper($m[2]) === 'ON');
+            return ['text' => '  ' . ($r['ok'] ? "{$r['name']}: industria " . ($r['on'] ? 'attivata' : 'disattivata') . '.' : $r['error']) . "\n", 'player' => $player, 'changed' => false];
         }
         if (preg_match('/^FAC(?:\s+BUY\s+(\d+))?$/i', $raw, $m)) {
             if (empty($m[1])) {
