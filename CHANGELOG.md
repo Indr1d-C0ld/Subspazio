@@ -4,6 +4,42 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-02 — Fase 8: equipaggio (versione piena)
+
+Ufficiali con **ruolo**, **livello**, **skill** e un'**abilità attiva**;
+occupano i posti dello scafo (`crew_slots`), danno bonus passivi e
+alimentano le **missioni away** a skill-check con esiti ramificati.
+`permadeath` OFF di default (toggle `crew.permadeath`). Deploy:
+`php bin/console.php migrate`.
+
+- **[db/migrations/0016_crew.sql](db/migrations/0016_crew.sql)** —
+  `ship_types.crew_slots`; tabelle `officer_archetypes` (12),
+  `officers`, `recruit_candidates`, `away_missions`,
+  `away_mission_log`, `crew_pending`; 21 chiavi `crew.*`.
+- **[src/Game/Crew.php](src/Game/Crew.php)** *(nuovo)* — generazione
+  procedurale, pool di reclutamento rotante per giocatore, roster,
+  hire/assign/bench/dismiss/heal, XP + level-up con crescita skill,
+  **lealtà** (→ abilità tier-2), `useAbility` per ruolo,
+  `consumePending`; `passiveBonuses()` con rendimenti decrescenti per
+  ruolo.
+- **[src/Game/AwayMissions.php](src/Game/AwayMissions.php)** *(nuovo)* —
+  pool legato alla regione; risoluzione istantanea skill+livello vs
+  soglia → *trionfo / successo / parziale / fallimento / disastro*;
+  ricompense scalate (crediti, Leghe, modulo, ufficiale, XP); disastro
+  → ferito + danno nave; cooldown per ufficiale.
+- **Agganci** — [ShipStats](src/Game/ShipStats.php) (bonus equipaggio
+  dopo i moduli); [Combat.php](src/Game/Combat.php) (XP ai kill; abilità
+  Mira / Negoziato / scudo-allineamento); [Navigation.php](src/Game/Navigation.php)
+  (Rotta rapida / sconto-warp); [Loot.php](src/Game/Loot.php) (Scansione
+  profonda → bottino garantito).
+- **UI** — [`/gioco/equipaggio`](views/game/crew.php) +
+  [CrewController](src/Controllers/CrewController.php);
+  [`/gioco/missioni`](views/game/missions.php) +
+  [MissionController](src/Controllers/MissionController.php); link e
+  riepilogo sulla plancia; comandi terminale `CREW` / `RECRUIT` /
+  `MISS`; CSS `.officer-card` / `.xp-bar`.
+- [sw.js](sw.js): `VERSION` `v7` → `v8`.
+
 ## 2026-09-02 — Fase 7: loot con fasce di rarità e moduli nave
 
 Ogni combattimento vinto può lasciare un **modulo** (5 fasce: Civile /

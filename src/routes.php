@@ -8,11 +8,13 @@ use App\Controllers\AuthController;
 use App\Controllers\BankController;
 use App\Controllers\CombatController;
 use App\Controllers\CorpController;
+use App\Controllers\CrewController;
 use App\Controllers\GameApiController;
 use App\Controllers\GameController;
 use App\Controllers\HomeController;
 use App\Controllers\LeaderboardController;
 use App\Controllers\MetaController;
+use App\Controllers\MissionController;
 use App\Controllers\ModuleController;
 use App\Controllers\PlanetController;
 use App\Controllers\PortController;
@@ -62,6 +64,19 @@ $router->post('/gioco/moduli/installa', [ModuleController::class, 'install'], $g
 $router->post('/gioco/moduli/rimuovi', [ModuleController::class, 'remove'], $game);
 $router->post('/gioco/moduli/smonta', [ModuleController::class, 'scrap'], $game);
 $router->post('/gioco/moduli/potenzia', [ModuleController::class, 'upgrade'], $game);
+
+// Equipaggio (HTML)
+$router->get('/gioco/equipaggio', [CrewController::class, 'index'], $game);
+$router->post('/gioco/equipaggio/assumi', [CrewController::class, 'hire'], $game);
+$router->post('/gioco/equipaggio/assegna', [CrewController::class, 'assign'], $game);
+$router->post('/gioco/equipaggio/panchina', [CrewController::class, 'bench'], $game);
+$router->post('/gioco/equipaggio/congeda', [CrewController::class, 'dismiss'], $game);
+$router->post('/gioco/equipaggio/cura', [CrewController::class, 'heal'], $game);
+$router->post('/gioco/equipaggio/abilita', [CrewController::class, 'ability'], $game);
+
+// Missioni away (HTML)
+$router->get('/gioco/missioni', [MissionController::class, 'index'], $game);
+$router->post('/gioco/missioni/invia', [MissionController::class, 'run'], $game);
 
 // Combattimento e dispiegamento (HTML)
 $router->post('/gioco/attacca/nave', [CombatController::class, 'attackShip'], $game);

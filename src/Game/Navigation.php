@@ -122,6 +122,14 @@ final class Navigation
         }
 
         $cost = max(1, (int) ($ship['turns_per_warp'] ?? 1));
+        $warpNote = null;
+        if (\App\Game\Crew::consumePending((int) $player['id'], 'free_warp') !== null) {
+            $cost = 0;
+            $warpNote = 'Rotta rapida: salto gratuito.';
+        } elseif ($cost > 1 && ($wd = (float) ($ship['crew_warp_discount_pct'] ?? 0)) > 0 && mt_rand(1, 100) <= $wd) {
+            $cost--;
+            $warpNote = 'Il Navigatore ottimizza la rotta: -1 turno.';
+        }
         if ((int) $player['turns'] < $cost) {
             return [
                 'ok' => false,
@@ -177,6 +185,9 @@ final class Navigation
         $enc = Combat::onEnterSector($player, $ship);
         $player = $enc['player'];
         $ship = $enc['ship'];
+        if ($warpNote !== null) {
+            array_unshift($enc['events'], $warpNote);
+        }
 
         if (!empty($enc['destroyed'])) {
             Live::alert((int) $player['id'], 'destroyed', 'Nave distrutta', implode(' ', $enc['events']), '/gioco');

@@ -112,6 +112,9 @@ final class Combat
         $tShip = PlayerService::ship((int) $target['ship_id']);
         $aM = (float) ($atkShip['combat_rating'] ?? 1.0);
         $dM = (float) ($tShip['combat_rating'] ?? 1.0);
+        if ($ab = Crew::consumePending((int) $atkPlayer['id'], 'attack_bonus_pct')) {
+            $aM *= 1 + $ab / 100;
+        }
 
         $commit = $commit > 0 ? min($commit, (int) $atkShip['fighters']) : (int) $atkShip['fighters'];
         if ($commit <= 0) {
@@ -151,6 +154,7 @@ final class Combat
                 Database::run('UPDATE players SET credits = credits - ? WHERE id = ?', [$loot, $target['id']]);
                 $drops = Loot::rollKill((int) $atkPlayer['id'], 'pvp', $sectorId,
                     (float) ($tShip['combat_rating'] ?? 1.0), null, $target);
+                Crew::awardKillXp((int) $atkPlayer['id']);
                 self::destroyShip($target);
                 Contracts::onPlayerKilled((int) $target['id'], (int) $atkPlayer['id']);
                 Live::alert((int) $target['id'], 'destroyed', 'Sei stato distrutto', "{$atkPlayer['handle']} ti ha distrutto nel settore {$sectorId}.", '/gioco');
@@ -229,6 +233,9 @@ final class Combat
         }
 
         $aM = (float) ($atkShip['combat_rating'] ?? 1.0);
+        if ($ab = Crew::consumePending((int) $atkPlayer['id'], 'attack_bonus_pct')) {
+            $aM *= 1 + $ab / 100;
+        }
         $pM = 1.0 + (int) $port['tech_level'] * 0.15;
 
         $r = self::duel($commit, (int) $atkShip['shields'], $aM, (int) $port['fighters'], 0, $pM);
@@ -267,6 +274,9 @@ final class Combat
                     }
                 }
                 $align = GameConfig::int('combat.port_bust_alignment', -120);
+                if ($as = (float) ($atkShip['crew_align_shield_pct'] ?? 0)) {
+                    $align = (int) round($align * (1 - min(60, $as) / 100));
+                }
                 $exp = GameConfig::int('combat.exp_per_kill', 50) + (int) round($r['def_lost'] * GameConfig::float('combat.exp_per_fighter', 0.02));
                 Database::run(
                     'UPDATE players SET credits = credits + ?, port_busts = port_busts + 1, alignment = alignment + ?, experience = experience + ? WHERE id = ?',
@@ -275,6 +285,7 @@ final class Combat
                 Database::run('UPDATE ports SET credits = credits - ? WHERE id = ?', [$loot, $port['id']]);
                 $drops = Loot::rollKill((int) $atkPlayer['id'], 'port', $sectorId,
                     1.0 + (float) ($port['tech_level'] ?? 1) * 0.4);
+                Crew::awardKillXp((int) $atkPlayer['id']);
             }
             if ($destroyedAtk) {
                 self::destroyShip($atkPlayer);
@@ -382,7 +393,11 @@ final class Combat
                 $defShd = (int) $p['shields'];
                 $defM = 1.0 + (int) $p['citadel_level'] * 0.15;
 
-                $r = self::duel($atkFtr, $atkShd, (float) ($atkShip['combat_rating'] ?? 1.0), $defFtr, $defShd, $defM);
+                $aM = (float) ($atkShip['combat_rating'] ?? 1.0);
+                if ($ab = Crew::consumePending((int) $atkPlayer['id'], 'attack_bonus_pct')) {
+                    $aM *= 1 + $ab / 100;
+                }
+                $r = self::duel($atkFtr, $atkShd, $aM, $defFtr, $defShd, $defM);
                 $rounds = $r['rounds'];
                 $atkFtr = $r['att_ftr'];
                 $atkShd = $r['att_shd'];
@@ -427,6 +442,9 @@ final class Combat
                     $align = $bombard
                         ? GameConfig::int('planet.bombard_alignment', -150)
                         : GameConfig::int('planet.bust_alignment', -60);
+                    if ($as = (float) ($atkShip['crew_align_shield_pct'] ?? 0)) {
+                        $align = (int) round($align * (1 - min(60, $as) / 100));
+                    }
                     $exp = GameConfig::int('combat.exp_per_kill', 50) + (int) round($defLost * GameConfig::float('combat.exp_per_fighter', 0.02));
                     Database::run(
                         'UPDATE players SET credits = credits + ?, alignment = alignment + ?, experience = experience + ? WHERE id = ?',
@@ -435,6 +453,7 @@ final class Combat
 
                     $drops = Loot::rollKill((int) $atkPlayer['id'], 'planet', (int) $p['sector_id'],
                         1.0 + (float) ($p['citadel_level'] ?? 0) * 0.5);
+                    Crew::awardKillXp((int) $atkPlayer['id']);
 
                     $note = ($bombard ? 'BOMBARDATO' : 'espugnato') . " da {$atkPlayer['handle']}";
                     if ((int) ($p['owner_player_id'] ?? 0) > 0) {
@@ -510,7 +529,11 @@ final class Combat
             return self::err('Non hai caccia da lanciare.');
         }
 
-        $r = self::duel($commit, (int) $atkShip['shields'], (float) ($atkShip['combat_rating'] ?? 1.0),
+        $aM = (float) ($atkShip['combat_rating'] ?? 1.0);
+        if ($ab = Crew::consumePending((int) $atkPlayer['id'], 'attack_bonus_pct')) {
+            $aM *= 1 + $ab / 100;
+        }
+        $r = self::duel($commit, (int) $atkShip['shields'], $aM,
             (int) $npc['fighters'], (int) $npc['shields'], (float) $npc['combat_rating']);
 
         $atkFtrLeft = (int) $atkShip['fighters'] - $r['att_lost'];
@@ -549,6 +572,7 @@ final class Combat
                 );
                 $drops = Loot::rollKill((int) $atkPlayer['id'], 'npc', (int) $npc['sector_id'],
                     (float) $npc['combat_rating'], (string) $npc['kind']);
+                Crew::awardKillXp((int) $atkPlayer['id']);
                 Database::run('DELETE FROM npcs WHERE id = ?', [$npcId]);
             } else {
                 Database::run('UPDATE npcs SET fighters = ?, shields = ? WHERE id = ?', [$r['def_ftr'], $r['def_shd'], $npcId]);
@@ -655,6 +679,7 @@ final class Combat
 
         $pid = (int) $player['id'];
         $mine = static fn (int $ownerId): bool => $ownerId === $pid || Corp::areMates($pid, $ownerId);
+        $noEngage = Crew::consumePending($pid, 'no_engage') !== null;
 
         // 0) Quasar planetari ostili
         foreach (Database::all(
@@ -702,10 +727,13 @@ final class Combat
         }
 
         // 2) caccia: pedaggio, offensivi, difensivi (se il visitatore e' malvagio)
-        $groups = Database::all(
+        $groups = $noEngage ? [] : Database::all(
             'SELECT sf.*, p.handle FROM sector_fighters sf JOIN players p ON p.id = sf.owner_player_id WHERE sf.sector_id = ?',
             [$sectorId]
         );
+        if ($noEngage) {
+            $events[] = 'Negoziato: le forze schierate qui ti lasciano passare.';
+        }
         foreach ($groups as $g) {
             if ($mine((int) $g['owner_player_id']) || (int) $g['qty'] <= 0) {
                 continue;
@@ -764,7 +792,7 @@ final class Combat
         }
 
         // 3) NPC ostili nel settore
-        foreach (Database::all('SELECT * FROM npcs WHERE sector_id = ? AND aggression > 0', [$sectorId]) as $npc) {
+        foreach (($noEngage ? [] : Database::all('SELECT * FROM npcs WHERE sector_id = ? AND aggression > 0', [$sectorId])) as $npc) {
             if ($npc['kind'] === 'ferrengi' && Ranks::isEvil((int) ($player['alignment'] ?? 0))) {
                 continue;
             }

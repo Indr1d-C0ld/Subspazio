@@ -85,6 +85,8 @@ final class TerminalRenderer
             '  BANCA        saldo IGB · DEP <q> deposita · PREL <q> preleva  (allo StarDock)',
             '  Y            catalogo cantiere (StarDock) · BUY <modello> · UPG H|F|S <q> · HW <articolo> [q]',
             '  MOD          officina moduli · MOD FIT/OFF/SCRAP/UP <id>',
+            '  CREW         equipaggio · RECRUIT candidati · CREW HIRE/ASSIGN/BENCH/FIRE/HEAL/USE <id>',
+            '  MISS         missioni away · MISS RUN <id> <off,off>',
             '  F            forze nel settore',
             '  DF <q> o|d|t [pedaggio]   dispiega caccia · PF recupera · DM a|l <q> dispiega mine',
             '  ATK <handle|#id> [q]     attacca una nave · BUST [q] assalta il porto',
@@ -451,6 +453,68 @@ final class TerminalRenderer
                 }
                 : $r['error'];
             return ['text' => '  ' . $txt . "\n", 'player' => $player, 'changed' => false];
+        }
+
+        if (strcasecmp($raw, 'RECRUIT') === 0) {
+            $l = ['  Candidati (StarDock) — Crediti: ' . number_format((int) $player['credits'], 0, ',', '.')];
+            foreach (Crew::recruits((int) $player['id']) as $c) {
+                $l[] = sprintf('   [%s] %-11s Lv%d  %s cr', $c['id'], Crew::roleLabel($c['role']), (int) $c['level'], number_format((int) $c['cost'], 0, ',', '.'));
+            }
+            $l[] = '  Assumi con: CREW HIRE <id>';
+            return ['text' => implode("\n", $l) . "\n", 'player' => $player, 'changed' => false];
+        }
+
+        if (preg_match('/^CREW(?:\s+(HIRE|ASSIGN|BENCH|FIRE|HEAL|USE)\s+(\d+)(?:\s+(\d+))?)?$/i', $raw, $m)) {
+            if (empty($m[1])) {
+                $c = Crew::counts((int) $player['id']);
+                $l = ["  Equipaggio {$c['assigned']}/" . Crew::slots((string) $ship['type_key']) . " · riserva {$c['bench']} · feriti {$c['inj']}"];
+                foreach (Crew::roster((int) $player['id']) as $o) {
+                    $ab = Crew::abilityInfo($o['role'], (int) $o['ability_tier']);
+                    $rd = $o['ready_at'] && strtotime((string) $o['ready_at']) > time() ? ' (ric.' . substr((string) $o['ready_at'], 11, 5) . ')' : '';
+                    $l[] = sprintf('   [%s] %-11s Lv%d %-9s %-8s %s%s',
+                        $o['id'], Crew::roleLabel($o['role']), (int) $o['level'],
+                        (int) $o['assigned'] === 1 ? 'imbarcato' : 'riserva',
+                        $o['status'], $ab['name'], $rd);
+                }
+                $l[] = '  CREW ASSIGN|BENCH|FIRE|HEAL|USE <id> · RECRUIT · CREW HIRE <id>';
+                return ['text' => implode("\n", $l) . "\n", 'player' => $player, 'changed' => false];
+            }
+            $act = strtoupper($m[1]);
+            $id = (int) $m[2];
+            $r = match ($act) {
+                'HIRE'   => Crew::hire($player, (string) $ship['type_key'], $id),
+                'ASSIGN' => Crew::assign($player, (string) $ship['type_key'], $id),
+                'BENCH'  => Crew::bench($player, $id),
+                'FIRE'   => Crew::dismiss($player, $id),
+                'HEAL'   => Crew::heal($player, $id),
+                'USE'    => Crew::useAbility($player, $ship, $id, (int) ($m[3] ?? 0)),
+                default  => ['ok' => false, 'error' => '?'],
+            };
+            $txt = $r['ok'] ? ($r['msg'] ?? ($r['name'] ?? 'ok') . ' — fatto.') : $r['error'];
+            return ['text' => '  ' . $txt . "\n", 'player' => $player, 'changed' => false];
+        }
+
+        if (preg_match('/^MISS(?:\s+RUN\s+(\d+)\s+([\d,]+))?$/i', $raw, $m)) {
+            if (empty($m[1])) {
+                $l = ['  Missioni away disponibili:'];
+                foreach (AwayMissions::open((int) $player['id'], (int) $player['sector_id']) as $mm) {
+                    $need = ShipStats::decode($mm['skills']) ?? [];
+                    $ns = [];
+                    foreach ($need as $k => $v) {
+                        $ns[] = "{$k}>={$v}";
+                    }
+                    $l[] = sprintf('   [%s] %-26s diff %d  %d turni  [%s]', $mm['id'], $mm['title'], (int) $mm['difficulty'], (int) $mm['turn_cost'], implode(' ', $ns));
+                }
+                $l[] = '  Invia con: MISS RUN <id> <off,off,off>   (vedi id da CREW)';
+                return ['text' => implode("\n", $l) . "\n", 'player' => $player, 'changed' => false];
+            }
+            $offs = array_map('intval', explode(',', $m[2]));
+            $r = AwayMissions::run($player, (int) $m[1], $offs);
+            if (empty($r['ok'])) {
+                return ['text' => '  ' . $r['error'] . "\n", 'player' => $player, 'changed' => false];
+            }
+            $t = "{$r['label']} (margine {$r['margin']})" . ($r['reward_text'] !== '' ? " — {$r['reward_text']}" : '') . '.';
+            return ['text' => '  ' . $t . "\n", 'player' => $player, 'changed' => false];
         }
 
         if (preg_match('/^DF\s+(\d+)\s+([odt])(?:\s+(\d+))?$/i', $raw, $m)) {

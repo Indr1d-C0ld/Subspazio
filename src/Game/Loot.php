@@ -88,9 +88,10 @@ final class Loot
                 }
             }
 
+            $guaranteed = Crew::consumePending($killerId, 'guaranteed_drop') !== null;
             $n = 1 + (self::frand() < GameConfig::float('loot.double_drop_pct', 0.08) ? 1 : 0);
             for ($i = 0; $i < $n; $i++) {
-                if (self::frand() >= min(0.95, $chance)) {
+                if (!($guaranteed && $i === 0) && self::frand() >= min(0.95, $chance)) {
                     continue;
                 }
                 $item = self::pickItem($source);
