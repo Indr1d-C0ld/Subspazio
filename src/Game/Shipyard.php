@@ -90,6 +90,7 @@ final class Shipyard
                 ]
             );
             Database::run('DELETE FROM ship_limpets WHERE ship_id = ?', [$ship['id']]);
+            self::unshipModules((int) $ship['id'], (int) $player['id']);
             $pdo->commit();
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) {
@@ -143,8 +144,27 @@ final class Shipyard
             ]
         );
         Database::run('DELETE FROM ship_limpets WHERE ship_id = ?', [$ship['id']]);
+        self::unshipModules((int) $ship['id'], (int) $player['id']);
 
         return ['ok' => true, 'type' => $type['ckey'], 'name' => $type['name']];
+    }
+
+    /** Al cambio scafo i moduli si disinstallano: tornano in inventario (o si perdono). */
+    private static function unshipModules(int $shipId, int $playerId): void
+    {
+        try {
+            if (GameConfig::int('loot.keep_modules_on_refit', 1) === 1) {
+                foreach (Database::all('SELECT item_key, rolled FROM ship_modules WHERE ship_id = ?', [$shipId]) as $m) {
+                    Database::run(
+                        'INSERT INTO player_items (player_id, item_key, rolled, source) VALUES (?, ?, ?, ?)',
+                        [$playerId, $m['item_key'], $m['rolled'], 'shop']
+                    );
+                }
+            }
+            Database::run('DELETE FROM ship_modules WHERE ship_id = ?', [$shipId]);
+        } catch (\Throwable) {
+            // tabelle non ancora migrate
+        }
     }
 
     /**

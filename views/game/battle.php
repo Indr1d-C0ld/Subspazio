@@ -11,6 +11,12 @@
 <section class="panel">
   <h1><?= e($b['attacker']) ?> <span class="vs">vs</span> <?= e($b['defender']) ?></h1>
   <p class="hint"><?= e(fmt_dt($b['at'])) ?> · tipo <?= e($b['kind']) ?> · <?= (int) $b['rounds'] ?> round · esito <strong><?= e($b['outcome']) ?></strong><?= $b['loot'] ? ' · bottino ' . number_format($b['loot'], 0, ',', '.') . ' cr' : '' ?></p>
+  <?php $dr = $b['drops'] ?? ['items' => [], 'salvage' => 0]; if (!empty($dr['salvage']) || !empty($dr['items'])): ?>
+    <p class="hint">Recuperato:
+      <?php if (!empty($dr['salvage'])): ?><span class="pill mut">+<?= number_format((int) $dr['salvage'], 0, ',', '.') ?> Leghe</span><?php endif; ?>
+      <?php foreach ($dr['items'] as $it): ?><span class="rarity rarity-<?= e($it['rarity']) ?>"><?= e($it['name']) ?> · <?= e($it['label']) ?></span><?php endforeach; ?>
+    </p>
+  <?php endif; ?>
 
   <?php if ($b['trace'] === []): ?>
     <p class="hint">Nessun dettaglio round-per-round per questo scontro (registrato prima dell'aggiornamento replay).</p>

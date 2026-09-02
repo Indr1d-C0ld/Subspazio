@@ -11,6 +11,7 @@ use App\Game\Combat;
 use App\Game\Ctx;
 use App\Game\Deploy;
 use App\Game\Economy;
+use App\Game\Loot;
 
 final class CombatController
 {
@@ -35,7 +36,7 @@ final class CombatController
                 $stolen[] = "{$q} " . Economy::label($c);
             }
             $s = $stolen ? ' Bottino merci: ' . implode(', ', $stolen) . '.' : '';
-            Session::flash('success', "PORTO ESPUGNATO in {$res['rounds']} round. Saccheggiati {$loot} cr.{$s} Allineamento in picchiata.");
+            Session::flash('success', "PORTO ESPUGNATO in {$res['rounds']} round. Saccheggiati {$loot} cr.{$s}" . Loot::describe($res['drops'] ?? []) . ' Allineamento in picchiata.');
         } elseif ($res['destroyed_self']) {
             Session::flash('error', "Le difese del porto ti hanno distrutto ({$res['rounds']} round). Capsula allo StarDock.");
         } else {
@@ -51,7 +52,7 @@ final class CombatController
             Session::flash('error', $res['error']);
         } elseif ($res['killed']) {
             Session::flash('success', "{$res['npc_name']} distrutto ({$res['rounds']} round). Bottino "
-                . number_format($res['loot'], 0, ',', '.') . " cr, +{$res['exp']} exp.");
+                . number_format($res['loot'], 0, ',', '.') . " cr, +{$res['exp']} exp." . Loot::describe($res['drops'] ?? []));
         } elseif ($res['destroyed_self']) {
             Session::flash('error', "{$res['npc_name']} ti ha distrutto. Capsula allo StarDock.");
         } else {
@@ -101,7 +102,7 @@ final class CombatController
         }
         if ($res['destroyed_target']) {
             $loot = number_format($res['loot'], 0, ',', '.');
-            return ['success', "{$res['target_handle']} DISTRUTTO in {$res['rounds']} round! Bottino {$loot} cr, +{$res['exp']} exp."];
+            return ['success', "{$res['target_handle']} DISTRUTTO in {$res['rounds']} round! Bottino {$loot} cr, +{$res['exp']} exp." . Loot::describe($res['drops'] ?? [])];
         }
         if ($res['destroyed_self']) {
             return ['error', "La tua nave e' stata distrutta da {$res['target_handle']}. Capsula allo StarDock."];

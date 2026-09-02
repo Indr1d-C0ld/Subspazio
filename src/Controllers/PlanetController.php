@@ -136,7 +136,7 @@ final class PlanetController
             $b = $res['bombarded'] ? " Bombardamento: {$res['bomb_killed']} coloni sterminati." : '';
             Session::flash('success', "Difese di {$res['planet_name']} annientate ({$res['rounds']} round). Saccheggiati "
                 . number_format($res['loot'], 0, ',', '.') . ' cr'
-                . ($st ? ' + ' . implode(', ', $st) : '') . '.' . $b);
+                . ($st ? ' + ' . implode(', ', $st) : '') . '.' . \App\Game\Loot::describe($res['drops'] ?? []) . $b);
         } else {
             Session::flash('error', "Assalto a {$res['planet_name']} respinto ({$res['rounds']} round).");
         }

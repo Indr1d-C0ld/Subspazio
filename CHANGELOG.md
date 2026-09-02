@@ -4,6 +4,46 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-02 — Fase 7: loot con fasce di rarità e moduli nave
+
+Ogni combattimento vinto può lasciare un **modulo** (5 fasce: Civile /
+Militare / Sperimentale / Xeno / Precursore) e produce sempre **Leghe di
+recupero**. I moduli si installano negli slot dello scafo e ne
+modificano le statistiche effettive. Tutto data-driven da `loot.*`.
+Deploy: `php bin/console.php migrate`.
+
+- **[db/migrations/0015_loot_modules.sql](db/migrations/0015_loot_modules.sql)**
+  — `ship_types` guadagna 5 colonne slot (0 sulla capsula);
+  `players.salvage`; tabelle `item_types` (catalogo 23 moduli v1),
+  `player_items` (inventario), `ship_modules` (installati); 18 chiavi
+  `game_config` `loot.*`.
+- **[src/Game/ShipStats.php](src/Game/ShipStats.php)** *(nuovo)* — overlay
+  degli effetti dei moduli, applicato in
+  [`PlayerService::ship()`](src/Game/PlayerService.php): `combat_rating`,
+  `turns_per_warp`, `holds_total`, `max_shields`, scanner, mantello,
+  rigen. scudi. Senza moduli è identico a prima.
+- **[src/Game/Loot.php](src/Game/Loot.php)** *(nuovo)* — `rollKill()`:
+  materiale sempre (∝ stazza del bersaglio) + drop pesato per fascia con
+  bonus regione (frontier/deep), evento *bounty_season* e fortuna dai
+  moduli. PvP: pavimento di fascia, esclusione bersagli protetti / rating
+  basso, cap 1/giorno per vittima.
+- **[src/Game/Modules.php](src/Game/Modules.php)** *(nuovo)* — officina
+  StarDock: install / remove / scrap / upgrade (sale di una fascia con
+  crediti + Leghe).
+- **Agganci** — [Combat.php](src/Game/Combat.php): drop nei rami
+  `def_destroyed` di NPC/nave/porto/pianeta; alla distruzione i moduli
+  installati si perdono con rimborso parziale in Leghe.
+  [Shipyard.php](src/Game/Shipyard.php): al cambio scafo i moduli tornano
+  in inventario. [Navigation.php](src/Game/Navigation.php): rigen. scudi
+  a fine salto. [BattleLog.php](src/Game/BattleLog.php): `drops` nel
+  dettaglio.
+- **UI** — nuova pagina [`/gioco/moduli`](views/game/modules.php) +
+  [ModuleController](src/Controllers/ModuleController.php) + rotte; link e
+  riepilogo scafo sulla plancia; link «Officina moduli» al Cantiere; riga
+  bottino nel replay; comando terminale `MOD [FIT|OFF|SCRAP|UP <id>]`;
+  chip `.rarity-*` in [app.css](assets/css/app.css).
+- [sw.js](sw.js): `VERSION` `v6` → `v7`.
+
 ## 2026-09-01 — Capsula di salvataggio + riordino della plancia
 
 **Capsula di salvataggio** — non è più un vicolo cieco. Prima: nave

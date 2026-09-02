@@ -13,6 +13,7 @@ $cr = (int) $player['credits'];
   <div><span class="k">Stive</span><span class="v"><?= $used ?>/<?= (int) $ship['holds_total'] ?> (max <?= (int) $ship['max_holds'] ?>)</span></div>
   <div><span class="k">Caccia</span><span class="v"><?= number_format((int) $ship['fighters'], 0, ',', '.') ?>/<?= number_format((int) $ship['max_fighters'], 0, ',', '.') ?></span></div>
   <div><span class="k">Scudi</span><span class="v"><?= number_format((int) $ship['shields'], 0, ',', '.') ?>/<?= number_format((int) $ship['max_shields'], 0, ',', '.') ?></span></div>
+  <div><a href="<?= e(url('/gioco/moduli')) ?>">Officina moduli</a></div>
   <div><a href="<?= e(url('/gioco')) ?>">← Plancia</a></div>
 </section>
 

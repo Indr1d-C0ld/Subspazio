@@ -128,6 +128,7 @@ final class Combat
         $pdo->beginTransaction();
         $loot = 0;
         $expGain = 0;
+        $drops = ['items' => [], 'salvage' => 0];
         try {
             Database::run('UPDATE players SET turns = turns - ? WHERE id = ?', [$turnCost, $atkPlayer['id']]);
             Database::run('UPDATE players SET protected_until = NULL WHERE id = ? AND protected_until IS NOT NULL', [$atkPlayer['id']]);
@@ -148,6 +149,8 @@ final class Combat
                     [$loot, $expGain, $align, $bounty, $atkPlayer['id']]
                 );
                 Database::run('UPDATE players SET credits = credits - ? WHERE id = ?', [$loot, $target['id']]);
+                $drops = Loot::rollKill((int) $atkPlayer['id'], 'pvp', $sectorId,
+                    (float) ($tShip['combat_rating'] ?? 1.0), null, $target);
                 self::destroyShip($target);
                 Contracts::onPlayerKilled((int) $target['id'], (int) $atkPlayer['id']);
                 Live::alert((int) $target['id'], 'destroyed', 'Sei stato distrutto', "{$atkPlayer['handle']} ti ha distrutto nel settore {$sectorId}.", '/gioco');
@@ -166,7 +169,7 @@ final class Combat
                     'ship', $sectorId, $atkPlayer['id'], $target['id'], $r['rounds'],
                     $r['att_lost'], $r['def_lost'],
                     $destroyedTarget ? 'def_destroyed' : ($destroyedAtk ? 'att_destroyed' : ($r['def_lost'] > $r['att_lost'] ? 'att_win' : 'draw')),
-                    $loot, json_encode($r, JSON_UNESCAPED_UNICODE),
+                    $loot, json_encode(['duel' => $r, 'drops' => $drops], JSON_UNESCAPED_UNICODE),
                 ]
             );
             $pdo->commit();
@@ -237,6 +240,7 @@ final class Combat
         $pdo->beginTransaction();
         $loot = 0;
         $stolen = [];
+        $drops = ['items' => [], 'salvage' => 0];
         try {
             Database::run('UPDATE players SET turns = turns - ?, protected_until = NULL WHERE id = ?', [$turnCost, $atkPlayer['id']]);
             Database::run('UPDATE ships SET fighters = ?, shields = ? WHERE id = ?', [max(0, $atkFtrLeft), $r['att_shd'], $atkShip['id']]);
@@ -269,6 +273,8 @@ final class Combat
                     [$loot, $align, $exp, $atkPlayer['id']]
                 );
                 Database::run('UPDATE ports SET credits = credits - ? WHERE id = ?', [$loot, $port['id']]);
+                $drops = Loot::rollKill((int) $atkPlayer['id'], 'port', $sectorId,
+                    1.0 + (float) ($port['tech_level'] ?? 1) * 0.4);
             }
             if ($destroyedAtk) {
                 self::destroyShip($atkPlayer);
@@ -281,7 +287,7 @@ final class Combat
                     'port', $sectorId, $atkPlayer['id'], $port['id'], $r['rounds'],
                     $r['att_lost'], $r['def_lost'],
                     $bust ? 'def_destroyed' : ($destroyedAtk ? 'att_destroyed' : 'repelled'),
-                    $loot, json_encode(['duel' => $r, 'stolen' => $stolen], JSON_UNESCAPED_UNICODE),
+                    $loot, json_encode(['duel' => $r, 'stolen' => $stolen, 'drops' => $drops], JSON_UNESCAPED_UNICODE),
                 ]
             );
             $pdo->commit();
@@ -302,6 +308,7 @@ final class Combat
             'destroyed_self' => $destroyedAtk,
             'loot'           => $loot,
             'stolen'         => $stolen,
+            'drops'          => $drops,
             'player'         => Database::first('SELECT * FROM players WHERE id = ?', [$atkPlayer['id']]),
             'ship'           => PlayerService::ship((int) Database::first('SELECT ship_id FROM players WHERE id = ?', [$atkPlayer['id']])['ship_id']),
         ];
@@ -360,6 +367,7 @@ final class Combat
             $destroyedAtk = false;
             $loot = 0;
             $stolen = [];
+            $drops = ['items' => [], 'salvage' => 0];
             $bombKilled = 0;
             $cracked = false;
             $rounds = 0;
@@ -425,6 +433,9 @@ final class Combat
                         [$loot, $align, $exp, $atkPlayer['id']]
                     );
 
+                    $drops = Loot::rollKill((int) $atkPlayer['id'], 'planet', (int) $p['sector_id'],
+                        1.0 + (float) ($p['citadel_level'] ?? 0) * 0.5);
+
                     $note = ($bombard ? 'BOMBARDATO' : 'espugnato') . " da {$atkPlayer['handle']}";
                     if ((int) ($p['owner_player_id'] ?? 0) > 0) {
                         Live::alert((int) $p['owner_player_id'], 'planet_hit', "Pianeta {$note}", "{$p['name']} (settore {$p['sector_id']}) e' stato {$note}.", '/gioco/pianeta/' . $planetId);
@@ -444,7 +455,7 @@ final class Combat
                     'planet', (int) $p['sector_id'], $atkPlayer['id'], (int) ($p['owner_player_id'] ?? 0) ?: null, $rounds,
                     $commit - max(0, $atkFtr), 0,
                     $cracked ? 'def_destroyed' : ($destroyedAtk ? 'att_destroyed' : 'repelled'),
-                    $loot, json_encode(['stolen' => $stolen, 'bomb_killed' => $bombKilled, 'events' => $events, 'duel' => $duelTrace], JSON_UNESCAPED_UNICODE),
+                    $loot, json_encode(['stolen' => $stolen, 'bomb_killed' => $bombKilled, 'events' => $events, 'duel' => $duelTrace, 'drops' => $drops], JSON_UNESCAPED_UNICODE),
                 ]
             );
             $pdo->commit();
@@ -465,6 +476,7 @@ final class Combat
             'destroyed_self' => $destroyedAtk,
             'loot'           => $loot,
             'stolen'         => $stolen,
+            'drops'          => $drops,
             'planet_name'    => $p['name'],
             'player'         => Database::first('SELECT * FROM players WHERE id = ?', [$atkPlayer['id']]),
             'ship'           => PlayerService::ship((int) Database::first('SELECT ship_id FROM players WHERE id = ?', [$atkPlayer['id']])['ship_id']),
@@ -509,6 +521,7 @@ final class Combat
         $pdo->beginTransaction();
         $loot = 0;
         $exp = 0;
+        $drops = ['items' => [], 'salvage' => 0];
         try {
             Database::run('UPDATE players SET turns = turns - ? WHERE id = ?', [$turnCost, $atkPlayer['id']]);
             Database::run('UPDATE ships SET fighters = ?, shields = ? WHERE id = ?', [max(0, $atkFtrLeft), $r['att_shd'], $atkShip['id']]);
@@ -534,6 +547,8 @@ final class Combat
                     'UPDATE players SET credits = credits + ?, experience = experience + ?, alignment = alignment + ?, kills = kills + IF(? IN (\'ferrengi\',\'pirate\'), 1, 0) WHERE id = ?',
                     [$loot, $exp, $align, $npc['kind'], $atkPlayer['id']]
                 );
+                $drops = Loot::rollKill((int) $atkPlayer['id'], 'npc', (int) $npc['sector_id'],
+                    (float) $npc['combat_rating'], (string) $npc['kind']);
                 Database::run('DELETE FROM npcs WHERE id = ?', [$npcId]);
             } else {
                 Database::run('UPDATE npcs SET fighters = ?, shields = ? WHERE id = ?', [$r['def_ftr'], $r['def_shd'], $npcId]);
@@ -547,7 +562,7 @@ final class Combat
                 'INSERT INTO combat_log (kind, sector_id, attacker_player_id, rounds, att_fighters_lost, def_fighters_lost, outcome, loot_credits, detail) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 ['npc', (int) $npc['sector_id'], $atkPlayer['id'], $r['rounds'], $r['att_lost'], $r['def_lost'],
                     $killed ? 'def_destroyed' : ($destroyedAtk ? 'att_destroyed' : 'repelled'), $loot,
-                    json_encode(['npc' => $npc['name'], 'kind' => $npc['kind'], 'duel' => $r], JSON_UNESCAPED_UNICODE)]
+                    json_encode(['npc' => $npc['name'], 'kind' => $npc['kind'], 'duel' => $r, 'drops' => $drops], JSON_UNESCAPED_UNICODE)]
             );
             $pdo->commit();
         } catch (\Throwable $e) {
@@ -569,6 +584,7 @@ final class Combat
             'destroyed_self' => $destroyedAtk,
             'loot'           => $loot,
             'exp'            => $exp,
+            'drops'          => $drops,
             'player'         => Database::first('SELECT * FROM players WHERE id = ?', [$atkPlayer['id']]),
             'ship'           => PlayerService::ship((int) Database::first('SELECT ship_id FROM players WHERE id = ?', [$atkPlayer['id']])['ship_id']),
         ];
@@ -801,6 +817,24 @@ final class Combat
         $hadPod = (int) $ship['escape_pod'] === 1;
         $lost = $hadPod ? 0 : (int) floor((int) $player['credits'] * 0.5);
         $podHolds = GameConfig::int('hardware.pod_holds', 5);
+
+        // moduli installati: persi, ma se ne recupera una parte in Leghe
+        try {
+            $refPct = GameConfig::float('loot.death_module_refund_pct', 0.5);
+            $refund = 0;
+            foreach (Database::all(
+                'SELECT it.base_salvage FROM ship_modules sm JOIN item_types it ON it.ckey = sm.item_key WHERE sm.ship_id = ?',
+                [$ship['id']]
+            ) as $mm) {
+                $refund += (int) round((int) $mm['base_salvage'] * $refPct);
+            }
+            if ($refund > 0) {
+                Database::run('UPDATE players SET salvage = salvage + ? WHERE id = ?', [$refund, $player['id']]);
+            }
+            Database::run('DELETE FROM ship_modules WHERE ship_id = ?', [$ship['id']]);
+        } catch (\Throwable) {
+            // tabelle non ancora migrate
+        }
 
         Database::run(
             "UPDATE ships SET type_key = 'escape_pod', name = ?, sector_id = ?, holds_total = ?,

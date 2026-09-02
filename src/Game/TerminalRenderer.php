@@ -84,6 +84,7 @@ final class TerminalRenderer
             '  T <m> c|v <q>  apri contrattazione (poi: numero=offri, A=accetta, X=lascia)',
             '  BANCA        saldo IGB · DEP <q> deposita · PREL <q> preleva  (allo StarDock)',
             '  Y            catalogo cantiere (StarDock) · BUY <modello> · UPG H|F|S <q> · HW <articolo> [q]',
+            '  MOD          officina moduli · MOD FIT/OFF/SCRAP/UP <id>',
             '  F            forze nel settore',
             '  DF <q> o|d|t [pedaggio]   dispiega caccia · PF recupera · DM a|l <q> dispiega mine',
             '  ATK <handle|#id> [q]     attacca una nave · BUST [q] assalta il porto',
@@ -377,7 +378,7 @@ final class TerminalRenderer
                 return ['text' => '  ' . $r['error'] . "\n", 'player' => $player, 'changed' => false];
             }
             $t = $r['killed']
-                ? "{$r['npc_name']} distrutto ({$r['rounds']} round). Bottino " . number_format($r['loot'], 0, ',', '.') . " cr, +{$r['exp']} exp."
+                ? "{$r['npc_name']} distrutto ({$r['rounds']} round). Bottino " . number_format($r['loot'], 0, ',', '.') . " cr, +{$r['exp']} exp." . Loot::describe($r['drops'] ?? [])
                 : ($r['destroyed_self']
                     ? "{$r['npc_name']} ti ha distrutto. Capsula allo StarDock."
                     : "Scontro con {$r['npc_name']} ({$r['rounds']} round): persi {$r['attacker_lost']}, inflitti -{$r['defender_lost']}.");
@@ -412,6 +413,44 @@ final class TerminalRenderer
             $r = Shipyard::buyHardware($player, $ship, strtolower($m[1]), (int) ($m[2] ?? 1));
             return ['text' => '  ' . ($r['ok'] ? 'Acquistato: ' . strtolower($m[1]) . (isset($r['qty']) ? " x{$r['qty']}" : '') . " ({$r['cost']} cr)." : $r['error']) . "\n",
                 'player' => $player, 'changed' => false];
+        }
+
+        if (preg_match('/^MOD(?:\s+(FIT|OFF|SCRAP|UP)\s+(\d+))?$/i', $raw, $m)) {
+            if (empty($m[1])) {
+                $l = ['  Officina moduli — Leghe di recupero: ' . number_format((int) ($player['salvage'] ?? 0), 0, ',', '.')];
+                $slots = ShipStats::slots((string) $ship['type_key']);
+                $inst = Modules::installed((int) $ship['id']);
+                $l[] = '  Installati (' . count($inst) . '/' . array_sum($slots) . '):';
+                foreach ($inst as $it) {
+                    $l[] = sprintf('   [%s] %-10s %-24s %s', $it['id'], Modules::catLabel($it['category']), $it['name'], $it['rarity']);
+                }
+                $inv = Modules::inventory((int) $player['id']);
+                $l[] = '  Inventario (' . count($inv) . '):';
+                foreach ($inv as $it) {
+                    $l[] = sprintf('   [%s] %-10s %-24s %s (+%d smont.)', $it['id'], Modules::catLabel($it['category']), $it['name'], $it['rarity'], (int) $it['base_salvage']);
+                }
+                $l[] = '  Uso: MOD FIT <idInv> · MOD OFF <idInst> · MOD SCRAP <idInv> · MOD UP <idInv>';
+                return ['text' => implode("\n", $l) . "\n", 'player' => $player, 'changed' => false];
+            }
+            $act = strtoupper($m[1]);
+            $id = (int) $m[2];
+            $r = match ($act) {
+                'FIT'   => Modules::install($player, $ship, $id),
+                'OFF'   => Modules::remove($player, $ship, $id),
+                'SCRAP' => Modules::scrap($player, $id),
+                'UP'    => Modules::upgrade($player, $id),
+                default => ['ok' => false, 'error' => 'Comando modulo sconosciuto.'],
+            };
+            $txt = $r['ok']
+                ? match ($act) {
+                    'FIT'   => "Installato: {$r['name']}.",
+                    'OFF'   => "Rimosso: {$r['name']} (in inventario).",
+                    'SCRAP' => "Smontato {$r['name']}: +{$r['salvage']} Leghe.",
+                    'UP'    => "Potenziato a {$r['name']} [{$r['label']}].",
+                    default => 'Fatto.',
+                }
+                : $r['error'];
+            return ['text' => '  ' . $txt . "\n", 'player' => $player, 'changed' => false];
         }
 
         if (preg_match('/^DF\s+(\d+)\s+([odt])(?:\s+(\d+))?$/i', $raw, $m)) {

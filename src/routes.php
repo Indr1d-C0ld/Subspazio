@@ -13,6 +13,7 @@ use App\Controllers\GameController;
 use App\Controllers\HomeController;
 use App\Controllers\LeaderboardController;
 use App\Controllers\MetaController;
+use App\Controllers\ModuleController;
 use App\Controllers\PlanetController;
 use App\Controllers\PortController;
 use App\Controllers\RadioController;
@@ -54,6 +55,13 @@ $router->post('/gioco/cantiere/nave', [ShipyardController::class, 'buyShip'], $g
 $router->post('/gioco/cantiere/soccorso', [ShipyardController::class, 'rescue'], $game);
 $router->post('/gioco/cantiere/upgrade', [ShipyardController::class, 'upgrade'], $game);
 $router->post('/gioco/cantiere/hardware', [ShipyardController::class, 'hardware'], $game);
+
+// Officina moduli (HTML)
+$router->get('/gioco/moduli', [ModuleController::class, 'index'], $game);
+$router->post('/gioco/moduli/installa', [ModuleController::class, 'install'], $game);
+$router->post('/gioco/moduli/rimuovi', [ModuleController::class, 'remove'], $game);
+$router->post('/gioco/moduli/smonta', [ModuleController::class, 'scrap'], $game);
+$router->post('/gioco/moduli/potenzia', [ModuleController::class, 'upgrade'], $game);
 
 // Combattimento e dispiegamento (HTML)
 $router->post('/gioco/attacca/nave', [CombatController::class, 'attackShip'], $game);

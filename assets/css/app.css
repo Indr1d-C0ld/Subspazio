@@ -610,6 +610,42 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 .ach p { margin: .2rem 0 0; font-size: .82rem; color: var(--ink-soft); }
 .ach-pts { font-size: .72rem; color: var(--ink-dim); font-family: var(--font-mono); }
 
+/* --------------------------------------------------------- Moduli / loot --- */
+.rarity {
+  display: inline-block; padding: .05rem .5rem; border-radius: 999px;
+  font-size: .68rem; font-family: var(--font-mono); letter-spacing: .04em;
+  text-transform: uppercase; border: 1px solid currentColor; white-space: nowrap;
+}
+.rarity-civ       { color: var(--ink-soft); }
+.rarity-mil       { color: var(--ok); }
+.rarity-exp       { color: var(--accent); }
+.rarity-xeno      { color: var(--accent-2); }
+.rarity-precursor { color: var(--warn); text-shadow: 0 0 10px rgba(255, 207, 107, .5); }
+
+.mod-summary { margin-top: .8rem; border-top: 1px solid var(--line); padding-top: .6rem; }
+
+.slot-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: .8rem; }
+.slot-cat { border: 1px solid var(--line); border-radius: 8px; padding: .6rem .75rem; background: var(--panel-2); }
+.slot-cat h3 {
+  margin: 0 0 .5rem; font-size: .74rem; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--accent); font-family: var(--font-mono);
+}
+.module-row {
+  display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+  padding: .35rem 0; border-bottom: 1px solid var(--line-soft); font-size: .86rem;
+}
+.module-row:last-child { border-bottom: 0; }
+.module-row.empty { color: var(--ink-dim); font-style: italic; }
+.module-row .mut { font-size: .78rem; color: var(--ink-soft); }
+.module-row form.inline { margin-left: auto; }
+
+.mod-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .6rem; }
+.mod-list li { border: 1px solid var(--line); border-radius: 8px; padding: .6rem .75rem; background: var(--panel-2); }
+.mi-head { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.mi-eff { font-size: .84rem; color: var(--ink); margin-top: .25rem; }
+.mi-descr { font-size: .78rem; margin-top: .15rem; }
+.mi-actions { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .5rem; }
+
 /* =========================================================================
    Responsive — smartphone / tablet in portrait (<= 820px).
    Confinato qui: la vista desktop (> 820px) resta invariata.

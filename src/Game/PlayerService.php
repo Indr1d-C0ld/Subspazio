@@ -21,13 +21,14 @@ final class PlayerService
     /** @return array<string,mixed>|null */
     public static function ship(int $shipId): ?array
     {
-        return Database::first(
+        $ship = Database::first(
             'SELECT s.*, t.name AS type_name, t.turns_per_warp, t.max_holds, t.max_fighters,
                     t.max_shields, t.can_transwarp, t.combat_rating, t.hold_price, t.base_cost
              FROM ships s JOIN ship_types t ON t.ckey = s.type_key
              WHERE s.id = ?',
             [$shipId]
         );
+        return $ship === null ? null : ShipStats::effective($ship);
     }
 
     /**

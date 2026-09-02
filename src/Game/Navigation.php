@@ -140,6 +140,13 @@ final class Navigation
                 [$cost, $toSector, (int) $player['id'], $cost]
             );
             Database::run('UPDATE ships SET sector_id = ? WHERE id = ?', [$toSector, (int) $ship['id']]);
+            $regen = (int) ($ship['mod_shield_regen'] ?? 0);
+            if ($regen > 0) {
+                Database::run(
+                    'UPDATE ships SET shields = LEAST(?, shields + ?) WHERE id = ?',
+                    [(int) ($ship['max_shields'] ?? 0) ?: 999999, $regen, (int) $ship['id']]
+                );
+            }
             Database::run(
                 'INSERT INTO player_visited_sectors (player_id, sector_id) VALUES (?, ?)
                  ON DUPLICATE KEY UPDATE last_seen = NOW(), visits = visits + 1',

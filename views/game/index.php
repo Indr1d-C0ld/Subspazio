@@ -260,6 +260,7 @@ $holdsUsed = (int) $ship['hold_ore'] + (int) $ship['hold_organics']
         <?php elseif (!empty($look['port'])): ?>
           <a class="btn xs" href="<?= e(url('/gioco/porto')) ?>">Porto</a>
         <?php endif; ?>
+        <a class="btn xs ghost" href="<?= e(url('/gioco/moduli')) ?>">Moduli</a>
         <a class="btn xs ghost" href="<?= e(url('/gioco/rotte')) ?>">Rotte</a>
         <a class="btn xs ghost" href="<?= e(url('/gioco/battaglie')) ?>">Battaglie</a>
         <a class="btn xs ghost" href="<?= e(url('/gioco/contratti')) ?>">Contratti</a>
@@ -270,6 +271,11 @@ $holdsUsed = (int) $ship['hold_ore'] + (int) $ship['hold_organics']
         <a class="btn xs ghost" href="<?= e(url('/gioco/albo')) ?>">Albo</a>
         <a class="btn xs ghost" href="<?= e(url('/terminale')) ?>">Terminale</a>
       </div>
+      <p class="hint mod-summary">
+        Scafo: <strong><?= e($ship['type_name']) ?></strong> ·
+        Moduli <?= (int) ($ship['mod_count'] ?? 0) ?>/<?= array_sum(\App\Game\ShipStats::slots((string) $ship['type_key'])) ?> ·
+        Leghe di recupero <?= number_format((int) ($player['salvage'] ?? 0), 0, ',', '.') ?>
+      </p>
     </section>
 
     <details class="tools" open>

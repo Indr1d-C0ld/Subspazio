@@ -85,6 +85,7 @@ final class BattleLog
             'loot'     => (int) $r['loot_credits'],
             'at'       => $r['created_at'],
             'stolen'   => $detail['stolen'] ?? [],
+            'drops'    => is_array($detail['drops'] ?? null) ? $detail['drops'] : ['items' => [], 'salvage' => 0],
             'trace'    => is_array($trace) ? $trace : [],
             'att_ftr0' => $duel['att_ftr0'] ?? null,
             'def_ftr0' => $duel['def_ftr0'] ?? null,
