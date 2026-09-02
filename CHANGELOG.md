@@ -4,6 +4,34 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-02 — Fase 11: profondità economica
+
+Mining, catena produttiva e industria planetaria: il giocatore **genera**
+materie prime e **costruisce** moduli su ricetta. Deploy:
+`php bin/console.php migrate`.
+
+- **[db/migrations/0019_economy_depth.sql](db/migrations/0019_economy_depth.sql)**
+  — `players.crystals`/`components`, `ships.mining_laser`,
+  `planets.industry` + `last_industry_at`, `sector_features.kind` +=
+  `asteroid`, tabella `recipes` (10), 3 voci Codex, config `mine.*` /
+  `craft.*`.
+- **[SectorFeatures](src/Game/SectorFeatures.php)** — giacimenti in
+  frontiera/profondo; `mine()` richiede il laser, costa turni, rende
+  minerale + Cristalli (garantiti sui «metalli rari»), esaurimento a più
+  passaggi, `deep_mult` premia il profondo.
+- **[src/Game/Industry.php](src/Game/Industry.php)** *(nuovo)* —
+  `refine()` (minerale+equip → Componenti), `recipes()`/`craft()`
+  (Componenti+Cristalli+Leghe → modulo deterministico, alcune con gate di
+  fazione), `togglePlanet()` + `tick()` (i pianeti in industria
+  convertono lo `stock_ore` in Componenti per il proprietario).
+- **Agganci** — [Shipyard](src/Game/Shipyard.php) hardware
+  `mining_laser`; [bin/tick.php](bin/tick.php) task `industry`.
+- **UI** — «Estrai» nei giacimenti;
+  [pannello «Raffineria & produzione»](views/game/modules.php);
+  interruttore industria nella [scheda pianeta](views/game/planet.php);
+  comandi terminale `MINE` / `REFINE` / `CRAFT` / `INDUSTRY`.
+- [sw.js](sw.js): `v11` → `v12`.
+
 ## 2026-09-02 — Fix layout pagina «Rotte» / «Battaglie»
 
 Su schermo largo il contenuto restava in 62rem e la tabella «Ultimi
