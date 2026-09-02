@@ -60,7 +60,7 @@ $errors = is_array($errors) ? $errors : [];
   </nav>
 </header>
 
-<main class="wrap">
+<main class="wrap<?= !empty($wide) ? ' wide' : '' ?>">
   <?php if ($m = flash('success')): ?>
     <div class="alert ok"><?= e($m) ?></div>
   <?php endif; ?>

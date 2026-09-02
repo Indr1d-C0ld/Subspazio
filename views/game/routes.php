@@ -22,11 +22,11 @@
       <tbody>
       <?php foreach ($recent as $r): ?>
         <tr>
-          <td class="nowrap"><?= e(fmt_dt($r['at'])) ?></td>
+          <td><?= e(fmt_dt($r['at'])) ?></td>
           <td><?= (int) $r['from'] ?> → <strong><?= (int) $r['to'] ?></strong> <?= $r['to_name'] ? '<small>' . e($r['to_name']) . '</small>' : '' ?></td>
           <td><?= e($r['mode']) ?></td>
           <td class="ta-r"><?= (int) $r['turns'] ?></td>
-          <td><a class="btn xs ghost" href="<?= e(url('/gioco/rotta?to=' . $r['to'])) ?>">Ripercorri</a></td>
+          <td class="ta-r"><a class="btn xs ghost" href="<?= e(url('/gioco/rotta?to=' . $r['to'])) ?>">Rotta</a></td>
         </tr>
       <?php endforeach; ?>
       <?php if ($recent === []): ?><tr><td colspan="5" class="hint">Nessuno spostamento.</td></tr><?php endif; ?>

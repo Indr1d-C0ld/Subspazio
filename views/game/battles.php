@@ -13,13 +13,14 @@
   <?php if ($rows === []): ?>
     <p class="hint">Nessuno scontro registrato.</p>
   <?php else: ?>
+  <div class="tbl-wrap">
   <table class="tbl">
     <thead><tr><th>#</th><th>Quando</th><th>Tipo</th><th>Settore</th><th>Ruolo</th><th>Avversario</th><th>Esito</th><th class="ta-r">Round</th><th class="ta-r">Persi</th><th class="ta-r">Bottino</th><th></th></tr></thead>
     <tbody>
     <?php foreach ($rows as $r): ?>
       <tr>
         <td><?= (int) $r['id'] ?></td>
-        <td class="nowrap"><?= e(fmt_dt($r['at'])) ?></td>
+        <td><?= e(fmt_dt($r['at'])) ?></td>
         <td><?= e($r['kind']) ?></td>
         <td><?= (int) $r['sector'] ?></td>
         <td><?= e($r['role']) ?></td>
@@ -33,5 +34,6 @@
     <?php endforeach; ?>
     </tbody>
   </table>
+  </div>
   <?php endif; ?>
 </section>

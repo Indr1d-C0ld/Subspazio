@@ -21,6 +21,7 @@ final class RegistroController
         $player = TurnManager::sync(Ctx::$player);
         return Response::html(view('game/battles', [
             'title'  => 'Registro battaglie',
+            'wide'   => true,
             'player' => $player,
             'rows'   => BattleLog::forPlayer((int) $player['id'], 50),
         ]));
@@ -46,6 +47,7 @@ final class RegistroController
         $player = TurnManager::sync(Ctx::$player);
         return Response::html(view('game/routes', [
             'title'   => 'Cronologia rotte',
+            'wide'    => true,
             'player'  => $player,
             'recent'  => RouteLog::recent((int) $player['id'], 60),
             'visited' => RouteLog::mostVisited((int) $player['id'], 15),

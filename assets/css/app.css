@@ -132,6 +132,8 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 1rem 0; }
 
 /* ---------------------------------------------------------------- Layout --- */
 .wrap { width: 100%; max-width: 62rem; margin: 2rem auto; padding: 0 1.4rem; flex: 1; }
+.wrap.wide { max-width: 86rem; }   /* pagine con tabelle larghe (rotte, battaglie) */
+.tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .foot {
   text-align: center; color: var(--ink-dim); font-size: .82rem;
   padding: 1.6rem; border-top: 1px solid var(--line);
@@ -335,7 +337,9 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
    altrimenti una tabella larga sfora e si sovrappone alla colonna accanto */
 .game-grid > * { min-width: 0; }
 .game-grid .panel { overflow: hidden; }
-.game-grid .tbl { display: block; overflow-x: auto; max-width: 100%; }
+.game-grid .tbl { display: block; width: 100%; overflow-x: auto; }
+/* rotte/battaglie: due colonne solo se c'è spazio, altrimenti impilate */
+.wrap.wide .game-grid { grid-template-columns: repeat(auto-fit, minmax(28rem, 1fr)); }
 
 /* Plancia: settore a sinistra (largo), colonna strumenti a destra, mappa
    a tutta larghezza sotto (vedi .map-card.map-3d). */
