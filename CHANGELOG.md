@@ -4,6 +4,21 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-02 — Fix layout pagina «Rotte» / «Battaglie»
+
+Su schermo largo il contenuto restava in 62rem e la tabella «Ultimi
+spostamenti» sforava (pulsante «Ripercorri» tagliato).
+
+- **[views/layout.php](views/layout.php)** + **[app.css](assets/css/app.css)** —
+  modificatore `.wrap.wide` (86rem) attivato dai controller di rotte e
+  battaglie; dentro, `.game-grid` diventa `auto-fit minmax(28rem,1fr)`
+  (2 colonne solo se c'è spazio); utility `.tbl-wrap`.
+- **[views/game/routes.php](views/game/routes.php)** — «Ripercorri» →
+  «Rotta», data senza `nowrap`.
+- **[views/game/battles.php](views/game/battles.php)** — tabella in
+  `.tbl-wrap`.
+- [sw.js](sw.js): `v10` → `v11`.
+
 ## 2026-09-02 — Fase 10: fazioni & reputazione
 
 Quattro potenze — **Federazione Unita**, **Consorzio Ferrengi**,
