@@ -808,6 +808,9 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
   .scan-box .feature form.inline { margin-left: 0; }
   .module-row form.inline { margin-left: 0; }
   .mi-actions .btn.xs { flex: 1 1 8rem; }
+  /* lista merci del port teaser: va a capo invece di sforare su telefoni stretti */
+  .port-teaser-list li { flex-wrap: wrap; }
+  .port-teaser-list .cl { min-width: 0; }
 }
 
 @media (max-width: 380px) {
