@@ -4,6 +4,33 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-03 — Rimozione completa della modalità terminale
+
+La skin di gioco a terminale (`/terminale` + `/api/comando`) è stata
+eliminata del tutto: poco usata, raddoppiava la superficie di gioco da
+tenere in parità con la plancia, e il `TerminalRenderer` era un parser di
+comandi da ~1000 righe da riallineare a ogni fase.
+
+Rimossi:
+
+- `src/Game/TerminalRenderer.php` (997 righe), `views/terminal/index.php`,
+  `assets/js/terminal.js`.
+- Rotte `GET /terminale` e `POST /api/comando` (**[src/routes.php](src/routes.php)**).
+- `GameController::terminal()`, `GameApiController::command()` e i relativi
+  `use App\Game\TerminalRenderer`.
+- CSS `.term-panel` / `#terminal` / `#terminal::after` / `#term-out` /
+  `.term-input` / `#term-prompt` / `#term-cmd` e le regole nel blocco
+  `@media (max-width: 820px)` (**[assets/css/app.css](assets/css/app.css)**).
+- Link «Terminale» nella topbar (**[views/layout.php](views/layout.php)**),
+  pulsante «Modalità terminale» in home e link nella Guida
+  (**[views/home.php](views/home.php)**, **[views/game/guide.php](views/game/guide.php)**).
+- Menzioni nei testi di `home.php` e `README.md`.
+
+Nessuna tabella o chiave `game_config` dedicata → nessuna migrazione.
+Verificato: le classi caricano, `GET /terminale` ora è 404, `/gioco` e
+`/gioco/guida` rispondono, nessun riferimento residuo nel codice.
+[sw.js](sw.js): `v15` → `v16`.
+
 ## 2026-09-03 — Fix: lista merci del port teaser su mobile
 
 Seguito della verifica mobile della plancia snellita: sulla plancia
