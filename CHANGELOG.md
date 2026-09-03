@@ -4,6 +4,28 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-03 — Onboarding: "primi passi" + Guida rapida
+
+Per i nuovi comandanti, in vista di più giocatori.
+
+- **[db/migrations/0020_onboarding.sql](db/migrations/0020_onboarding.sql)** —
+  `players.onboarding_state` (0 attivo / 1 nascosto / 2 completato);
+  config `onboarding.reward_credits`.
+- **[src/Game/Onboarding.php](src/Game/Onboarding.php)** *(nuovo)* — 7
+  "primi passi" (warp, commercio, banca, kill NPC, scansione, modulo,
+  ufficiale) **dedotti dai dati esistenti**, nessun progresso da
+  memorizzare; `maybeReward()` dà una ricompensa una tantum a
+  completamento; `dismiss()`.
+- **[GameController](src/Controllers/GameController.php)** — valuta
+  l'onboarding in plancia; rotta `POST /gioco/primi-passi/nascondi`.
+- **[views/game/index.php](views/game/index.php)** — pannello "Primi
+  passi"; briefing del primo accesso riscritto, più breve, con rimando
+  alla Guida.
+- **[views/game/guide.php](views/game/guide.php)** + `/gioco/guida` —
+  riferimento sintetico di tutti i sistemi, ognuno con link; voce
+  "Guida" nella topbar e nei Comandi.
+- [sw.js](sw.js): `v12` → `v13`.
+
 ## 2026-09-02 — Fase 11: profondità economica
 
 Mining, catena produttiva e industria planetaria: il giocatore **genera**
