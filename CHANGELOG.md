@@ -4,6 +4,20 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-03 — Fix: lista merci del port teaser su mobile
+
+Seguito della verifica mobile della plancia snellita: sulla plancia
+StarDock la lista merci del riquadro porto sforava il pannello su
+telefoni stretti (a 375px di pochi px, ritagliata; a 320px la colonna
+`%` di stock veniva tagliata). Causa: `.port-teaser-list .cl` con
+`min-width: 8rem` su una riga flex che non andava a capo.
+
+- **[assets/css/app.css](assets/css/app.css)** — nel blocco
+  `@media (max-width: 820px)`: `.port-teaser-list li { flex-wrap: wrap }`
+  e `.port-teaser-list .cl { min-width: 0 }`. Il contenuto va a capo,
+  nessuno sforo di pagina (verificato a 320 e 375px).
+- [sw.js](sw.js): `v14` → `v15`.
+
 ## 2026-09-03 — Barra di navigazione di gioco + rifiniture mobile
 
 Con ~20 pagine di gioco l'unica navigazione era la lista nel pannello
