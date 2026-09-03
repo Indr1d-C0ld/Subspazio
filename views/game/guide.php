@@ -6,7 +6,6 @@ $sec = static function (string $title, string $body): string {
 <section class="statusbar">
   <div><span class="k">Guida</span><span class="v">SubSpazio</span></div>
   <div><a href="<?= e(url('/gioco')) ?>">← Plancia</a></div>
-  <div><a href="<?= e(url('/terminale')) ?>">Terminale (comando <code>?</code>)</a></div>
 </section>
 
 <section class="panel">

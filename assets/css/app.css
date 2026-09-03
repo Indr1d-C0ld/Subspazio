@@ -596,26 +596,6 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 }
 .mod-more .row { margin: .3rem 0; }
 
-/* ------------------------------------------------------------- Terminale --- */
-.term-panel { max-width: 62rem; margin-inline: auto; }
-#terminal {
-  position: relative;
-  background: #04070d; border: 1px solid var(--line); border-radius: 8px;
-  padding: .9rem; margin-top: 1rem; max-height: 62vh; overflow-y: auto;
-  font-family: var(--font-mono); font-size: .9rem;
-  box-shadow: inset 0 0 50px -12px rgba(95, 227, 161, .12);
-}
-#terminal::after {                       /* scanline CRT, molto tenue */
-  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
-  background: repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 3px);
-  mix-blend-mode: overlay;
-}
-#term-out { margin: 0; white-space: pre-wrap; color: #a8ecbe; position: relative; z-index: 2; text-shadow: 0 0 8px rgba(95,227,161,.25); }
-.term-input { display: flex; gap: .3rem; align-items: baseline; margin-top: .3rem; position: relative; z-index: 2; }
-#term-prompt { color: var(--accent); white-space: pre; }
-#term-cmd { flex: 1; background: transparent; border: 0; outline: none; color: #d8f5df; font: inherit; padding: 0; }
-#term-cmd:focus { box-shadow: none; }
-
 /* --------------------------------------------------------- Traguardi / meta --- */
 .ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: .6rem; }
 .ach {
@@ -790,9 +770,6 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
   #toast-host { left: .5rem; right: .5rem; bottom: .5rem; max-width: none; }
   .alert-panel { position: fixed; left: .5rem; right: .5rem; top: 3.6rem; width: auto; max-height: 70vh; }
   .mod-more { position: fixed; left: .8rem; right: .8rem; z-index: 30; }
-
-  #terminal { font-size: .82rem; max-height: 66vh; }
-  #term-cmd { font-size: 16px; }
 
   .radio-log li { grid-template-columns: 3rem 1fr; }
   .radio-log .rl-at { display: none; }

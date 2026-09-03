@@ -48,7 +48,6 @@ $router->post('/gioco/muovi', [GameController::class, 'move'], $game);
 $router->get('/gioco/rotta', [GameController::class, 'course'], $game);
 $router->post('/gioco/autopilot', [GameController::class, 'autopilot'], $game);
 $router->post('/gioco/faro', [GameController::class, 'beacon'], $game);
-$router->get('/terminale', [GameController::class, 'terminal'], $game);
 
 // Porto ed economia (HTML)
 $router->get('/gioco/porto', [PortController::class, 'show'], $game);
@@ -158,7 +157,6 @@ $router->get('/api/rotta', [GameApiController::class, 'courseApi'], $game);
 $router->post('/api/muovi', [GameApiController::class, 'move'], $game);
 $router->post('/api/autopilot', [GameApiController::class, 'autopilotApi'], $game);
 $router->post('/api/faro', [GameApiController::class, 'beaconApi'], $game);
-$router->post('/api/comando', [GameApiController::class, 'command'], $game);
 
 // Porto / contrattazione / banca (API JSON)
 $router->get('/api/porto', [GameApiController::class, 'port'], $game);

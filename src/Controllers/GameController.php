@@ -9,7 +9,6 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Game\Ctx;
 use App\Game\Navigation;
-use App\Game\TerminalRenderer;
 use App\Game\TurnManager;
 
 final class GameController
@@ -103,19 +102,5 @@ final class GameController
         Navigation::setBeacon(Ctx::$player, $request->str('text'));
         Session::flash('success', 'Faro aggiornato.');
         return redirect('/gioco');
-    }
-
-    // --- skin terminale ----------------------------------------------------
-
-    public function terminal(Request $request): Response
-    {
-        $player = TurnManager::sync(Ctx::$player);
-        return Response::html(view('terminal/index', [
-            'title'  => 'Terminale',
-            'player' => $player,
-            'ship'   => Ctx::$ship,
-            'intro'  => TerminalRenderer::sector(Navigation::look($player))
-                . "\n" . TerminalRenderer::help(),
-        ]));
     }
 }

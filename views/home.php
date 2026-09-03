@@ -23,7 +23,6 @@
   <?php else: ?>
     <p class="actions">
       <a class="btn" href="<?= e(url('/gioco')) ?>">Entra in plancia</a>
-      <a class="btn ghost" href="<?= e(url('/terminale')) ?>">Modalita' terminale</a>
     </p>
   <?php endif; ?>
 </section>
@@ -52,6 +51,6 @@
     <li><strong>Pianeti</strong> — siluri Genesi, tipi M/K/O/L/C/H/U, coloni e produzione, Citadel, cannone Quasar, assalto planetario.</li>
     <li><strong>Mondo vivo</strong> — classifiche, radio subspaziale, NPC Ferrengi/pirati/mercanti, eventi globali.</li>
     <li><strong>Meta</strong> — stagioni con ladder e albo d'oro, traguardi, corporazioni e alleanze, contratti e taglie fra giocatori.</li>
-    <li><strong>Tecnologia</strong> — aggiornamenti in tempo reale (mappa live, avvisi), installabile come app, interfaccia web + skin terminale.</li>
+    <li><strong>Tecnologia</strong> — aggiornamenti in tempo reale (mappa live, avvisi), installabile come app, interfaccia web moderna.</li>
   </ul>
 </section>

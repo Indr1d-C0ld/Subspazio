@@ -42,7 +42,6 @@ $errors = is_array($errors) ? $errors : [];
         ?>
         <a href="<?= e(url('/gioco/radio')) ?>">Radio<span class="badge" id="radio-badge"<?= $unread > 0 ? '' : ' hidden' ?>><?= (int) $unread ?></span></a>
         <a href="<?= e(url('/gioco/classifica')) ?>">Classifica</a>
-        <a href="<?= e(url('/terminale')) ?>">Terminale</a>
         <a href="<?= e(url('/gioco/guida')) ?>">Guida</a>
         <span class="bell-wrap">
           <a href="#" id="alert-bell" title="Avvisi">🔔<span class="badge" id="alert-count"<?= $unAlerts > 0 ? '' : ' hidden' ?>><?= (int) $unAlerts ?></span></a>

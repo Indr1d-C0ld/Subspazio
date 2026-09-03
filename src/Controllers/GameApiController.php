@@ -27,11 +27,10 @@ use App\Game\Ranks;
 use App\Game\RouteLog;
 use App\Game\SectorNotes;
 use App\Game\Shipyard;
-use App\Game\TerminalRenderer;
 use App\Game\TurnManager;
 
 /**
- * Endpoint JSON per la plancia e la skin terminale.
+ * Endpoint JSON per la plancia.
  */
 final class GameApiController
 {
@@ -233,18 +232,6 @@ final class GameApiController
             'account' => Bank::account((int) $player['id']),
             'credits' => (int) $player['credits'],
             'at_bank' => Bank::atBank((int) $player['sector_id']),
-        ]);
-    }
-
-    public function command(Request $request): Response
-    {
-        $player = TurnManager::sync(Ctx::$player);
-        $out = TerminalRenderer::handle($player, Ctx::$ship, $request->str('cmd'));
-        return Response::json([
-            'text'    => $out['text'],
-            'changed' => $out['changed'],
-            'prompt'  => TerminalRenderer::prompt($out['player'], Ctx::$ship),
-            'player'  => self::playerDto($out['player']),
         ]);
     }
 
