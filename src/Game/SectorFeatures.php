@@ -375,10 +375,12 @@ final class SectorFeatures
             return ['ok' => false, 'error' => 'Il giacimento è esaurito.'];
         }
         $crystals = 0;
-        if ($f['subtype'] === 'metalli rari' || mt_rand(1, 100) <= GameConfig::int('mine.crystal_chance_pct', 45)) {
+        if ($f['subtype'] === 'metalli rari' || mt_rand(1, 100) <= GameConfig::int('mine.crystal_chance_pct', 30)) {
             $bonus = $f['subtype'] === 'metalli rari' ? 2 : 1;
-            $crystals = mt_rand(GameConfig::int('mine.crystal_per_hit_min', 1), GameConfig::int('mine.crystal_per_hit_max', 4))
-                * $bonus * ($deep ? 2 : 1);
+            $crystals = (int) round(
+                mt_rand(GameConfig::int('mine.crystal_per_hit_min', 1), GameConfig::int('mine.crystal_per_hit_max', 3))
+                * $bonus * ($deep ? 1.5 : 1)
+            );
         }
 
         $pdo = Database::pdo();

@@ -22,8 +22,7 @@ final class Industry
         }
         $qty = max(1, min($qty, GameConfig::int('craft.refine_batch_max', 200)));
         $orePer = GameConfig::int('craft.refine_ore_per_component', 4);
-        $equPer = GameConfig::int('craft.refine_equ_per_component', 2);
-        $cost = GameConfig::int('craft.refine_turn_cost', 3);
+        $equPer = GameConfig::int('craft.refine_equ_per_component', 3);
 
         $fresh = Database::first('SELECT * FROM ships WHERE id = ?', [(int) $ship['id']]);
         $maxByOre = $orePer > 0 ? intdiv((int) $fresh['hold_ore'], $orePer) : $qty;
@@ -32,9 +31,13 @@ final class Industry
         if ($qty <= 0) {
             return ['ok' => false, 'error' => "Servono {$orePer} minerale e {$equPer} equipaggiamento per Componente."];
         }
+        // il costo in turni scala col lotto (niente più 200 Componenti a 3 turni)
+        $perTurn = max(1, GameConfig::int('craft.refine_units_per_turn', 12));
+        $cost = max(GameConfig::int('craft.refine_turn_cost', 3), (int) ceil($qty / $perTurn));
+
         $player = TurnManager::sync($player);
         if ((int) $player['turns'] < $cost) {
-            return ['ok' => false, 'error' => "Turni insufficienti (servono {$cost})."];
+            return ['ok' => false, 'error' => "Turni insufficienti (servono {$cost} per {$qty} Componenti)."];
         }
 
         $pdo = Database::pdo();
