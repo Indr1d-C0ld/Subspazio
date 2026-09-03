@@ -4,6 +4,33 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-03 — Passata di bilanciamento (Fasi 7–11)
+
+I moduli si guadagnano, i Cristalli non sono banali, il minerale non
+inonda l'economia, gli empori di fazione sono una scelta vera rispetto
+alla produzione, la reputazione va mantenuta. Deploy:
+`php bin/console.php migrate`.
+
+- **[db/migrations/0021_balance.sql](db/migrations/0021_balance.sql)**
+  *(solo `UPDATE` su valori fissi, idempotente)*:
+  - **Loot** — `drop_chance_npc` `0.35`→`0.22`, `drop_chance_pvp`
+    `0.55`→`0.40`, `event_bounty_luck` `1.4`→`1.2`, `double_drop_pct`
+    `0.08`→`0.05`, `salvage_per_rating` `6`→`4.5`, `upgrade_cost_salvage`
+    +~25%.
+  - **Mining** — `crystal_chance_pct` `45`→`30`, `crystal_per_hit_max`
+    `4`→`3`, `ore_per_pass_base` `8`→`6`.
+  - **Craft** — `refine_equ_per_component` `2`→`3`,
+    `planet_component_per_day` `48`→`36`, nuovo `refine_units_per_turn=12`.
+  - **Scansione** — `wreck_module_pct` `35`→`28`, `wreck_module_deep_pct`
+    `60`→`48`.
+  - **Fazioni** — `kill_gain` `6`→`5`, `decay_per_day` `2`→`3`.
+  - **Empori di fazione** — prezzi ~2× (erano sotto il costo di
+    produzione della stessa ricetta).
+- **[src/Game/Industry.php](src/Game/Industry.php)** — `refine()`: il
+  costo in turni scala col lotto (`ceil(qty / refine_units_per_turn)`).
+- **[src/Game/SectorFeatures.php](src/Game/SectorFeatures.php)** —
+  `mine()`: moltiplicatore Cristalli del profondo `×2` → `×1.5`.
+
 ## 2026-09-03 — Onboarding: "primi passi" + Guida rapida
 
 Per i nuovi comandanti, in vista di più giocatori.
