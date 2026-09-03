@@ -730,7 +730,8 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
   .wrap { margin: 1rem auto; padding: 0 .7rem; }
   .panel { padding: 1rem; }
   .panel.narrow { max-width: 100%; }
-  .game-grid, .plancia-grid { grid-template-columns: 1fr; gap: 1rem; }
+  /* forza colonna singola anche sulle pagine .wrap.wide: minmax(28rem,…) sforerebbe i telefoni */
+  .game-grid, .plancia-grid, .wrap.wide .game-grid { grid-template-columns: 1fr; gap: 1rem; }
   .hero h1 { font-size: 2rem; }
 
   .statusbar { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem .6rem; padding: .7rem .8rem; }
