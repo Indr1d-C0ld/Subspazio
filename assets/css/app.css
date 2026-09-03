@@ -116,6 +116,20 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 1rem 0; }
   border-bottom: 1px solid transparent;
   border-image: linear-gradient(90deg, transparent, rgba(107,226,255,.5), rgba(177,140,255,.35), transparent) 1;
 }
+/* barra di navigazione di gioco: striscia scorrevole sotto la topbar */
+.game-nav {
+  display: flex; gap: .15rem; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  padding: .3rem 1rem; scrollbar-width: none;
+  background: rgba(9, 13, 22, .55); border-bottom: 1px solid var(--line);
+  font-family: var(--font-mono); font-size: .8rem;
+}
+.game-nav::-webkit-scrollbar { display: none; }
+.game-nav a {
+  flex: 0 0 auto; padding: .4rem .7rem; border-radius: 6px;
+  color: var(--ink-soft); text-decoration: none; white-space: nowrap;
+}
+.game-nav a:hover { color: var(--ink); background: rgba(107, 226, 255, .09); text-decoration: none; }
+
 .brand {
   font-weight: 700; letter-spacing: .16em; text-transform: uppercase;
   font-size: .95rem; color: var(--accent);
@@ -782,6 +796,18 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 
   .radio-log li { grid-template-columns: 3rem 1fr; }
   .radio-log .rl-at { display: none; }
+
+  /* componenti Fasi 7-11 su schermo stretto */
+  .game-nav { font-size: .78rem; padding: .25rem .5rem; }
+  .game-nav a { padding: .5rem .6rem; }
+  .guide-grid, .crew-grid, .codex-list, .slot-grid { grid-template-columns: 1fr; }
+  .statusbar .v { font-size: .82rem; overflow-wrap: anywhere; }
+  .oc-actions form.inline { flex: 1 1 8rem; }
+  .oc-actions form.inline .btn.xs { width: 100%; }
+  .fac-offer form.inline, .fac-offer .pill { margin-left: 0; }
+  .scan-box .feature form.inline { margin-left: 0; }
+  .module-row form.inline { margin-left: 0; }
+  .mi-actions .btn.xs { flex: 1 1 8rem; }
 }
 
 @media (max-width: 380px) {

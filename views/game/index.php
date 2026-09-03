@@ -327,31 +327,19 @@ $holdsUsed = (int) $ship['hold_ore'] + (int) $ship['hold_organics']
 
   <aside class="game-side">
     <section class="panel side-panel">
-      <h2>Comandi</h2>
+      <h2>Servizi del settore</h2>
       <div class="side-links">
         <?php if ($look['is_stardock']): ?>
           <a class="btn xs" href="<?= e(url('/gioco/porto')) ?>">Porto</a>
           <a class="btn xs ghost" href="<?= e(url('/gioco/banca')) ?>">Banca</a>
           <a class="btn xs ghost" href="<?= e(url('/gioco/cantiere')) ?>">Cantiere</a>
-          <a class="btn xs ghost" href="<?= e(url('/gioco/pianeti')) ?>">Coloni</a>
+          <a class="btn xs ghost" href="<?= e(url('/gioco/moduli')) ?>">Officina</a>
+          <a class="btn xs ghost" href="<?= e(url('/gioco/equipaggio')) ?>">Equipaggio</a>
         <?php elseif (!empty($look['port'])): ?>
-          <a class="btn xs" href="<?= e(url('/gioco/porto')) ?>">Porto</a>
+          <a class="btn xs" href="<?= e(url('/gioco/porto')) ?>">Entra nel porto</a>
+        <?php else: ?>
+          <span class="hint">Nessun servizio in questo settore. La barra qui sopra porta a tutte le sezioni.</span>
         <?php endif; ?>
-        <a class="btn xs ghost" href="<?= e(url('/gioco/moduli')) ?>">Moduli</a>
-        <a class="btn xs ghost" href="<?= e(url('/gioco/equipaggio')) ?>">Equipaggio</a>
-        <a class="btn xs ghost" href="<?= e(url('/gioco/missioni')) ?>">Missioni</a>
-        <a class="btn xs ghost" href="<?= e(url('/gioco/fazioni')) ?>">Fazioni</a>
-        <a class="btn xs ghost" href="<?= e(url('/gioco/codex')) ?>">Codex</a>
-        <a class="btn xs ghost" href="<?= e(url('/gioco/rotte')) ?>">Rotte</a>
-        <a class="btn xs ghost" href="<?= e(url('/gioco/battaglie')) ?>">Battaglie</a>
-        <a class="btn xs ghost" href="<?= e(url('/gioco/contratti')) ?>">Contratti</a>
-        <a class="btn xs ghost" href="<?= e(url('/gioco/mercato-nero')) ?>">Mercato nero</a>
-        <a class="btn xs ghost" href="<?= e(url('/gioco/corp')) ?>">Corp</a>
-        <a class="btn xs ghost" href="<?= e(url('/gioco/traguardi')) ?>">Traguardi</a>
-        <a class="btn xs ghost" href="<?= e(url('/gioco/classifica')) ?>">Classifica</a>
-        <a class="btn xs ghost" href="<?= e(url('/gioco/albo')) ?>">Albo</a>
-        <a class="btn xs ghost" href="<?= e(url('/terminale')) ?>">Terminale</a>
-        <a class="btn xs ghost" href="<?= e(url('/gioco/guida')) ?>">Guida</a>
       </div>
       <p class="hint mod-summary">
         Scafo: <strong><?= e($ship['type_name']) ?></strong> ·
@@ -370,7 +358,7 @@ $holdsUsed = (int) $ship['hold_ore'] + (int) $ship['hold_organics']
       </p>
     </section>
 
-    <details class="tools" open>
+    <details class="tools">
       <summary>Computer di bordo</summary>
       <form method="get" action="<?= e(url('/gioco/rotta')) ?>" class="row">
         <label>Traccia rotta verso settore

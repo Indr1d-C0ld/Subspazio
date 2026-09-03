@@ -61,6 +61,27 @@ $errors = is_array($errors) ? $errors : [];
   </nav>
 </header>
 
+<?php if ($u !== null && ($u['status'] ?? '') === 'active'): ?>
+<nav class="game-nav" aria-label="Navigazione di gioco">
+  <a href="<?= e(url('/gioco')) ?>">Plancia</a>
+  <a href="<?= e(url('/gioco/porto')) ?>">Porto</a>
+  <a href="<?= e(url('/gioco/cantiere')) ?>">Cantiere</a>
+  <a href="<?= e(url('/gioco/banca')) ?>">Banca</a>
+  <a href="<?= e(url('/gioco/moduli')) ?>">Moduli</a>
+  <a href="<?= e(url('/gioco/equipaggio')) ?>">Equipaggio</a>
+  <a href="<?= e(url('/gioco/missioni')) ?>">Missioni</a>
+  <a href="<?= e(url('/gioco/fazioni')) ?>">Fazioni</a>
+  <a href="<?= e(url('/gioco/codex')) ?>">Codex</a>
+  <a href="<?= e(url('/gioco/pianeti')) ?>">Pianeti</a>
+  <a href="<?= e(url('/gioco/rotte')) ?>">Rotte</a>
+  <a href="<?= e(url('/gioco/battaglie')) ?>">Battaglie</a>
+  <a href="<?= e(url('/gioco/contratti')) ?>">Contratti</a>
+  <a href="<?= e(url('/gioco/mercato-nero')) ?>">Mercato nero</a>
+  <a href="<?= e(url('/gioco/corp')) ?>">Corp</a>
+  <a href="<?= e(url('/gioco/traguardi')) ?>">Traguardi</a>
+</nav>
+<?php endif; ?>
+
 <main class="wrap<?= !empty($wide) ? ' wide' : '' ?>">
   <?php if ($m = flash('success')): ?>
     <div class="alert ok"><?= e($m) ?></div>
