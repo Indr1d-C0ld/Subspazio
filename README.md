@@ -8,7 +8,7 @@ Implementazione **originale** delle meccaniche di gioco: non contiene codice,
 testi o artwork della door proprietaria.
 
 - **Stack:** PHP 8 puro (nessun framework, nessuna dipendenza) · MariaDB/MySQL · Apache
-- **Interfaccia doppia:** plancia web + skin terminale, sulle stesse API JSON
+- **Interfaccia:** plancia web su API JSON, aggiornamenti in tempo reale, installabile come PWA
 - **Licenza:** GPL-3.0-or-later
 
 ## Funzionalità
@@ -139,7 +139,7 @@ src/Controllers/       Home, Auth, Admin, Game, GameApi, Port, Shipyard, Combat,
                        Radio, Leaderboard, Registro, Meta, AdminGame
 src/Cli/Migrator.php   migratore SQL minimale
 src/routes.php         tabella delle rotte
-views/                 template PHP (layout, auth/*, game/*, admin/*, terminal/*, errors/*)
+views/                 template PHP (layout, auth/*, game/*, admin/*, errors/*)
 assets/                css/js statici + icone PWA
 db/migrations/         *.sql versionati    ·    db/setup.sql = bootstrap DB/utente
 bin/                   console.php, migrate.php, tick.php
