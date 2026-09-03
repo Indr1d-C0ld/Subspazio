@@ -4,6 +4,22 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-03 — Fix: pagina Rotte non sfora più su mobile
+
+Emerso durante la verifica mobile di tutte le pagine da loggato (21/21 ok
+a 375px tranne questa): `/gioco/rotte` sforava di ~84px in orizzontale.
+
+Causa pre-esistente (dalla fix Rotte del 02-09): `.wrap.wide .game-grid`
+imposta `grid-template-columns: repeat(auto-fit, minmax(28rem, 1fr))` e ha
+specificità maggiore della regola mobile `.game-grid { 1fr }`, quindi la
+traccia minima di 28rem (448px) restava attiva anche sui telefoni.
+
+- **[assets/css/app.css](assets/css/app.css)** — nel blocco
+  `@media (max-width: 820px)` la regola a colonna singola ora elenca anche
+  `.wrap.wide .game-grid`. Verificato a 375px: rotte e battaglie a colonna
+  singola, `documentElement.scrollWidth == body.scrollWidth == 375`.
+- [sw.js](sw.js): `v16` → `v17`.
+
 ## 2026-09-03 — Rimozione completa della modalità terminale
 
 La skin di gioco a terminale (`/terminale` + `/api/comando`) è stata
