@@ -4,6 +4,25 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-03 — Barra di navigazione di gioco + rifiniture mobile
+
+Con ~20 pagine di gioco l'unica navigazione era la lista nel pannello
+«Comandi» della plancia — da mobile, scomoda.
+
+- **[views/layout.php](views/layout.php)** — nuova `<nav class="game-nav">`
+  sotto la topbar (per i giocatori attivi): striscia di link a tutte le
+  sezioni, che **scorre orizzontalmente** su schermo stretto.
+- **[views/game/index.php](views/game/index.php)** — il pannello laterale
+  perde la lista generica (ora nella game-nav) → «Servizi del settore»,
+  solo azioni contestuali + riepiloghi; «Computer di bordo» non più aperto
+  di default.
+- **[assets/css/app.css](assets/css/app.css)** — `.game-nav`; blocco
+  `@media <=820`: `.guide-grid`/`.crew-grid`/`.codex-list`/`.slot-grid` a
+  colonna singola, `.statusbar .v` con `overflow-wrap`, azioni di
+  officina/relitti/offerte/ufficiali che non spingono più il bottone
+  fuori dallo schermo.
+- [sw.js](sw.js): `v13` → `v14`.
+
 ## 2026-09-03 — Passata di bilanciamento (Fasi 7–11)
 
 I moduli si guadagnano, i Cristalli non sono banali, il minerale non
