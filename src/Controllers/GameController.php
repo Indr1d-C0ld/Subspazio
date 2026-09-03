@@ -19,16 +19,36 @@ final class GameController
         $player = TurnManager::sync(Ctx::$player);
         $ship   = Ctx::$ship;
         \App\Game\Achievements::evaluate((int) $player['id']);
-        $look   = Navigation::look($player);
+
+        $reward = \App\Game\Onboarding::maybeReward($player, $ship);
+        if ($reward !== null) {
+            Session::flash('success', 'Primi passi completati! Ricompensa: '
+                . number_format($reward, 0, ',', '.') . ' cr. Buona rotta, comandante.');
+            $player = \App\Game\PlayerService::forUser((int) $player['user_id']) ?? $player;
+        }
+
+        $look = Navigation::look($player);
 
         return Response::html(view('game/index', [
-            'title'   => 'Plancia — Settore ' . $look['id'],
-            'player'  => $player,
-            'ship'    => $ship,
-            'look'    => $look,
-            'created' => Ctx::$created,
-            'events'  => \App\Game\Events::active(),
+            'title'      => 'Plancia — Settore ' . $look['id'],
+            'player'     => $player,
+            'ship'       => $ship,
+            'look'       => $look,
+            'created'    => Ctx::$created,
+            'events'     => \App\Game\Events::active(),
+            'onboarding' => \App\Game\Onboarding::forView($player, $ship),
         ]));
+    }
+
+    public function hideOnboarding(Request $request): Response
+    {
+        \App\Game\Onboarding::dismiss((int) Ctx::$player['id']);
+        return redirect('/gioco');
+    }
+
+    public function guide(Request $request): Response
+    {
+        return Response::html(view('game/guide', ['title' => 'Guida rapida']));
     }
 
     public function move(Request $request): Response

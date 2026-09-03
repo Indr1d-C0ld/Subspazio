@@ -42,6 +42,8 @@ $router->get('/attesa', [AuthController::class, 'pending'], ['auth']);
 // Gioco (HTML)
 $game = ['auth', 'active', 'player'];
 $router->get('/gioco', [GameController::class, 'index'], $game);
+$router->post('/gioco/primi-passi/nascondi', [GameController::class, 'hideOnboarding'], $game);
+$router->get('/gioco/guida', [GameController::class, 'guide'], $game);
 $router->post('/gioco/muovi', [GameController::class, 'move'], $game);
 $router->get('/gioco/rotta', [GameController::class, 'course'], $game);
 $router->post('/gioco/autopilot', [GameController::class, 'autopilot'], $game);

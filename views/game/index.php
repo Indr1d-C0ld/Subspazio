@@ -45,11 +45,33 @@ $holdsUsed = (int) $ship['hold_ore'] + (int) $ship['hold_organics']
   <h2>Briefing comandante</h2>
   <p>Benvenuto a bordo, <strong><?= e($player['handle']) ?></strong>. Sei attraccato allo
      <strong>StarDock</strong> nel settore <?= (int) $look['id'] ?> (<?= e($look['name']) ?>), a bordo di una
-     <em><?= e($ship['type_name']) ?></em> con <?= (int) $ship['holds_total'] ?> stive.</p>
-  <p>Hai <strong><?= (int) $player['turns'] ?> turni</strong> al giorno. Ogni salto di warp costa
-     <?= (int) $ship['turns_per_warp'] ?> turno/i. Usa i pulsanti <strong>Warp</strong> per spostarti fra
-     i settori adiacenti; il <strong>computer di bordo</strong> traccia le rotte verso i settori che hai
-     gia' esplorato. La zona di Federazione (settori bassi) e' protetta.</p>
+     <em><?= e($ship['type_name']) ?></em> con <?= (int) $ship['holds_total'] ?> stive e
+     <strong><?= (int) $player['turns'] ?> turni</strong> al giorno.</p>
+  <p>Ogni salto di <strong>Warp</strong> costa <?= (int) $ship['turns_per_warp'] ?> turno/i; il
+     <strong>computer di bordo</strong> traccia rotte verso i settori esplorati. La Federazione (settori bassi)
+     è protetta. Sei sotto <strong>protezione novizio</strong> per le prime 48 ore. La
+     <a href="<?= e(url('/gioco/guida')) ?>">Guida rapida</a> spiega tutti i sistemi; qui sotto i tuoi primi passi.</p>
+</section>
+<?php endif; ?>
+
+<?php if (!empty($onboarding)): ?>
+<section class="panel onboarding">
+  <div class="ob-head">
+    <h2>Primi passi <span class="mut"><?= (int) $onboarding['done'] ?>/<?= (int) $onboarding['total'] ?></span></h2>
+    <form method="post" action="<?= e(url('/gioco/primi-passi/nascondi')) ?>" class="inline">
+      <?= csrf_field() ?><button class="btn xs ghost" type="submit">Nascondi</button>
+    </form>
+  </div>
+  <ul class="ob-list">
+    <?php foreach ($onboarding['steps'] as $s): ?>
+      <li class="ob-step<?= $s['done'] ? ' done' : '' ?>">
+        <span class="ob-mark"><?= $s['done'] ? '✓' : '○' ?></span>
+        <?php if ($s['done']): ?><?= e($s['label']) ?>
+        <?php else: ?><a href="<?= e($s['link']) ?>"><?= e($s['label']) ?></a><?php endif; ?>
+      </li>
+    <?php endforeach; ?>
+  </ul>
+  <p class="hint">Completa tutti i passi per una ricompensa in crediti. Puoi nasconderlo in qualsiasi momento.</p>
 </section>
 <?php endif; ?>
 
@@ -329,6 +351,7 @@ $holdsUsed = (int) $ship['hold_ore'] + (int) $ship['hold_organics']
         <a class="btn xs ghost" href="<?= e(url('/gioco/classifica')) ?>">Classifica</a>
         <a class="btn xs ghost" href="<?= e(url('/gioco/albo')) ?>">Albo</a>
         <a class="btn xs ghost" href="<?= e(url('/terminale')) ?>">Terminale</a>
+        <a class="btn xs ghost" href="<?= e(url('/gioco/guida')) ?>">Guida</a>
       </div>
       <p class="hint mod-summary">
         Scafo: <strong><?= e($ship['type_name']) ?></strong> ·
