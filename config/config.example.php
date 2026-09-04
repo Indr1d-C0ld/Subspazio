@@ -40,4 +40,24 @@ return [
     'paths' => [
         'root' => '/data/html/subspazio',
     ],
+
+    // Trasporto e-mail (opzionale). 'transport' = 'log' disattiva l'invio reale.
+    // Con 'smtp', 'from_email' deve essere un mittente verificato dal provider.
+    'mail' => [
+        'transport'   => 'log',                  // 'smtp' | 'sendmail' | 'log'
+        'smtp_host'   => 'smtp-relay.example.com',
+        'smtp_port'   => 587,
+        'smtp_secure' => 'tls',
+        'smtp_user'   => 'CAMBIAMI',
+        'smtp_pass'   => 'CAMBIAMI',
+        'from_email'  => 'noreply@example.com',
+        'from_name'   => 'SubSpazio',
+    ],
+
+    // Notifiche all'amministratore.
+    'notify' => [
+        'new_registration'      => false,
+        'admin_email'           => 'admin@example.com',
+        'new_registration_mode' => 'digest',    // 'digest' | 'immediate'
+    ],
 ];
