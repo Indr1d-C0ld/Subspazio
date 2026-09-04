@@ -4,6 +4,45 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-03 — Meccaniche di attesa
+
+Cose che maturano nel tempo reale sul tick + un riassunto di cosa è
+successo mentre eri via. **Nessun timer di volo**: il warp resta
+istantaneo, il costo è il turno.
+
+**Rapporto di rientro**
+
+- **[db/migrations/0023_waiting.sql](db/migrations/0023_waiting.sql)** —
+  `players.last_digest_at`.
+- **[src/Game/Digest.php](src/Game/Digest.php)** — `forView()` compone un
+  riassunto (voci di giornale accumulate col conteggio dei critici, turni
+  ricaricati se è passato il ciclo giornaliero, colonie che hanno
+  prodotto, lavori d'Officina completati, contratti scaduti) quando sei
+  stato via oltre `digest.min_away_min` (20 min); `null` se sotto soglia o
+  se non è successo nulla. Si vede una volta per assenza.
+- Pannello «Rapporto di rientro» in cima alla plancia
+  (**[views/game/index.php](views/game/index.php)**,
+  **[src/Controllers/GameController.php](src/Controllers/GameController.php)**).
+
+**Lavori dell'Officina a tempo**
+
+- **[db/migrations/0023_waiting.sql](db/migrations/0023_waiting.sql)** —
+  tabella `craft_jobs` + config `craft.max_jobs` (3) e `craft.job_minutes`
+  per rarità (`civ:4,mil:12,exp:35,xeno:90,precursor:180`).
+- **[src/Game/Industry.php](src/Game/Industry.php)** — `craft()` non
+  consegna più il modulo all'istante: scala i costi subito e mette in coda
+  un lavoro che matura fra N minuti. `craftJobs()` (lista), `cancelJob()`
+  (rimborso pieno dei materiali, non dei turni), `craftJobsTick()`
+  (consegna i moduli maturati + voce di giornale «Officina: … completato»
+  + alert). Nuovo task tick `craft_jobs`; rotta
+  `POST /gioco/moduli/annulla-lavoro`.
+- **[views/game/modules.php](views/game/modules.php)** — sezione «Officina
+  — lavori in corso» (visibile ovunque, i lavori proseguono lontano dallo
+  StarDock; l'avvio è solo al dock); il bottone ricetta diventa «Avvia».
+  Striscia «Officina» in plancia col conteggio lavori/pronti.
+- **[assets/css/app.css](assets/css/app.css)** — `.digest-card` /
+  `.officina-strip` / `.craft-jobs`. [sw.js](sw.js): `v18` → `v19`.
+
 ## 2026-09-03 — Giornale di bordo
 
 Registro incidenti persistente e sfogliabile per giocatore, con voce
