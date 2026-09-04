@@ -4,6 +4,20 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-03 — Predisposizione config e-mail / notifiche
+
+Scaffolding per una futura notifica all'amministratore quando arriva una
+richiesta di iscrizione. Nessun codice consuma ancora queste chiavi.
+
+- **[config/config.example.php](config/config.example.php)** — nuovi
+  blocchi `mail` (`transport` = `smtp` | `sendmail` | `log`, parametri
+  SMTP, mittente) e `notify` (`new_registration`, `admin_email`,
+  `new_registration_mode` = `digest` | `immediate`), con placeholder.
+
+Il config reale fuori dal DocumentRoot riusa l'account Brevo già in uso
+dal forum phpBB sullo stesso server (mittente verificato, free tier
+300 mail/giorno).
+
 ## 2026-09-03 — Fix: pagina Rotte non sfora più su mobile
 
 Emerso durante la verifica mobile di tutte le pagine da loggato (21/21 ok
