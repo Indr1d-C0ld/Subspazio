@@ -13,115 +13,111 @@ testi o artwork della door proprietaria.
 
 ## Meccaniche di gioco
 
-**Universo & navigazione**
-: 1000+ settori con grafo di warp (collegamenti a senso unico, vicoli ciechi,
-  Federazione protetta, StarDock), fog-of-war, tracciamento rotte con
-  autopilota, mappa stellare 3D con pan/zoom, turni giornalieri (ora di reset
-  configurabile), preferiti e note per settore.
+- **Universo & navigazione** — 1000+ settori con grafo di warp (collegamenti a
+  senso unico, vicoli ciechi, Federazione protetta, StarDock), fog-of-war,
+  tracciamento rotte con autopilota, mappa stellare 3D con pan e zoom, turni
+  giornalieri (ora di reset configurabile), preferiti e note per settore.
 
-**Economia**
-: porti classe 1–8 con **prezzi dinamici** domanda/offerta (scorte vs
-  capacità + valore base regionale che deriva nel tempo), rigenerazione lazy
-  di scorte e tesoreria, **contrattazione a offerta / controproposta**, scambio
-  veloce, Banca Intergalattica con interesse composto, **mercato nero** (vendita
-  a premio + hardware scontato pagando in allineamento, ripulisce la taglia).
+- **Economia** — porti classe 1–8 con **prezzi dinamici** domanda/offerta
+  (scorte contro capacità, più un valore base regionale che deriva nel tempo),
+  rigenerazione lazy di scorte e tesoreria, **contrattazione** a offerta e
+  controproposta, scambio veloce, Banca Intergalattica con interesse composto,
+  **mercato nero** (vendita a premio e hardware scontato pagando in
+  allineamento, ripulisce la taglia).
 
-**Navi, hardware & moduli**
-: cantiere StarDock — acquisto navi con permuta, potenziamento
-  stive/caccia/scudi, hardware (sonde, mine armid/limpet, capsula di
-  salvataggio, scanner di densità/olografico, transwarp, occultamento, siluri
-  Genesi, laser minerario). **Moduli** in 5 fasce di rarità (Civile → Militare →
-  Sperimentale → Xeno → Precursore): si trovano come bottino, occupano slot per
-  categoria, si installano/smontano/potenziano (recupero in "Leghe"), e
-  sovrappongono i loro bonus alle statistiche della nave.
+- **Navi, hardware & moduli** — cantiere StarDock: acquisto navi con permuta,
+  potenziamento di stive, caccia e scudi, hardware (sonde, mine armid e limpet,
+  capsula di salvataggio, scanner di densità e olografico, transwarp,
+  occultamento, siluri Genesi, laser minerario). I **moduli** hanno 5 fasce di
+  rarità (Civile, Militare, Sperimentale, Xeno, Precursore): si trovano come
+  bottino, occupano slot per categoria, si installano, smontano e potenziano
+  (con recupero in «Leghe»), e sovrappongono i loro bonus alle statistiche
+  della nave.
 
-**Combattimento**
-: motore a caccia con scudi, attacco nave-vs-nave (con bottino, esperienza,
-  taglia), assalto ai porti con saccheggio, caccia e mine dispiegati
-  (offensivo / difensivo / pedaggio) che intercettano all'ingresso nel settore,
-  distruzione nave → capsula di salvataggio, gradi e allineamento, protezione
-  novizio, **replay round-per-round** di ogni battaglia.
+- **Combattimento** — motore a caccia con scudi, attacco nave contro nave (con
+  bottino, esperienza e taglia), assalto ai porti con saccheggio, caccia e mine
+  dispiegati (offensivi, difensivi o a pedaggio) che intercettano all'ingresso
+  nel settore, distruzione della nave con capsula di salvataggio, gradi e
+  allineamento, protezione novizio, **replay round per round** di ogni
+  battaglia.
 
-**Equipaggio**
-: ufficiali generati da archetipi, 6 ruoli con **bonus passivo** (fusi nelle
-  statistiche dopo i moduli) + **abilità attiva**, esperienza e passaggi di
-  livello, lealtà con sblocco di un secondo livello di bonus. **Missioni away**
-  a skill-check con esiti scalati (trionfo → disastro). Permadeath opzionale
-  (spento di default).
+- **Equipaggio** — ufficiali generati da archetipi, 6 ruoli con **bonus
+  passivo** (fuso nelle statistiche dopo i moduli) e **abilità attiva**,
+  esperienza e passaggi di livello, lealtà che sblocca un secondo livello di
+  bonus. **Missioni away** a skill-check con esiti scalati, dal trionfo al
+  disastro. Permadeath opzionale, spento di default.
 
-**Scansione & frontiera**
-: le regioni profonde nascondono relitti, depositi, anomalie, giacimenti di
-  asteroidi e pericoli ambientali. **SCAN** costa turni e rivela le feature del
-  settore corrente e dei vicini (raggio in base a scanner / ufficiale Scienziato
-  / modulo); poi si spoglia / raccoglie / studia. Hazard (radiazioni, tempeste
-  ioniche) e pozzi gravitazionali colpiscono all'ingresso, mitigati se già noti.
-  **Codex**: diario delle scoperte.
+- **Scansione & frontiera** — le regioni profonde nascondono relitti, depositi,
+  anomalie, giacimenti di asteroidi e pericoli ambientali. La **scansione**
+  costa turni e rivela le anomalie del settore corrente e di quelli vicini (il
+  raggio dipende da scanner, ufficiale Scienziato o modulo); poi si spoglia, si
+  raccoglie o si studia. Hazard (radiazioni, tempeste ioniche) e pozzi
+  gravitazionali colpiscono all'ingresso, mitigati se già noti. Il **Codex**
+  tiene il diario delle scoperte.
 
-**Fazioni & reputazione**
-: quattro potenze (Federazione Unita, Consorzio Ferrengi, Egemonia di Korr,
-  Liberi Mondi della Frontiera). Reputazione per giocatore da −100 a +100 in 5
-  tier, mossa da commercio, kill, missioni e lavoro nel profondo, con
-  spill-over sulle rivali. Sblocca **empori di fazione** allo StarDock; la
-  Federazione ostile revoca Cantiere e Banca (con possibilità di **ammenda**) e
-  invia **cacciatori di taglie**; decadimento giornaliero.
+- **Fazioni & reputazione** — quattro potenze: Federazione Unita, Consorzio
+  Ferrengi, Egemonia di Korr, Liberi Mondi della Frontiera. La reputazione per
+  giocatore va da −100 a +100 su 5 tier, mossa da commercio, kill, missioni e
+  lavoro nel profondo, con spill-over sulle rivali. Sblocca **empori di
+  fazione** allo StarDock; la Federazione ostile revoca Cantiere e Banca (con
+  possibilità di **ammenda**) e invia **cacciatori di taglie**; decade ogni
+  giorno.
 
-**Industria & produzione**
-: laser minerario per estrarre da un giacimento di asteroidi (minerale +
-  Cristalli, a più passaggi); **raffineria** allo StarDock (minerale +
-  equipaggiamento → Componenti); **ricette** deterministiche (Componenti +
-  Cristalli + Leghe → un modulo preciso) come **lavori dell'Officina** che
-  maturano sul tick — la durata scala con la rarità, si annullano con rimborso
-  dei materiali; **modalità industria** dei pianeti (scorte di minerale →
-  Componenti per il proprietario).
+- **Industria & produzione** — laser minerario per estrarre da un giacimento di
+  asteroidi (minerale e Cristalli, a più passaggi); **raffineria** allo
+  StarDock (minerale + equipaggiamento → Componenti); **ricette**
+  deterministiche (Componenti + Cristalli + Leghe → un modulo preciso), avviate
+  come **lavori dell'Officina** che maturano sul tick (durata proporzionale
+  alla rarità, annullabili con rimborso dei materiali); **modalità industria**
+  dei pianeti, che converte le scorte di minerale in Componenti per il
+  proprietario.
 
-**Pianeti & corporazioni**
-: siluri Genesi → pianeti (tipi M/K/O/L/C/H/U con capacità e produzione
-  diverse), coloni in categorie con crescita e produzione lazy, imbarco coloni
-  dalla Terra (quota giornaliera), **Citadel** livelli 1–6, cannone **Quasar**,
-  guarnigione e scudi planetari, assalto planetario con saccheggio e
-  bombardamento. **Corporazioni**: fonda/entra/esci, cassa e possesso pianeti
-  condivisi, i soci non si sparano addosso, **alleanze** fra corp.
+- **Pianeti & corporazioni** — siluri Genesi che generano pianeti (tipi
+  M/K/O/L/C/H/U, con capacità e produzione diverse), coloni in categorie con
+  crescita e produzione lazy, imbarco coloni dalla Terra (quota giornaliera),
+  **Citadel** livelli 1–6, cannone **Quasar**, guarnigione e scudi planetari,
+  assalto planetario con saccheggio e bombardamento. Le **corporazioni** si
+  fondano e si lasciano, condividono cassa e possesso dei pianeti, i soci non
+  si sparano addosso, e possono stringere **alleanze**.
 
-**Contratti fra giocatori**
-: **taglie** con cauzione, riscosse in automatico da chi elimina il bersaglio;
-  **consegne** di merce con ricompensa. Scadenza gestita dal tick.
+- **Contratti fra giocatori** — **taglie** con cauzione, riscosse in automatico
+  da chi elimina il bersaglio; **consegne** di merce con ricompensa. La
+  scadenza è gestita dal tick.
 
-**Mondo vivo**
-: **classifiche** comandanti e corporazioni (rating combinato ricalcolato dal
-  tick), **radio subspaziale** (canali radio / fedcomm / corp / privato / hail
-  con badge non letti), **NPC** Ferrengi / pirati / mercanti con
-  movimento / ingaggio / respawn, **eventi globali** (shock di mercato,
-  brillamento solare, incursione Ferrengi, ondata di pirateria, stagione delle
-  taglie) annunciati via radio.
+- **Mondo vivo** — **classifiche** di comandanti e corporazioni (rating
+  combinato ricalcolato dal tick); **radio subspaziale** con i canali radio,
+  fedcomm, corp, privato e hail, e badge dei messaggi non letti; **NPC**
+  Ferrengi, pirati e mercanti che si muovono, ingaggiano e rinascono sul tick;
+  **eventi globali** (shock di mercato, brillamento solare, incursione
+  Ferrengi, ondata di pirateria, stagione delle taglie) annunciati via radio.
 
-**Meta-gioco**
-: **stagioni** con ladder, soft-reset dei comandanti e albo d'oro (i traguardi
-  persistono, universo rigenerabile a scelta); **traguardi** verificati sullo
-  stato o per evento.
+- **Meta-gioco** — **stagioni** con ladder, soft-reset dei comandanti e albo
+  d'oro (i traguardi persistono, l'universo si rigenera a scelta); **traguardi**
+  verificati sullo stato o per evento.
 
-**Giornale di bordo & rientro**
-: un **registro incidenti** persistente e sfogliabile per giocatore, con voce
-  coerente all'ambientazione — scontri all'ingresso di un settore, hazard,
-  contatti NPC, comunicazioni diplomatiche, colonie colpite, esiti dei
-  contratti. Al ritorno in plancia dopo un'assenza, un **rapporto di rientro**
-  riassume cosa è maturato (voci di giornale, turni ricaricati, produzione
-  delle colonie, lavori d'Officina completati, contratti scaduti).
+- **Giornale di bordo & rientro** — un **registro incidenti** persistente e
+  sfogliabile per giocatore, con voce coerente all'ambientazione: scontri
+  all'ingresso di un settore, hazard, contatti NPC, comunicazioni diplomatiche,
+  colonie colpite, esiti dei contratti. Al ritorno in plancia dopo un'assenza,
+  un **rapporto di rientro** riassume cosa è maturato: voci di giornale, turni
+  ricaricati, produzione delle colonie, lavori d'Officina completati, contratti
+  scaduti.
 
-**Onboarding**
-: sette "primi passi" dedotti dai dati del giocatore, con ricompensa una
-  tantum, e una pagina **Guida** di riferimento a tutti i sistemi.
+- **Onboarding** — sette «primi passi» dedotti dai dati del giocatore, con una
+  ricompensa una tantum, e una pagina **Guida** di riferimento a tutti i
+  sistemi.
 
-**Realtime & PWA**
-: stream **SSE** (`/api/stream`) per mappa live, toast, campanella degli
-  avvisi e badge senza refresh; Web App Manifest + service worker (guscio
-  offline) + mappa con pan/zoom touch. *Il service worker richiede HTTPS.*
+- **Realtime & PWA** — stream **SSE** (`/api/stream`) per mappa live, toast,
+  campanella degli avvisi e badge senza refresh; Web App Manifest, service
+  worker (guscio offline) e mappa con pan e zoom touch. Il service worker
+  richiede HTTPS.
 
-**Amministrazione**
-: pannello `/admin/gioco` — editor della configurazione di gioco, trigger
-  manuale degli eventi, spawn/purga NPC, Big Bang (rigenerazione universo),
-  moderazione in-game (kick/sospensione/teletrasporto/rettifiche), chiusura
-  stagione, statistiche. Registrazione con **approvazione admin** e **notifica
-  e-mail** (SMTP) all'amministratore per ogni nuova richiesta di accesso.
+- **Amministrazione** — pannello `/admin/gioco`: editor della configurazione di
+  gioco, trigger manuale degli eventi, spawn e purga degli NPC, Big Bang
+  (rigenerazione dell'universo), moderazione in-game (kick, sospensione,
+  teletrasporto, rettifiche), chiusura stagione, statistiche. Registrazione con
+  **approvazione admin** e **notifica e-mail** (SMTP) all'amministratore per
+  ogni nuova richiesta di accesso.
 
 ## Requisiti
 
