@@ -4,6 +4,32 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-04 — Fix: Radio subspaziale illeggibile su mobile
+
+Segnalato dall'utente: la voce «Radio» del menu di gioco appariva confusa
+su smartphone. Il testo dei messaggi era schiacciato in una colonna di
+soli 48px invece di occupare la riga.
+
+Causa: nel blocco `@media (max-width: 820px)`, `.radio-log li` passa da 4
+a 2 colonne (`3rem 1fr`), ma con 3 figli visibili (canale, mittente, corpo
+— l'orario è `display:none`) il grid auto-piazzava il corpo del messaggio
+nella prima colonna della seconda riga, cioè negli stessi 48px del
+canale.
+
+- **[assets/css/app.css](assets/css/app.css)** — `.radio-log .rl-body {
+  grid-column: 1 / -1; }` nel blocco mobile: il corpo del messaggio va a
+  capo su tutta la larghezza, sotto la riga canale + mittente. Verificato
+  in browser a 375px: `rl-body` passa da 48px a 319px (piena larghezza),
+  nessuno sforo di pagina.
+- Rimossa anche una regola morta e contraddittoria: `.radio-compose .row`
+  compariva sia nell'elenco che forza `flex-direction: column` sia, poco
+  sotto, in una regola separata che lo rimetteva a `row; flex-wrap: wrap`
+  — quest'ultima vinceva per ordine. L'effetto era mascherato da
+  `.row label { width: 100% }`, ma il codice era inutilmente
+  contraddittorio; il campo «A» (per hail/privato) ora si impila
+  correttamente sotto «Canale».
+- [sw.js](sw.js): `v19` → `v20`.
+
 ## 2026-09-04 — Notifica e-mail per le richieste di iscrizione
 
 Quando un utente si registra (`status='pending'`) l'amministratore riceve
