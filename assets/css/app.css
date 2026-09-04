@@ -782,7 +782,6 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
   .tools input, .upg-grid input.qty, .hg-controls input, .qty {
     width: 100%; font-size: 16px;   /* 16px = niente auto-zoom su iOS */
   }
-  .radio-compose .row { flex-direction: row; flex-wrap: wrap; }
 
   .btn, button.btn { padding: .6rem 1rem; }
   .btn.xs { padding: .5rem .8rem; font-size: .84rem; }
@@ -804,7 +803,10 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
   .alert-panel { position: fixed; left: .5rem; right: .5rem; top: 3.6rem; width: auto; max-height: 70vh; }
   .mod-more { position: fixed; left: .8rem; right: .8rem; z-index: 30; }
 
+  /* canale+mittente su una riga, il testo del messaggio va a capo su tutta
+     la larghezza invece di stiparsi nella colonna del canale (3rem) */
   .radio-log li { grid-template-columns: 3rem 1fr; }
+  .radio-log .rl-body { grid-column: 1 / -1; }
   .radio-log .rl-at { display: none; }
 
   /* componenti Fasi 7-11 su schermo stretto */
