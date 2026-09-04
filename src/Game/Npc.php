@@ -107,7 +107,7 @@ final class Npc
             if ($r['kind'] === 'ferrengi' && Ranks::isEvil((int) $player['alignment']) && mt_rand(0, 1)) {
                 continue;
             }
-            Combat::npcEngagePlayer($r, $player, $ship);
+            Combat::npcEngagePlayer($r, $player, $ship, true);
             $seen[$r['id']] = true;
             $n++;
         }

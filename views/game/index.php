@@ -75,6 +75,33 @@ $holdsUsed = (int) $ship['hold_ore'] + (int) $ship['hold_organics']
 </section>
 <?php endif; ?>
 
+<?php if (!empty($shiplog)):
+  $slUnread = 0;
+  foreach ($shiplog as $__e) { if ($__e['read_at'] === null) { $slUnread++; } }
+?>
+<section class="panel shiplog-card">
+  <div class="shiplog-head">
+    <h2>Giornale di bordo<?php if ($slUnread > 0): ?> <span class="badge"><?= (int) $slUnread ?></span><?php endif; ?></h2>
+    <a class="btn xs ghost" href="<?= e(url('/gioco/giornale')) ?>">Storico completo</a>
+  </div>
+  <ul class="shiplog-list">
+    <?php foreach ($shiplog as $ev): ?>
+      <li class="sl-entry sl-<?= e($ev['severity']) ?><?= $ev['read_at'] === null ? ' sl-new' : '' ?>">
+        <div class="sl-meta">
+          <span class="sl-chan"><?= e(\App\Game\ShipLog::channel($ev['kind'])) ?></span>
+          <time><?= e(date('d/m H:i', strtotime((string) $ev['created_at']))) ?></time>
+        </div>
+        <p class="sl-title"><?= e($ev['title']) ?></p>
+        <?php $__lines = preg_split('/\n/', (string) $ev['body']); $__first = trim($__lines[0] ?? ''); ?>
+        <?php if ($__first !== '' && $__first !== $ev['title']): ?>
+          <p class="sl-body"><?= e($__first) ?><?= count($__lines) > 1 ? ' …' : '' ?></p>
+        <?php endif; ?>
+      </li>
+    <?php endforeach; ?>
+  </ul>
+</section>
+<?php endif; ?>
+
 <div class="game-grid plancia-grid">
   <section class="panel sector-card">
     <header class="sector-head">

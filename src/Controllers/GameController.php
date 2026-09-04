@@ -36,6 +36,7 @@ final class GameController
             'created'    => Ctx::$created,
             'events'     => \App\Game\Events::active(),
             'onboarding' => \App\Game\Onboarding::forView($player, $ship),
+            'shiplog'    => \App\Game\ShipLog::recent((int) $player['id'], 6),
         ]));
     }
 

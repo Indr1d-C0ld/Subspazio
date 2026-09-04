@@ -202,6 +202,8 @@ final class Navigation
             Live::player((int) $player['id'], 'entry_combat', 'Contatto nel settore', implode(' ', $enc['events']));
         }
 
+        \App\Game\ShipLog::fromEntryEvents((int) $player['id'], $toSector, $enc['events'], !empty($enc['destroyed']));
+
         return [
             'ok'          => true,
             'cost'        => $cost,

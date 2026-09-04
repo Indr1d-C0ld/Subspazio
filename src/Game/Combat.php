@@ -159,8 +159,20 @@ final class Combat
                 self::destroyShip($target);
                 Contracts::onPlayerKilled((int) $target['id'], (int) $atkPlayer['id']);
                 Live::alert((int) $target['id'], 'destroyed', 'Sei stato distrutto', "{$atkPlayer['handle']} ti ha distrutto nel settore {$sectorId}.", '/gioco');
+                ShipLog::write((int) $target['id'], 'destroyed', 'alert',
+                    "Nave perduta: attacco di {$atkPlayer['handle']}",
+                    "Ingaggiati e distrutti da {$atkPlayer['handle']} nel settore {$sectorId} dopo {$r['rounds']} scambi. "
+                    . 'Persi ' . number_format($r['def_lost'], 0, ',', '.') . ' caccia e ' . number_format($loot, 0, ',', '.') . ' cr di carico/fondi. '
+                    . 'Equipaggio recuperato in capsula allo StarDock.',
+                    $sectorId);
             } else {
                 Live::player((int) $target['id'], 'attacked', 'Sotto attacco', "{$atkPlayer['handle']} ti ha attaccato nel settore {$sectorId}.");
+                ShipLog::write((int) $target['id'], 'combat', 'warning',
+                    "Sotto attacco da {$atkPlayer['handle']}",
+                    sprintf('%s ti ha attaccato nel settore %d: %d scambi, persi %d caccia, scudi al %d%%. Nave integra.',
+                        $atkPlayer['handle'], $sectorId, $r['rounds'], $r['def_lost'],
+                        (int) $tShip['max_shields'] > 0 ? (int) round(100 * $r['def_shd'] / (int) $tShip['max_shields']) : 0),
+                    $sectorId);
             }
             if ($destroyedAtk) {
                 self::destroyShip($atkPlayer);
@@ -466,6 +478,11 @@ final class Combat
                     $note = ($bombard ? 'BOMBARDATO' : 'espugnato') . " da {$atkPlayer['handle']}";
                     if ((int) ($p['owner_player_id'] ?? 0) > 0) {
                         Live::alert((int) $p['owner_player_id'], 'planet_hit', "Pianeta {$note}", "{$p['name']} (settore {$p['sector_id']}) e' stato {$note}.", '/gioco/pianeta/' . $planetId);
+                        ShipLog::write((int) $p['owner_player_id'], 'planet', $bombard ? 'alert' : 'warning',
+                            "Colonia sotto attacco: {$p['name']}",
+                            "Rapporto dalla colonia di {$p['name']} (settore {$p['sector_id']}): il pianeta è stato {$note}."
+                            . ($bombard ? ' Perdite gravi tra i coloni e le infrastrutture.' : ' La guarnigione è stata sopraffatta.'),
+                            (int) $p['sector_id'], ['planet_id' => $planetId]);
                     }
                     Live::corp((int) ($p['corp_id'] ?? 0) ?: null, 'planet_hit', "Pianeta {$note}", "{$p['name']} e' stato {$note}.");
                 }
@@ -631,7 +648,7 @@ final class Combat
      * @param array<string,mixed> $ship
      * @return array{event:string, destroyed:bool}
      */
-    public static function npcEngagePlayer(array $npc, array $player, array $ship): array
+    public static function npcEngagePlayer(array $npc, array $player, array $ship, bool $fromTick = false): array
     {
         $r = self::duel(
             (int) $npc['fighters'], (int) $npc['shields'], (float) $npc['combat_rating'],
@@ -659,9 +676,24 @@ final class Combat
         if ($playerDead) {
             $d = self::destroyShip($player);
             Live::alert((int) $player['id'], 'destroyed', 'Nave distrutta da un NPC', "{$npc['name']} ti ha distrutto nel settore {$npc['sector_id']}.", '/gioco');
+            if ($fromTick) {
+                ShipLog::write((int) $player['id'], 'destroyed', 'alert',
+                    "Nave perduta: {$npc['name']}",
+                    "Agganciati e ingaggiati da {$npc['name']} nel settore {$npc['sector_id']} mentre eri in stazionamento. "
+                    . "Difese collassate dopo {$r['rounds']} scambi. " . self::deathLine($d),
+                    (int) $npc['sector_id']);
+            }
             return ['event' => "{$npc['name']} ti ha distrutto. " . self::deathLine($d), 'destroyed' => true];
         }
         Live::player((int) $player['id'], 'npc_attack', 'Attacco NPC', "{$npc['name']} ti ha attaccato nel settore {$npc['sector_id']}.");
+        if ($fromTick) {
+            ShipLog::write((int) $player['id'], 'npc', 'warning',
+                "Attacco NPC nel settore {$npc['sector_id']}",
+                sprintf('%s ti ha ingaggiato in stazionamento nel settore %d: %d scambi, persi %d caccia, inflitti %d di perdite.',
+                    $npc['name'], (int) $npc['sector_id'], $r['rounds'], $r['def_lost'], $r['att_lost'])
+                . ($npcDead ? ' Ostile respinto e distrutto.' : ' Ostile ancora presente.'),
+                (int) $npc['sector_id']);
+        }
         if ($npcDead) {
             return ['event' => "{$npc['name']} ti ha attaccato ma e\' stato respinto e distrutto.", 'destroyed' => false];
         }

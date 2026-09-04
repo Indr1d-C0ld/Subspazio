@@ -31,16 +31,18 @@ $errors = is_array($errors) ? $errors : [];
       <?php if (($u['status'] ?? '') === 'active'): ?>
         <a href="<?= e(url('/gioco')) ?>">Plancia</a>
         <?php
-          $unread = 0; $unAlerts = 0;
+          $unread = 0; $unAlerts = 0; $unLog = 0;
           try {
               $pl = \App\Game\PlayerService::forUser((int) $u['id']);
               if ($pl) {
                   $unread = \App\Game\Radio::unread($pl);
                   $unAlerts = \App\Game\Live::unreadAlerts((int) $pl['id']);
+                  $unLog = \App\Game\ShipLog::unread((int) $pl['id']);
               }
           } catch (\Throwable) {}
         ?>
         <a href="<?= e(url('/gioco/radio')) ?>">Radio<span class="badge" id="radio-badge"<?= $unread > 0 ? '' : ' hidden' ?>><?= (int) $unread ?></span></a>
+        <a href="<?= e(url('/gioco/giornale')) ?>">Giornale<span class="badge"<?= $unLog > 0 ? '' : ' hidden' ?>><?= (int) $unLog ?></span></a>
         <a href="<?= e(url('/gioco/classifica')) ?>">Classifica</a>
         <a href="<?= e(url('/gioco/guida')) ?>">Guida</a>
         <span class="bell-wrap">
@@ -63,6 +65,7 @@ $errors = is_array($errors) ? $errors : [];
 <?php if ($u !== null && ($u['status'] ?? '') === 'active'): ?>
 <nav class="game-nav" aria-label="Navigazione di gioco">
   <a href="<?= e(url('/gioco')) ?>">Plancia</a>
+  <a href="<?= e(url('/gioco/giornale')) ?>">Giornale</a>
   <a href="<?= e(url('/gioco/porto')) ?>">Porto</a>
   <a href="<?= e(url('/gioco/cantiere')) ?>">Cantiere</a>
   <a href="<?= e(url('/gioco/banca')) ?>">Banca</a>

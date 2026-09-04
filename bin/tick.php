@@ -44,9 +44,10 @@ try {
     );
     $runId = Database::lastInsertId();
 
-    // 1) Garbage collection dei rate limit + eventi live scaduti.
+    // 1) Garbage collection dei rate limit + eventi live scaduti + giornale di bordo.
     $tasks['rate_limits_gc'] = RateLimiter::gc();
     $tasks['live_gc'] = Live::gc();
+    $tasks['shiplog_gc'] = \App\Game\ShipLog::gc();
 
     // 2) Reset turni giornaliero.
     $tasks['turn_reset'] = handleTurnReset();

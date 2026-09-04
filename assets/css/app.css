@@ -596,6 +596,27 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 }
 .mod-more .row { margin: .3rem 0; }
 
+/* --------------------------------------------------------- Giornale di bordo --- */
+.shiplog-card .shiplog-head { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
+.shiplog-card .shiplog-head h2 { margin: 0; }
+.shiplog-list, .shiplog-full { list-style: none; margin: .6rem 0 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+.shiplog-full { counter-reset: none; }
+.sl-entry {
+  border: 1px solid var(--line); border-left: 3px solid var(--line);
+  border-radius: 6px; padding: .5rem .7rem; background: var(--panel-2);
+}
+.sl-entry.sl-warning { border-left-color: var(--warn); }
+.sl-entry.sl-alert   { border-left-color: var(--err); background: rgba(255, 90, 90, .05); }
+.sl-entry.sl-new     { box-shadow: inset 2px 0 0 var(--accent); }
+.sl-meta { display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; font-family: var(--font-mono); font-size: .68rem; }
+.sl-chan { color: var(--accent); text-transform: uppercase; letter-spacing: .1em; }
+.sl-entry.sl-warning .sl-chan { color: var(--warn); }
+.sl-entry.sl-alert .sl-chan { color: var(--err); }
+.sl-meta .sl-sec { color: var(--ink-soft); }
+.sl-meta time { color: var(--ink-dim); margin-left: auto; }
+.sl-title { margin: .25rem 0 0; font-weight: 700; }
+.sl-body { margin: .2rem 0 0; color: var(--ink-soft); font-size: .88rem; line-height: 1.5; }
+
 /* --------------------------------------------------------- Traguardi / meta --- */
 .ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: .6rem; }
 .ach {
@@ -789,6 +810,8 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
   /* lista merci del port teaser: va a capo invece di sforare su telefoni stretti */
   .port-teaser-list li { flex-wrap: wrap; }
   .port-teaser-list .cl { min-width: 0; }
+  .shiplog-card .shiplog-head { flex-wrap: wrap; }
+  .sl-meta time { margin-left: 0; }
 }
 
 @media (max-width: 380px) {

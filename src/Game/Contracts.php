@@ -153,6 +153,10 @@ final class Contracts
         Achievements::award((int) $player['id'], 'contract_claim');
         Live::alert((int) $c['issuer_player_id'], 'contract', 'Consegna ricevuta',
             "{$player['handle']} ha completato il tuo contratto di consegna.", '/gioco/contratti');
+        ShipLog::write((int) $c['issuer_player_id'], 'contract', 'info',
+            'Consegna completata',
+            "{$player['handle']} ha portato a termine il tuo contratto di consegna. Ricompensa erogata: "
+            . number_format((int) $c['reward'], 0, ',', '.') . ' cr.');
         return ['ok' => true, 'reward' => (int) $c['reward']];
     }
 
@@ -180,6 +184,10 @@ final class Contracts
                 'Hai incassato ' . number_format((int) $c['reward'], 0, ',', '.') . ' cr per un bersaglio.', '/gioco/contratti');
             Live::alert((int) $c['issuer_player_id'], 'contract', 'Taglia riscossa',
                 'La tua taglia e\' stata riscossa.', '/gioco/contratti');
+            ShipLog::write($killerPlayerId, 'contract', 'info', 'Taglia riscossa',
+                'Bersaglio eliminato. Incassati ' . number_format((int) $c['reward'], 0, ',', '.') . ' cr dalla rete contratti.');
+            ShipLog::write((int) $c['issuer_player_id'], 'contract', 'info', 'La tua taglia è stata riscossa',
+                'Un cacciatore ha eliminato il bersaglio della tua taglia. Compenso versato dalla rete contratti.');
         }
     }
 

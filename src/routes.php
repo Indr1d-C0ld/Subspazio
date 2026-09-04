@@ -23,6 +23,7 @@ use App\Controllers\PortController;
 use App\Controllers\RadioController;
 use App\Controllers\RegistroController;
 use App\Controllers\ScanController;
+use App\Controllers\ShipLogController;
 use App\Controllers\ShipyardController;
 use App\Core\Router;
 
@@ -44,6 +45,7 @@ $game = ['auth', 'active', 'player'];
 $router->get('/gioco', [GameController::class, 'index'], $game);
 $router->post('/gioco/primi-passi/nascondi', [GameController::class, 'hideOnboarding'], $game);
 $router->get('/gioco/guida', [GameController::class, 'guide'], $game);
+$router->get('/gioco/giornale', [ShipLogController::class, 'show'], $game);
 $router->post('/gioco/muovi', [GameController::class, 'move'], $game);
 $router->get('/gioco/rotta', [GameController::class, 'course'], $game);
 $router->post('/gioco/autopilot', [GameController::class, 'autopilot'], $game);

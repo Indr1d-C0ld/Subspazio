@@ -91,6 +91,20 @@ final class Faction
                 'INSERT INTO faction_log (player_id, faction, delta, reason) VALUES (?, ?, ?, ?)',
                 [$playerId, $faction, $new - $cur, mb_substr($reason, 0, 48)]
             );
+            $oldTier = self::tier($cur);
+            $newTier = self::tier($new);
+            if ($oldTier !== $newTier) {
+                $names = [
+                    'fed' => 'Federazione Unita', 'ferrengi' => 'Consorzio Ferrengi',
+                    'frontier' => 'Liberi Mondi della Frontiera', 'hegemony' => 'Egemonia di Korr',
+                ];
+                $up = (self::TIER_ORDER[$newTier] ?? 2) > (self::TIER_ORDER[$oldTier] ?? 2);
+                ShipLog::write($playerId, 'faction', $newTier === 'hostile' ? 'alert' : 'info',
+                    ($up ? 'Reputazione in aumento: ' : 'Reputazione in calo: ') . ($names[$faction] ?? $faction),
+                    'Comunicazione diplomatica: il tuo status presso ' . ($names[$faction] ?? $faction)
+                    . ' passa da «' . (self::TIER_LABEL[$oldTier] ?? $oldTier) . '» a «' . (self::TIER_LABEL[$newTier] ?? $newTier)
+                    . "» (reputazione {$new}).");
+            }
             // rivalità: se sali con una fazione, la rivale scende un po'
             if ($spill && $delta > 0) {
                 $rival = (string) (Database::first('SELECT rival FROM factions WHERE ckey = ?', [$faction])['rival'] ?? '');
@@ -311,6 +325,11 @@ final class Faction
                 );
                 $out['bounty_hunters']++;
                 Live::player((int) $pl['id'], 'alert', 'Cacciatore di taglie', 'Un cacciatore di taglie della Federazione ti ha trovato.');
+                ShipLog::write((int) $pl['id'], 'faction', 'warning',
+                    'Cacciatore di taglie sulle tue tracce',
+                    'Intercettazione radio Federazione: la taglia sulla tua testa ha attirato un cacciatore, ora in avvicinamento nel settore '
+                    . (int) $pl['sector_id'] . '. Muoviti con prudenza.',
+                    (int) $pl['sector_id']);
             }
         } catch (\Throwable $e) {
             $out['error'] = $e->getMessage();
