@@ -21,6 +21,7 @@ return [
         'timezone'    => 'Europe/Rome',
         'pretty_urls' => false,          // true solo dopo aver abilitato deploy/apache-subspazio.conf
         'base_path'   => null,           // null = autodetect
+        'public_url'  => '',             // URL pubblico assoluto per i link nelle e-mail (vuoto = omesso)
     ],
 
     'db' => [
@@ -54,10 +55,11 @@ return [
         'from_name'   => 'SubSpazio',
     ],
 
-    // Notifiche all'amministratore.
+    // Notifiche e-mail all'amministratore. L'invio parte dal tick.
     'notify' => [
         'new_registration'      => false,
         'admin_email'           => 'admin@example.com',
         'new_registration_mode' => 'digest',    // 'digest' | 'immediate'
+        'digest_delay_min'      => 10,          // attesa (min) prima di spedire il blocco in modo 'digest'
     ],
 ];

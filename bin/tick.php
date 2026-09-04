@@ -68,6 +68,9 @@ try {
     $tasks['craft_jobs'] = \App\Game\Industry::craftJobsTick();
     $tasks['contracts_expired'] = Contracts::expireDue();
 
+    // 5b) Notifica e-mail all'admin per le richieste di iscrizione.
+    $tasks['notify'] = \App\Game\Notifier::tick();
+
     // 6) Ricalcolo classifiche (throttlato).
     $ratingEvery = GameConfig::int('rating.interval_min', 15);
     $ratingLast = GameConfig::str('rating.last_run', '');
