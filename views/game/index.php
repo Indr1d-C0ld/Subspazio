@@ -24,6 +24,33 @@ $holdsUsed = (int) $ship['hold_ore'] + (int) $ship['hold_organics']
   <div class="alert event-banner">⚡ <strong><?= e($ev['title']) ?></strong> — <?= e($ev['body']) ?></div>
 <?php endforeach; ?>
 
+<?php if (!empty($digest)): ?>
+<section class="panel digest-card">
+  <h2>Rapporto di rientro <span class="mut">assente per <?= e($digest['away']) ?></span></h2>
+  <ul class="digest-list">
+    <?php foreach ($digest['lines'] as $dl): ?>
+      <li>
+        <span class="di-ic"><?= e($dl['icon']) ?></span>
+        <?php if (!empty($dl['link'])): ?><a href="<?= e(url($dl['link'])) ?>"><?= e($dl['text']) ?></a>
+        <?php else: ?><?= e($dl['text']) ?><?php endif; ?>
+      </li>
+    <?php endforeach; ?>
+  </ul>
+</section>
+<?php endif; ?>
+
+<?php if (!empty($craftjobs)): ?>
+<section class="panel officina-strip">
+  <strong>Officina</strong>
+  <?php
+    $jr = 0; $jn = count($craftjobs);
+    foreach ($craftjobs as $cj) { if ($cj['ready']) { $jr++; } }
+  ?>
+  <span class="mut"><?= $jn ?> lavori in corso<?= $jr > 0 ? " · {$jr} pronti al prossimo ciclo" : '' ?>.</span>
+  <a class="btn xs ghost" href="<?= e(url('/gioco/moduli')) ?>">Officina</a>
+</section>
+<?php endif; ?>
+
 <?php if (($ship['type_key'] ?? '') === 'escape_pod'): ?>
 <section class="panel pod-notice">
   <h2>🛟 Capsula di salvataggio</h2>

@@ -65,6 +65,7 @@ try {
     $tasks['features'] = \App\Game\SectorFeatures::tick();
     $tasks['factions'] = \App\Game\Faction::tick();
     $tasks['industry'] = \App\Game\Industry::tick();
+    $tasks['craft_jobs'] = \App\Game\Industry::craftJobsTick();
     $tasks['contracts_expired'] = Contracts::expireDue();
 
     // 6) Ricalcolo classifiche (throttlato).

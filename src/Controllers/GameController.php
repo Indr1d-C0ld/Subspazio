@@ -28,6 +28,11 @@ final class GameController
 
         $look = Navigation::look($player);
 
+        $digest = \App\Game\Digest::forView($player);
+        if ($digest !== null) {
+            \App\Game\Digest::markShown((int) $player['id']);
+        }
+
         return Response::html(view('game/index', [
             'title'      => 'Plancia — Settore ' . $look['id'],
             'player'     => $player,
@@ -37,6 +42,8 @@ final class GameController
             'events'     => \App\Game\Events::active(),
             'onboarding' => \App\Game\Onboarding::forView($player, $ship),
             'shiplog'    => \App\Game\ShipLog::recent((int) $player['id'], 6),
+            'digest'     => $digest,
+            'craftjobs'  => \App\Game\Industry::craftJobs((int) $player['id']),
         ]));
     }
 

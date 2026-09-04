@@ -617,6 +617,17 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 .sl-title { margin: .25rem 0 0; font-weight: 700; }
 .sl-body { margin: .2rem 0 0; color: var(--ink-soft); font-size: .88rem; line-height: 1.5; }
 
+/* --------------------------------------------------------- Attesa / rientro --- */
+.digest-card { border-left: 3px solid var(--accent-2); }
+.digest-card h2 { margin: 0 0 .4rem; }
+.digest-card h2 .mut { font-weight: 400; font-size: .85rem; }
+.digest-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .3rem; }
+.digest-list li { display: flex; align-items: baseline; gap: .55rem; }
+.digest-list .di-ic { color: var(--accent-2); font-family: var(--font-mono); flex: 0 0 1rem; text-align: center; }
+.officina-strip { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; padding: .6rem .9rem; }
+.officina-strip .btn.xs { margin-left: auto; }
+.craft-jobs .mut { font-family: var(--font-mono); font-size: .82rem; }
+
 /* --------------------------------------------------------- Traguardi / meta --- */
 .ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: .6rem; }
 .ach {

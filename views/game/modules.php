@@ -134,10 +134,35 @@ foreach ($installed as $m) {
   </section>
 </div>
 
+<?php if (!empty($jobs)): ?>
+<section class="panel">
+  <h2>Officina — lavori in corso <span class="mut"><?= count($jobs) ?>/<?= (int) ($max_jobs ?? 3) ?></span></h2>
+  <ul class="mod-list craft-jobs">
+    <?php foreach ($jobs as $j):
+      $s = (int) $j['secs_left'];
+      $when = $j['ready'] ? 'pronto — consegna al prossimo ciclo'
+        : ($s < 90 ? 'pronto tra meno di un minuto'
+          : ($s < 3600 ? 'pronto tra circa ' . max(1, (int) round($s / 60)) . ' min'
+            : 'pronto tra circa ' . max(1, (int) round($s / 3600)) . ' h'));
+    ?>
+      <li class="fac-offer">
+        <span class="rarity rarity-<?= e($j['rarity']) ?>"><?= e($j['item_name']) ?></span>
+        <span class="mut"><?= $j['ready'] ? '✓ ' : '⚙ ' ?><?= e($when) ?></span>
+        <form method="post" action="<?= e(url('/gioco/moduli/annulla-lavoro')) ?>" class="inline"
+              onsubmit="return confirm('Annullare il lavoro? I materiali tornano indietro, i turni no.')">
+          <?= csrf_field() ?><input type="hidden" name="job" value="<?= (int) $j['id'] ?>">
+          <button class="btn xs ghost" type="submit">Annulla</button>
+        </form>
+      </li>
+    <?php endforeach; ?>
+  </ul>
+</section>
+<?php endif; ?>
+
 <section class="panel">
   <h1>Raffineria &amp; produzione</h1>
   <?php if (!$at_dock): ?>
-    <p class="hint">Disponibile allo StarDock.</p>
+    <p class="hint">Raffineria e avvio dei lavori disponibili allo StarDock<?= !empty($jobs) ? ' (i lavori già avviati proseguono ovunque)' : '' ?>.</p>
   <?php else: ?>
   <p class="hint">Minerale + equipaggiamento → <strong>Componenti</strong>. Componenti + Cristalli + Leghe (e a volte crediti/merci) su ricetta → un modulo preciso.</p>
 
@@ -150,6 +175,7 @@ foreach ($installed as $m) {
   </form>
 
   <h2>Ricette</h2>
+  <p class="hint">La fabbricazione richiede tempo: il modulo arriva quando il lavoro matura (dai ~4 min dei civili alle ~3 h dei Precursori). Massimo <?= (int) ($max_jobs ?? 3) ?> lavori in parallelo.</p>
   <ul class="mod-list">
     <?php foreach (($recipes ?? []) as $rc): ?>
       <li class="fac-offer">
@@ -172,7 +198,7 @@ foreach ($installed as $m) {
         <?php else: ?>
           <form method="post" action="<?= e(url('/gioco/moduli/crafta')) ?>" class="inline">
             <?= csrf_field() ?><input type="hidden" name="recipe" value="<?= e($rc['ckey']) ?>">
-            <button class="btn xs" type="submit"<?= $rc['affordable'] ? '' : ' disabled' ?>>Produci</button>
+            <button class="btn xs" type="submit"<?= $rc['affordable'] && count($jobs ?? []) < (int) ($max_jobs ?? 3) ? '' : ' disabled' ?>>Avvia</button>
           </form>
         <?php endif; ?>
       </li>

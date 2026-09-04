@@ -89,14 +89,51 @@ final class Industry
         return $rows;
     }
 
-    /** @param array<string,mixed> $player @param array<string,mixed> $ship */
+    /** Minuti di lavorazione per una data rarita' di modulo. */
+    public static function jobMinutes(string $rarity): int
+    {
+        $map = [];
+        foreach (explode(',', GameConfig::str('craft.job_minutes', 'civ:4,mil:12,exp:35,xeno:90,precursor:180')) as $pair) {
+            $p = explode(':', trim($pair));
+            if (count($p) === 2) {
+                $map[$p[0]] = max(1, (int) $p[1]);
+            }
+        }
+        return $map[$rarity] ?? ($map['mil'] ?? 12);
+    }
+
+    /** @return list<array<string,mixed>> lavori in corso del giocatore, dal piu' vicino al completamento. */
+    public static function craftJobs(int $playerId): array
+    {
+        try {
+            $rows = Database::all(
+                'SELECT id, recipe_key, item_key, item_name, rarity, ready_at, created_at,
+                        GREATEST(0, TIMESTAMPDIFF(SECOND, NOW(), ready_at)) AS secs_left
+                 FROM craft_jobs WHERE player_id = ? ORDER BY ready_at ASC',
+                [$playerId]
+            );
+        } catch (\Throwable) {
+            return [];
+        }
+        foreach ($rows as &$r) {
+            $r['ready'] = (int) $r['secs_left'] <= 0;
+        }
+        return $rows;
+    }
+
+    /**
+     * Mette in coda la produzione di un modulo: i costi vengono scalati
+     * subito, il modulo arriva quando il lavoro matura sul tick.
+     *
+     * @param array<string,mixed> $player @param array<string,mixed> $ship
+     */
     public static function craft(array $player, array $ship, string $recipeKey): array
     {
         if (!Shipyard::atShipyard((int) $player['sector_id'])) {
             return ['ok' => false, 'error' => 'La produzione moduli è allo StarDock.'];
         }
         $r = Database::first(
-            'SELECT r.*, it.name AS item_name FROM recipes r JOIN item_types it ON it.ckey = r.output_item WHERE r.ckey = ?',
+            'SELECT r.*, it.name AS item_name, it.rarity AS rarity FROM recipes r JOIN item_types it ON it.ckey = r.output_item WHERE r.ckey = ?',
             [$recipeKey]
         );
         if ($r === null) {
@@ -106,6 +143,13 @@ final class Industry
             && !Faction::tierAtLeast((int) $player['id'], (string) $r['min_faction'], (string) ($r['min_tier'] ?? 'friendly'))) {
             return ['ok' => false, 'error' => 'Reputazione di fazione insufficiente per questa ricetta.'];
         }
+
+        $maxJobs = max(1, GameConfig::int('craft.max_jobs', 3));
+        $running = (int) (Database::first('SELECT COUNT(*) c FROM craft_jobs WHERE player_id = ?', [(int) $player['id']])['c'] ?? 0);
+        if ($running >= $maxJobs) {
+            return ['ok' => false, 'error' => "Officina al completo: {$maxJobs} lavori già in corso."];
+        }
+
         $cost = GameConfig::int('craft.turn_cost', 6);
         $player = TurnManager::sync($player);
         if ((int) $player['turns'] < $cost) {
@@ -126,6 +170,17 @@ final class Industry
             return ['ok' => false, 'error' => 'Manca: ' . implode(', ', $lack) . '.'];
         }
 
+        $minutes = self::jobMinutes((string) $r['rarity']);
+        $refund = [
+            'credits'    => (int) $r['cost_credits'],
+            'components' => (int) $r['cost_components'],
+            'crystals'   => (int) $r['cost_crystals'],
+            'salvage'    => (int) $r['cost_salvage'],
+            'cargo_ore'  => (int) $r['cargo_ore'],
+            'cargo_equ'  => (int) $r['cargo_equ'],
+            'cargo_org'  => (int) $r['cargo_org'],
+        ];
+
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
@@ -139,8 +194,14 @@ final class Industry
                     [(int) $r['cargo_ore'], (int) $r['cargo_equ'], (int) $r['cargo_org'], (int) $ship['id']]
                 );
             }
-            Database::run("INSERT INTO player_items (player_id, item_key, source) VALUES (?, ?, 'shop')",
-                [(int) $player['id'], $r['output_item']]);
+            Database::run(
+                "INSERT INTO craft_jobs (player_id, recipe_key, item_key, item_name, rarity, cost, ready_at)
+                 VALUES (?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? MINUTE))",
+                [
+                    (int) $player['id'], $recipeKey, (string) $r['output_item'], (string) $r['item_name'],
+                    (string) $r['rarity'], json_encode($refund, JSON_UNESCAPED_UNICODE), $minutes,
+                ]
+            );
             Codex::unlock((int) $player['id'], 'production_chain');
             $pdo->commit();
         } catch (\Throwable $e) {
@@ -149,7 +210,62 @@ final class Industry
             }
             throw $e;
         }
-        return ['ok' => true, 'name' => $r['item_name']];
+        return ['ok' => true, 'name' => $r['item_name'], 'minutes' => $minutes];
+    }
+
+    /** Annulla un lavoro in corso: rimborso pieno dei materiali (non dei turni). */
+    public static function cancelJob(array $player, int $jobId): array
+    {
+        $j = Database::first('SELECT * FROM craft_jobs WHERE id = ? AND player_id = ?', [$jobId, (int) $player['id']]);
+        if ($j === null) {
+            return ['ok' => false, 'error' => 'Lavoro inesistente.'];
+        }
+        $c = json_decode((string) ($j['cost'] ?? '{}'), true) ?: [];
+        $pdo = Database::pdo();
+        $pdo->beginTransaction();
+        try {
+            Database::run(
+                'UPDATE players SET credits = credits + ?, components = components + ?, crystals = crystals + ?, salvage = salvage + ? WHERE id = ?',
+                [(int) ($c['credits'] ?? 0), (int) ($c['components'] ?? 0), (int) ($c['crystals'] ?? 0), (int) ($c['salvage'] ?? 0), (int) $player['id']]
+            );
+            if ((int) ($c['cargo_ore'] ?? 0) + (int) ($c['cargo_equ'] ?? 0) + (int) ($c['cargo_org'] ?? 0) > 0) {
+                Database::run(
+                    'UPDATE ships SET hold_ore = hold_ore + ?, hold_equipment = hold_equipment + ?, hold_organics = hold_organics + ? WHERE id = ?',
+                    [(int) ($c['cargo_ore'] ?? 0), (int) ($c['cargo_equ'] ?? 0), (int) ($c['cargo_org'] ?? 0), (int) $player['ship_id']]
+                );
+            }
+            Database::run('DELETE FROM craft_jobs WHERE id = ?', [$jobId]);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
+        return ['ok' => true, 'name' => (string) $j['item_name']];
+    }
+
+    /** Tick: consegna i moduli dei lavori maturati. */
+    public static function craftJobsTick(): array
+    {
+        $out = ['delivered' => 0];
+        try {
+            $jobs = Database::all('SELECT * FROM craft_jobs WHERE ready_at <= NOW() ORDER BY ready_at ASC LIMIT 200');
+            foreach ($jobs as $j) {
+                $pid = (int) $j['player_id'];
+                Database::run("INSERT INTO player_items (player_id, item_key, source) VALUES (?, ?, 'shop')",
+                    [$pid, (string) $j['item_key']]);
+                Database::run('DELETE FROM craft_jobs WHERE id = ?', [(int) $j['id']]);
+                ShipLog::write($pid, 'system', 'info',
+                    "Officina: {$j['item_name']} completato",
+                    "La fabbricazione di «{$j['item_name']}» è terminata. Il modulo è nell'inventario, pronto da installare allo StarDock.");
+                Live::alert($pid, 'craft', 'Modulo pronto', "{$j['item_name']} è nell'inventario moduli.", '/gioco/moduli');
+                $out['delivered']++;
+            }
+        } catch (\Throwable $e) {
+            $out['error'] = $e->getMessage();
+        }
+        return $out;
     }
 
     // --- industria planetaria -------------------------------------

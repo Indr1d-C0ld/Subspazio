@@ -34,6 +34,8 @@ final class ModuleController
             'up_credits' => self::parseTiers(GameConfig::str('loot.upgrade_cost_credits', '')),
             'up_salvage' => self::parseTiers(GameConfig::str('loot.upgrade_cost_salvage', '')),
             'recipes'    => Industry::recipes($player, $ship),
+            'jobs'       => Industry::craftJobs((int) $player['id']),
+            'max_jobs'   => GameConfig::int('craft.max_jobs', 3),
             'refine'     => [
                 'ore' => GameConfig::int('craft.refine_ore_per_component', 4),
                 'equ' => GameConfig::int('craft.refine_equ_per_component', 2),
@@ -54,7 +56,16 @@ final class ModuleController
     {
         $res = Industry::craft(Ctx::$player, Ctx::$ship, $request->str('recipe'));
         Session::flash($res['ok'] ? 'success' : 'error', $res['ok']
-            ? "Prodotto: {$res['name']}. È nell'inventario moduli."
+            ? "Avviata la fabbricazione di {$res['name']}: pronta fra circa {$res['minutes']} minuti."
+            : $res['error']);
+        return redirect('/gioco/moduli');
+    }
+
+    public function cancelJob(Request $request): Response
+    {
+        $res = Industry::cancelJob(Ctx::$player, $request->int('job'));
+        Session::flash($res['ok'] ? 'success' : 'error', $res['ok']
+            ? "Lavoro annullato: {$res['name']}. Materiali rimborsati (turni no)."
             : $res['error']);
         return redirect('/gioco/moduli');
     }

@@ -72,6 +72,7 @@ $router->post('/gioco/moduli/smonta', [ModuleController::class, 'scrap'], $game)
 $router->post('/gioco/moduli/potenzia', [ModuleController::class, 'upgrade'], $game);
 $router->post('/gioco/moduli/raffina', [ModuleController::class, 'refine'], $game);
 $router->post('/gioco/moduli/crafta', [ModuleController::class, 'craft'], $game);
+$router->post('/gioco/moduli/annulla-lavoro', [ModuleController::class, 'cancelJob'], $game);
 
 // Equipaggio (HTML)
 $router->get('/gioco/equipaggio', [CrewController::class, 'index'], $game);
