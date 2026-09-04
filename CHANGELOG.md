@@ -4,6 +4,40 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-03 — Giornale di bordo
+
+Registro incidenti persistente e sfogliabile per giocatore, con voce
+coerente all'ambientazione. Quando qualcosa capita alla nave o alle
+colonie fuori da un'azione esplicita (scontri all'ingresso di un settore,
+hazard, pedaggi, contatti NPC, comunicazioni diplomatiche, colonie
+colpite, esiti di contratti) il computer di bordo ne scrive un rapporto.
+La campanella resta per il toast in tempo reale; il giornale è la
+narrazione durevole.
+
+- **[db/migrations/0022_shiplog.sql](db/migrations/0022_shiplog.sql)** —
+  tabella `ship_log` (`kind`, `severity` info|warning|alert, `title`,
+  `body`, `sector_id`, `data`, `read_at`) + config
+  `shiplog.keep_per_player` = 200.
+- **[src/Game/ShipLog.php](src/Game/ShipLog.php)** — `write()`
+  non‑bloccante, `recent()` / `page()` / `unread()` / `markRead()`,
+  `fromEntryEvents()` (compone e classifica una voce dalle righe‑evento di
+  `Combat::onEnterSector` → travel | combat | destroyed), `channel()`
+  (etichetta di canale in‑fiction), `gc()` (pota alle ultime N per
+  giocatore, dal tick).
+- **[src/Controllers/ShipLogController.php](src/Controllers/ShipLogController.php)**
+  + rotta `GET /gioco/giornale`: pagina completa paginata
+  (`?before=<id>`), segna letto all'apertura.
+- **[views/game/shiplog.php](views/game/shiplog.php)** (storico) e
+  pannello «Giornale di bordo» in **[views/game/index.php](views/game/index.php)**
+  (ultime 6 + badge non‑letti); voce «Giornale» in topbar e `.game-nav`
+  (**[views/layout.php](views/layout.php)**).
+- **[assets/css/app.css](assets/css/app.css)** — `.shiplog-card` /
+  `.sl-entry` (bordo sinistro per severità). [sw.js](sw.js): `v17` → `v18`.
+- **[bin/tick.php](bin/tick.php)** — task `shiplog_gc`.
+- Hook non‑bloccanti in `Navigation::move`, `Combat` (NPC in
+  stazionamento, attacco a nave, pianeta colpito), `Contracts` (consegna /
+  taglia) e `Faction` (cambio di tier, cacciatore di taglie).
+
 ## 2026-09-03 — Predisposizione config e-mail / notifiche
 
 Scaffolding per una futura notifica all'amministratore quando arriva una
