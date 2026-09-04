@@ -4,6 +4,30 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-04 — Notifica e-mail per le richieste di iscrizione
+
+Quando un utente si registra (`status='pending'`) l'amministratore riceve
+una e-mail. L'invio parte **dal tick**, mai dal percorso della richiesta:
+un errore SMTP non tocca il form pubblico.
+
+- **[db/migrations/0024_notify.sql](db/migrations/0024_notify.sql)** —
+  `users.reg_notified_at` (coda implicita: `NULL` = da segnalare).
+- **[src/Core/Mailer.php](src/Core/Mailer.php)** — client SMTP minimale
+  senza dipendenze: STARTTLS su 587 (o TLS implicito su 465), `AUTH LOGIN`,
+  testo semplice, un destinatario. `transport='log'` scrive su
+  `storage/logs` invece di inviare.
+- **[src/Game/Notifier.php](src/Game/Notifier.php)** — `tick()` legge i
+  `pending` non ancora segnalati e, secondo `notify.new_registration_mode`:
+  `immediate` = una mail per richiesta; `digest` (default) = una mail
+  cumulativa quando la richiesta più vecchia supera
+  `notify.digest_delay_min` minuti. Marca `reg_notified_at` solo sugli
+  invii riusciti; rispetta il toggle `notify.new_registration`.
+- **[bin/tick.php](bin/tick.php)** — task `notify`.
+- **[config/config.example.php](config/config.example.php)** —
+  `app.public_url` (link nelle e-mail) e `notify.digest_delay_min`. Il
+  config reale fuori dal DocumentRoot ha le credenziali Brevo (riuso
+  dell'account del forum phpBB sullo stesso server).
+
 ## 2026-09-03 — Meccaniche di attesa
 
 Cose che maturano nel tempo reale sul tick + un riassunto di cosa è
