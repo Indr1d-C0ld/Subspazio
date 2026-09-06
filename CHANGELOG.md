@@ -4,6 +4,19 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-04 — Pagina di accesso: elenco funzionalità aggiornato
+
+L'elenco «Cosa c'è nel gioco» sulla home si era fermato al nucleo
+(Fasi 1–6) e non rifletteva più il gioco reale.
+
+- **[views/home.php](views/home.php)** — elenco esteso ai sistemi
+  post-roadmap: equipaggio, scansione & frontiera, fazioni & reputazione,
+  industria & produzione, moduli, giornale di bordo & rientro, primi
+  passi. 14 voci raggruppate, intro «Sedici sistemi, tutti già attivi in
+  questa beta». Tolto «installabile come app» dalla voce Tecnologia
+  (l'installazione PWA richiede HTTPS). Aggiunta la riga «In beta testing»
+  sotto le azioni di registrazione.
+
 ## 2026-09-04 — README: ritmo del gioco, ispirazioni, stato beta
 
 Il README copriva già le 16 meccaniche; aggiunte le parti che mancavano
