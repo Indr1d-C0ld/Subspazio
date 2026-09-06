@@ -8,7 +8,10 @@ Implementazione **originale** delle meccaniche di gioco: non contiene codice,
 testi o artwork della door proprietaria.
 
 - **Stack:** PHP 8 puro (nessun framework, nessuna dipendenza) · MariaDB/MySQL · Apache
-- **Interfaccia:** plancia web su API JSON, aggiornamenti in tempo reale, installabile come PWA
+- **Interfaccia:** plancia web su API JSON, aggiornamenti in tempo reale (SSE),
+  responsive per telefono/tablet/desktop; predisposta come PWA (installazione,
+  guscio offline e Web Push richiedono HTTPS)
+- **Stato:** in **beta testing**
 - **Licenza:** GPL-3.0-or-later
 
 ## Meccaniche di gioco
@@ -118,6 +121,38 @@ testi o artwork della door proprietaria.
   teletrasporto, rettifiche), chiusura stagione, statistiche. Registrazione con
   **approvazione admin** e **notifica e-mail** (SMTP) all'amministratore per
   ogni nuova richiesta di accesso.
+
+## Come si gioca
+
+Ci si registra da `/registrati` (nome utente di 3–32 caratteri, email valida,
+password di almeno 10 caratteri); un amministratore approva l'account a mano.
+Alla prima visita di `/gioco` viene creato il comandante, con una nave iniziale
+allo StarDock, i «primi passi» in evidenza e **48 ore di protezione novizio**.
+
+Il gioco ha un ritmo doppio:
+
+- **Turni** — un budget di azioni al giorno che si ricarica alle 03:00 (fuso
+  configurabile, default `Europe/Rome`). Warp, commercio e combattimento
+  consumano turni.
+- **Tick** — ogni minuto un cron fa avanzare il mondo: NPC, eventi, feature dei
+  settori, fazioni, produzione e industria dei pianeti, lavori dell'Officina,
+  scadenza dei contratti, interessi, drift di mercato, notifiche, garbage
+  collection.
+
+Stare offline non fa perdere nulla: al rientro in plancia il **rapporto di
+rientro** riassume cosa è maturato. Periodicamente una **stagione** si chiude
+con un soft-reset dei comandanti (traguardi e albo d'oro restano).
+
+## Ispirazioni
+
+L'ossatura è quella di **TradeWars 2002**, la *door* per BBS: settori, warp,
+turni, porti, StarDock, flotte, corporazioni. Sopra ci mette il ritmo asincrono
+di **OGame** (il mondo che cresce offline, i lavori a tempo), lo spirito 4X di
+**Master of Orion** (colonie, industria, tecnologie e moduli, potenze
+galattiche), il tono di plancia di **Star Trek: The Next Generation** (radio
+subspaziale, comunicazioni diplomatiche, giornale di bordo, ufficiali con i loro
+ruoli) e, da **Mass Effect**, l'equipaggio con ruoli e lealtà, la reputazione a
+livelli con fazioni rivali e le missioni fuori dalla nave con esiti che pesano.
 
 ## Requisiti
 

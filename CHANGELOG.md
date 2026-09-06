@@ -4,6 +4,18 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-04 — README: ritmo del gioco, ispirazioni, stato beta
+
+Il README copriva già le 16 meccaniche; aggiunte le parti che mancavano
+rispetto alla presentazione per i beta-tester.
+
+- **[README.md](README.md)** — nuova sezione **«Come si gioca»** (flusso
+  registrazione → approvazione → primo comandante → protezione novizio;
+  ritmo doppio turni + tick; rientro; stagioni) e **«Ispirazioni»**
+  (TradeWars 2002, OGame, Master of Orion, Star Trek: TNG, Mass Effect).
+  Riga di stato «in beta testing»; nota di onestà sulla PWA (installazione
+  e offline richiedono HTTPS, non attivo).
+
 ## 2026-09-04 — Fix: Radio subspaziale illeggibile su mobile
 
 Segnalato dall'utente: la voce «Radio» del menu di gioco appariva confusa
