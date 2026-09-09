@@ -17,7 +17,10 @@
     <?php foreach ($players as $i => $r): ?>
       <tr<?= $r['handle'] === $player['handle'] ? ' class="row-current"' : '' ?>>
         <td><?= $i + 1 ?></td>
-        <td><strong><?= e($r['handle']) ?></strong></td>
+        <td class="ld-cmd">
+          <?= partial('crest', ['crest' => $r['crest'] ?? null, 'color' => $r['color'] ?? null, 'size' => 16]) ?>
+          <strong style="color:<?= e($r['color'] ?? '') ?>"><?= e($r['handle']) ?></strong>
+        </td>
         <td><?= $r['corp'] ? e($r['corp']) : '—' ?></td>
         <td><?= e($r['rank']) ?></td>
         <td class="ta-r"><?= number_format($r['rating'], 0, ',', '.') ?></td>

@@ -67,8 +67,11 @@ final class Leaderboard
             'alignment'  => Ranks::alignmentLabel((int) $r['alignment']),
             'planets'    => (int) $r['planet_count'],
             'corp'       => $r['corp_tag'],
+            'color'      => Identity::color($r),
+            'crest'      => Identity::crest($r),
         ], Database::all(
             "SELECT p.handle, p.rating, p.experience, p.kills, p.deaths, p.alignment,
+                    p.color, p.crest,
                     c.tag AS corp_tag,
                     (SELECT COUNT(*) FROM planets pl WHERE pl.owner_player_id = p.id AND pl.destroyed = 0) AS planet_count
              FROM players p

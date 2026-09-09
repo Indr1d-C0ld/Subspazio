@@ -68,6 +68,14 @@ if (!function_exists('view')) {
     }
 }
 
+if (!function_exists('partial')) {
+    /** Rende views/partials/<name>.php senza layout. @param array<string,mixed> $data */
+    function partial(string $name, array $data = []): string
+    {
+        return View::renderPartial('partials/' . ltrim($name, '/'), $data);
+    }
+}
+
 if (!function_exists('old')) {
     function old(string $key, mixed $default = ''): mixed
     {

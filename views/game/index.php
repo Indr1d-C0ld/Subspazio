@@ -6,13 +6,28 @@
 $holdsUsed = (int) $ship['hold_ore'] + (int) $ship['hold_organics']
     + (int) $ship['hold_equipment'] + (int) $ship['hold_colonists'];
 ?>
-<?php $rank = \App\Game\Ranks::title((int) $player['experience']); $align = \App\Game\Ranks::alignmentLabel((int) $player['alignment']); ?>
+<?php
+$rank = \App\Game\Ranks::title((int) $player['experience']);
+$align = \App\Game\Ranks::alignmentLabel((int) $player['alignment']);
+$idc = \App\Game\Identity::forPlayer($player);
+$shipReg = trim((string) ($ship['registry'] ?? ''));
+?>
 <section class="statusbar">
-  <div><span class="k">Comandante</span><span class="v"><?= e($player['handle']) ?></span></div>
+  <div class="sb-id">
+    <span class="k">Comandante</span>
+    <span class="v">
+      <?= partial('crest', ['crest' => $idc['crest'], 'color' => $idc['color'], 'size' => 16, 'title' => $idc['title']]) ?>
+      <a href="<?= e(url('/gioco/profilo')) ?>" style="color:<?= e($idc['color']) ?>"><?= e($player['handle']) ?></a>
+    </span>
+  </div>
   <div><span class="k">Grado</span><span class="v"><?= e($rank) ?></span></div>
   <div><span class="k">Turni</span><span class="v" data-bind="turns"><?= (int) $player['turns'] ?></span></div>
   <div><span class="k">Crediti</span><span class="v" data-bind="credits"><?= number_format((int) $player['credits'], 0, ',', '.') ?></span></div>
-  <div><span class="k">Nave</span><span class="v"><?= e($ship['type_name']) ?></span></div>
+  <div><span class="k">Nave</span><span class="v"><?php
+    $sn = trim((string) ($ship['name'] ?? ''));
+    echo e($sn !== '' ? $sn : $ship['type_name']);
+    if ($shipReg !== '') { echo ' <span class="mut">' . e($shipReg) . '</span>'; }
+  ?></span></div>
   <div><span class="k">Stive</span><span class="v"><?= $holdsUsed ?>/<?= (int) $ship['holds_total'] ?></span></div>
   <div><span class="k">Caccia</span><span class="v"><?= number_format((int) $ship['fighters'], 0, ',', '.') ?></span></div>
   <div><span class="k">Scudi</span><span class="v"><?= number_format((int) $ship['shields'], 0, ',', '.') ?></span></div>

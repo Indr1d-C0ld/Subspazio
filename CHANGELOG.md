@@ -4,6 +4,51 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-10 — Identità del comandante (roadmap post-beta, slice #1)
+
+Prima slice della roadmap post-beta: personalizzazione leggera del
+comandante e della flotta, tutta agganciata a sistemi già esistenti
+(`Ranks`, `Faction`, classifiche, plancia).
+
+- **[db/migrations/0025_identity.sql](db/migrations/0025_identity.sql)** —
+  nuove colonne: `players.color/crest/motto`, `ships.registry`,
+  `corporations.color/crest` (queste ultime pronte per lo slice corp).
+  Idempotente (`ADD COLUMN IF NOT EXISTS`).
+- **[src/Game/Identity.php](src/Game/Identity.php)** — nuovo motore:
+  `PALETTE` di 12 accenti curati, `CRESTS` di 12 stemmi, `save()` con
+  validazione (colore in palette, stemma nell'elenco, motto ≤ 80,
+  nome nave ≤ 40, registro `^[A-Z0-9-]{1,16}$` reso maiuscolo, salta
+  nave/registro se sei in capsula), `title()` **derivato** da grado +
+  tier di fazione (suffisso «Fuorilegge» se ostile alla Fed, «Alleato …»
+  al tier massimo).
+- **[src/Controllers/ProfileController.php](src/Controllers/ProfileController.php)**
+  — `show`/`save` per `/gioco/profilo`.
+- **[src/routes.php](src/routes.php)** — rotte `GET`/`POST /gioco/profilo`.
+- **[views/partials/crest_sprite.php](views/partials/crest_sprite.php)** —
+  12 `<symbol>` SVG (viewBox 0 0 24 24, disegnati con `currentColor`),
+  inclusi una volta nel layout per gli utenti attivi.
+- **[views/partials/crest.php](views/partials/crest.php)**,
+  **[views/partials/idchip.php](views/partials/idchip.php)** — stemma e
+  targhetta d'identità riusabili.
+- **[src/Support/helpers.php](src/Support/helpers.php)** — helper
+  `partial($name, $data)` → `View::renderPartial('partials/'.$name)`.
+- **[views/game/profilo.php](views/game/profilo.php)** — editor con
+  anteprima live (colore, stemma, motto, nome + registro nave).
+- **[views/layout.php](views/layout.php)** — sprite degli stemmi + voce
+  «Profilo» nella game-nav.
+- **[views/game/index.php](views/game/index.php)** — status bar di
+  plancia: stemma + nome comandante colorato (link al profilo), cella
+  «Nave» con nome + registro.
+- **[src/Game/Leaderboard.php](src/Game/Leaderboard.php)** /
+  **[views/game/leaderboard.php](views/game/leaderboard.php)** —
+  `topPlayers()` espone `color`/`crest`; la classifica mostra lo stemma e
+  il nome colorato.
+- **[assets/css/app.css](assets/css/app.css)** — `.crest`, `.idchip`,
+  griglie `.swatch-grid`/`.crest-grid` per l'editor.
+- **[sw.js](sw.js)** — cache `subspazio-v21`.
+- **[docs/roadmap.md](docs/roadmap.md)** — roadmap post-beta formalizzata
+  (temi A–E, sequenza in 5 fasi, metodo, stato).
+
 ## 2026-09-04 — Pagina di accesso: elenco funzionalità aggiornato
 
 L'elenco «Cosa c'è nel gioco» sulla home si era fermato al nucleo

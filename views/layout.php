@@ -21,6 +21,7 @@ $errors = is_array($errors) ? $errors : [];
 <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
 </head>
 <body>
+<?php if ($u !== null && ($u['status'] ?? '') === 'active') { echo partial('crest_sprite'); } ?>
 <header class="topbar">
   <a class="brand" href="<?= e(url('/')) ?>"><?= e(config('app.name', 'SubSpazio')) ?></a>
   <input type="checkbox" id="nav-toggle" class="nav-toggle">
@@ -65,6 +66,7 @@ $errors = is_array($errors) ? $errors : [];
 <?php if ($u !== null && ($u['status'] ?? '') === 'active'): ?>
 <nav class="game-nav" aria-label="Navigazione di gioco">
   <a href="<?= e(url('/gioco')) ?>">Plancia</a>
+  <a href="<?= e(url('/gioco/profilo')) ?>">Profilo</a>
   <a href="<?= e(url('/gioco/giornale')) ?>">Giornale</a>
   <a href="<?= e(url('/gioco/porto')) ?>">Porto</a>
   <a href="<?= e(url('/gioco/cantiere')) ?>">Cantiere</a>
