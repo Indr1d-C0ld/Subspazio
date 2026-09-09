@@ -69,14 +69,20 @@ final class Leaderboard
             'corp'       => $r['corp_tag'],
             'color'      => Identity::color($r),
             'crest'      => Identity::crest($r),
+            'pid'        => (int) $r['id'],
+            'has_avatar' => (int) $r['avatar_id'] > 0,
         ], Database::all(
-            "SELECT p.handle, p.rating, p.experience, p.kills, p.deaths, p.alignment,
+            "SELECT p.id, p.handle, p.rating, p.experience, p.kills, p.deaths, p.alignment,
                     p.color, p.crest,
                     c.tag AS corp_tag,
+                    ma.id AS avatar_id,
                     (SELECT COUNT(*) FROM planets pl WHERE pl.owner_player_id = p.id AND pl.destroyed = 0) AS planet_count
              FROM players p
              LEFT JOIN corp_members m ON m.player_id = p.id
              LEFT JOIN corporations c ON c.id = m.corp_id
+             LEFT JOIN media_assets ma
+                    ON ma.owner_type = 'player' AND ma.owner_id = p.id
+                   AND ma.kind = 'avatar' AND ma.status = 'approved'
              ORDER BY p.rating DESC, p.experience DESC
              LIMIT ?",
             [$limit]

@@ -144,6 +144,25 @@ final class Request
         return $this->post + $this->json + $this->query;
     }
 
+    /**
+     * Voce di $_FILES per un upload singolo, o null se assente/malformata.
+     * @return array{name:string,type:string,tmp_name:string,error:int,size:int}|null
+     */
+    public function file(string $key): ?array
+    {
+        $f = $_FILES[$key] ?? null;
+        if (!is_array($f) || !isset($f['tmp_name']) || is_array($f['tmp_name'])) {
+            return null;
+        }
+        return [
+            'name'     => (string) ($f['name'] ?? ''),
+            'type'     => (string) ($f['type'] ?? ''),
+            'tmp_name' => (string) $f['tmp_name'],
+            'error'    => (int) ($f['error'] ?? UPLOAD_ERR_NO_FILE),
+            'size'     => (int) ($f['size'] ?? 0),
+        ];
+    }
+
     public function header(string $name): string
     {
         $key = 'HTTP_' . strtoupper(str_replace('-', '_', $name));

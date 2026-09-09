@@ -11,13 +11,24 @@ $rank = \App\Game\Ranks::title((int) $player['experience']);
 $align = \App\Game\Ranks::alignmentLabel((int) $player['alignment']);
 $idc = \App\Game\Identity::forPlayer($player);
 $shipReg = trim((string) ($ship['registry'] ?? ''));
+$pid = (int) $player['id'];
+$hasAvatar = \App\Game\MediaAsset::current('player', $pid, 'avatar') !== null;
+$hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
 ?>
 <section class="statusbar">
   <div class="sb-id">
     <span class="k">Comandante</span>
     <span class="v">
-      <?= partial('crest', ['crest' => $idc['crest'], 'color' => $idc['color'], 'size' => 16, 'title' => $idc['title']]) ?>
+      <?php if ($hasAvatar): ?>
+        <img class="idchip-avatar" style="--crest-color:<?= e($idc['color']) ?>;width:16px;height:16px"
+             src="<?= e(url('/media/c/' . $pid . '/avatar')) ?>" alt="" title="<?= e($idc['title']) ?>" loading="lazy">
+      <?php else: ?>
+        <?= partial('crest', ['crest' => $idc['crest'], 'color' => $idc['color'], 'size' => 16, 'title' => $idc['title']]) ?>
+      <?php endif; ?>
       <a href="<?= e(url('/gioco/profilo')) ?>" style="color:<?= e($idc['color']) ?>"><?= e($player['handle']) ?></a>
+      <?php if ($hasLogo): ?>
+        <img class="fleet-logo" src="<?= e(url('/media/c/' . $pid . '/logo')) ?>" alt="logo di flotta" loading="lazy">
+      <?php endif; ?>
     </span>
   </div>
   <div><span class="k">Grado</span><span class="v"><?= e($rank) ?></span></div>

@@ -97,8 +97,8 @@ dopo ogni cluster.
 | Slice | Stato |
 |---|---|
 | **#1 — Identità del comandante** (colori, stemma, motto, titolo derivato, nome + registro nave) | fatto — 2026-09-10 |
-| **#1b — Avatar + logo caricati** (coda di approvazione admin, riuso della coda iscrizioni) | prossimo |
-| **#2 — Combattimento B1: tipi d'arma con profilo** | da fare |
+| **#1b — Avatar + logo caricati** (coda di approvazione admin, riuso della coda iscrizioni) | fatto — 2026-09-10 |
+| **#2 — Combattimento B1: tipi d'arma con profilo** | prossimo |
 
 ### #1 — dettaglio di quanto consegnato
 
@@ -113,3 +113,28 @@ dopo ogni cluster.
 - Stemma + nome colorato nella status bar di plancia e nella classifica
   comandanti; registro/nome nave nella cella «Nave».
 - `sw.js` → v21.
+
+### #1b — dettaglio di quanto consegnato
+
+- Migrazione `0026_media` — tabella `media_assets` (owner_type/owner_id/kind,
+  status pending|approved|rejected, mime/ext/bytes/width/height/sha1/path,
+  review_note/reviewed_by/reviewed_at).
+- `App\Game\MediaAsset` — `storeUpload()` valida (tipo, peso effettivo = min
+  fra config e `upload_max_filesize`/`post_max_size`, dimensioni 32..4096),
+  **ricodifica con GD** in PNG (avatar ritagliato quadrato ≤512, logo a
+  proporzioni ≤512 — spoglia EXIF/payload), scrive in `storage/uploads/`
+  (fuori dal web), registra `pending` sostituendo il pending precedente.
+  `approve()` ritira l'approvato precedente; `reject(note)`; `removeOwn()`;
+  `current()` = solo `approved`; `queue()`/`forOwner()` per le UI.
+- `App\Core\Request::file()` — accesso tipizzato a `$_FILES`.
+- `MediaController` — `GET /media/c/{id}/{kind}` (approvato, `public,max-age=300`,
+  ETag/304), `GET /gioco/profilo/media/{kind}` (proprio pending, `private`),
+  `GET /admin/media/{id}/file` (qualunque asset, solo admin).
+- `ProfileController::uploadMedia`/`removeMedia` + rotte `POST /gioco/profilo/media`
+  e `.../rimuovi`; sezione «Immagini caricate» nel profilo (anteprima, stato,
+  motivo del rifiuto).
+- `AdminController` — coda «Immagini in attesa» nella dashboard +
+  `POST /admin/media/{id}/approva|rifiuta` (audit `media.approve`/`media.reject`).
+- Display: l'avatar approvato sostituisce lo stemma in `idchip` (plancia,
+  classifica); il logo di flotta compare accanto al nome in plancia.
+- `.gitignore` → `storage/uploads/*` (solo `.gitkeep` versionato). `sw.js` → v22.

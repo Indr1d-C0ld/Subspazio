@@ -3,6 +3,7 @@
 /** @var list<array<string,mixed>> $pending */
 /** @var list<array<string,mixed>> $recent */
 /** @var list<array<string,mixed>> $audit */
+/** @var list<array<string,mixed>> $media_pending */
 $badge = static fn (string $s): string => match ($s) {
     'active' => 'ok', 'pending' => 'warn', 'suspended' => 'err', default => 'mut',
 };
@@ -45,6 +46,38 @@ $badge = static fn (string $s): string => match ($s) {
       <?php endforeach; ?>
       </tbody>
     </table>
+  <?php endif; ?>
+</section>
+
+<section class="panel">
+  <h2>Immagini in attesa <?php if ($media_pending !== []): ?><span class="pill warn"><?= count($media_pending) ?></span><?php endif; ?></h2>
+  <?php if ($media_pending === []): ?>
+    <p class="hint">Nessuna immagine da moderare.</p>
+  <?php else: ?>
+    <div class="media-review">
+      <?php foreach ($media_pending as $m): ?>
+        <figure class="media-review-card">
+          <img src="<?= e(url('/admin/media/' . (int) $m['id'] . '/file')) ?>" alt="" loading="lazy">
+          <figcaption>
+            <strong>@<?= e($m['owner_handle'] ?? ('#' . $m['owner_id'])) ?></strong>
+            · <?= e($m['kind'] === 'avatar' ? 'avatar' : 'logo di flotta') ?>
+            · <?= (int) $m['width'] ?>×<?= (int) $m['height'] ?>
+            · <?= e(fmt_dt($m['created_at'])) ?>
+          </figcaption>
+          <div class="media-review-actions">
+            <form method="post" action="<?= e(url('/admin/media/' . $m['id'] . '/approva')) ?>" class="inline">
+              <?= csrf_field() ?><button class="btn xs">Approva</button>
+            </form>
+            <form method="post" action="<?= e(url('/admin/media/' . $m['id'] . '/rifiuta')) ?>" class="inline"
+                  onsubmit="this.querySelector('[name=note]').value = prompt('Motivo del rifiuto (opzionale):') || '';">
+              <?= csrf_field() ?>
+              <input type="hidden" name="note" value="">
+              <button class="btn xs danger">Rifiuta</button>
+            </form>
+          </div>
+        </figure>
+      <?php endforeach; ?>
+    </div>
   <?php endif; ?>
 </section>
 

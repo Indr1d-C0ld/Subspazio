@@ -18,7 +18,12 @@
       <tr<?= $r['handle'] === $player['handle'] ? ' class="row-current"' : '' ?>>
         <td><?= $i + 1 ?></td>
         <td class="ld-cmd">
-          <?= partial('crest', ['crest' => $r['crest'] ?? null, 'color' => $r['color'] ?? null, 'size' => 16]) ?>
+          <?php if (!empty($r['has_avatar'])): ?>
+            <img class="ld-avatar" src="<?= e(url('/media/c/' . (int) $r['pid'] . '/avatar')) ?>" alt="" loading="lazy"
+                 style="--crest-color:<?= e($r['color'] ?? '') ?>">
+          <?php else: ?>
+            <?= partial('crest', ['crest' => $r['crest'] ?? null, 'color' => $r['color'] ?? null, 'size' => 16]) ?>
+          <?php endif; ?>
           <strong style="color:<?= e($r['color'] ?? '') ?>"><?= e($r['handle']) ?></strong>
         </td>
         <td><?= $r['corp'] ? e($r['corp']) : '—' ?></td>

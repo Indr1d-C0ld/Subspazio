@@ -3,7 +3,9 @@
 /** @var array<string,mixed> $ship */
 /** @var array<string,string> $palette */
 /** @var list<string> $crests */
+/** @var array<string,array{approved:?array,pending:?array}> $media */
 use App\Game\Identity;
+use App\Game\MediaAsset;
 
 $curColor = Identity::color($player);
 $curCrest = Identity::crest($player);
@@ -87,6 +89,72 @@ $crestLabels = [
       <a class="btn ghost" href="<?= e(url('/gioco')) ?>">Annulla</a>
     </div>
   </form>
+</section>
+
+<section class="panel">
+  <h2>Immagini caricate</h2>
+  <p class="hint">Avatar personale e logo di flotta. Ogni immagine passa da un
+     <strong>controllo dell'amministratore</strong> prima di diventare visibile agli
+     altri comandanti (stessa coda delle iscrizioni). PNG, JPEG, WebP o GIF, max
+     <?= number_format(MediaAsset::maxBytes() / (1024 * 1024), 1, ',', '.') ?> MB; l'immagine
+     viene ritagliata e ricodificata (l'avatar in quadrato).</p>
+
+  <div class="media-slots">
+    <?php foreach (MediaAsset::KINDS as $kind => $meta):
+      $ap = $media[$kind]['approved'] ?? null;
+      $pe = $media[$kind]['pending'] ?? null;
+      $re = $media[$kind]['rejected'] ?? null;
+      $showReject = $re !== null && $pe === null
+        && ($ap === null || (int) $re['id'] > (int) $ap['id']);
+    ?>
+    <div class="media-slot">
+      <h3><?= e($meta['label']) ?></h3>
+
+      <div class="media-state">
+        <?php if ($ap !== null): ?>
+          <figure class="media-preview">
+            <img src="<?= e(url('/gioco/profilo/media/' . $kind)) ?>?v=<?= e(substr((string) $ap['sha1'], 0, 8)) ?>"
+                 alt="<?= e($meta['label']) ?> attuale" loading="lazy">
+            <figcaption><span class="pill ok">approvato</span></figcaption>
+          </figure>
+        <?php endif; ?>
+
+        <?php if ($pe !== null): ?>
+          <figure class="media-preview">
+            <img src="<?= e(url('/gioco/profilo/media/' . $kind)) ?>?v=<?= e(substr((string) $pe['sha1'], 0, 8)) ?>"
+                 alt="<?= e($meta['label']) ?> in attesa" loading="lazy">
+            <figcaption><span class="pill warn">in attesa</span></figcaption>
+          </figure>
+        <?php endif; ?>
+
+        <?php if ($ap === null && $pe === null): ?>
+          <p class="hint">Nessuna immagine: al suo posto compare il tuo stemma.</p>
+        <?php endif; ?>
+      </div>
+
+      <?php if ($showReject): ?>
+        <p class="media-note"><span class="pill err">respinta</span>
+           <?= e((string) ($re['review_note'] ?: 'Non conforme alle linee guida.')) ?></p>
+      <?php endif; ?>
+
+      <form method="post" action="<?= e(url('/gioco/profilo/media')) ?>" enctype="multipart/form-data" class="media-up">
+        <?= csrf_field() ?>
+        <input type="hidden" name="kind" value="<?= e($kind) ?>">
+        <input type="file" name="file" accept="image/png,image/jpeg,image/webp,image/gif" required>
+        <button type="submit" class="btn xs"><?= $pe !== null ? 'Sostituisci' : 'Carica' ?></button>
+      </form>
+
+      <?php if ($pe !== null || $ap !== null): ?>
+      <form method="post" action="<?= e(url('/gioco/profilo/media/rimuovi')) ?>" class="inline"
+            onsubmit="return confirm('Rimuovere questa immagine?')">
+        <?= csrf_field() ?>
+        <input type="hidden" name="id" value="<?= (int) ($pe['id'] ?? $ap['id']) ?>">
+        <button type="submit" class="btn xs ghost">Rimuovi<?= $pe !== null ? ' la richiesta' : '' ?></button>
+      </form>
+      <?php endif; ?>
+    </div>
+    <?php endforeach; ?>
+  </div>
 </section>
 
 <script>

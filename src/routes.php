@@ -15,6 +15,7 @@ use App\Controllers\GameApiController;
 use App\Controllers\GameController;
 use App\Controllers\HomeController;
 use App\Controllers\LeaderboardController;
+use App\Controllers\MediaController;
 use App\Controllers\MetaController;
 use App\Controllers\MissionController;
 use App\Controllers\ModuleController;
@@ -49,6 +50,10 @@ $router->get('/gioco/guida', [GameController::class, 'guide'], $game);
 $router->get('/gioco/giornale', [ShipLogController::class, 'show'], $game);
 $router->get('/gioco/profilo', [ProfileController::class, 'show'], $game);
 $router->post('/gioco/profilo', [ProfileController::class, 'save'], $game);
+$router->post('/gioco/profilo/media', [ProfileController::class, 'uploadMedia'], $game);
+$router->post('/gioco/profilo/media/rimuovi', [ProfileController::class, 'removeMedia'], $game);
+$router->get('/gioco/profilo/media/{kind}', [MediaController::class, 'mine'], $game);
+$router->get('/media/c/{id}/{kind}', [MediaController::class, 'show'], ['auth', 'active']);
 $router->post('/gioco/muovi', [GameController::class, 'move'], $game);
 $router->get('/gioco/rotta', [GameController::class, 'course'], $game);
 $router->post('/gioco/autopilot', [GameController::class, 'autopilot'], $game);
@@ -217,6 +222,9 @@ $router->get('/admin', [AdminController::class, 'dashboard'], $admin);
 $router->post('/admin/utenti/{id}/approva', [AdminController::class, 'approve'], $admin);
 $router->post('/admin/utenti/{id}/sospendi', [AdminController::class, 'suspend'], $admin);
 $router->post('/admin/utenti/{id}/rifiuta', [AdminController::class, 'reject'], $admin);
+$router->get('/admin/media/{id}/file', [MediaController::class, 'raw'], $admin);
+$router->post('/admin/media/{id}/approva', [AdminController::class, 'approveMedia'], $admin);
+$router->post('/admin/media/{id}/rifiuta', [AdminController::class, 'rejectMedia'], $admin);
 
 // Pannello di controllo del gioco
 $router->get('/admin/gioco', [AdminGameController::class, 'show'], $admin);

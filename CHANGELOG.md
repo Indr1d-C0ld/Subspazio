@@ -4,6 +4,66 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-10 — Avatar e logo di flotta caricati (roadmap post-beta, slice #1b)
+
+Seconda slice del tema Identità: i comandanti possono caricare un avatar
+personale e un logo di flotta, che passano da una **coda di approvazione
+dell'amministratore** prima di diventare visibili agli altri (stesso
+schema mentale della coda iscrizioni).
+
+- **[db/migrations/0026_media.sql](db/migrations/0026_media.sql)** — tabella
+  `media_assets`: `owner_type`/`owner_id`/`kind` (avatar|logo),
+  `status` (pending|approved|rejected), `mime`/`ext`/`bytes`/`width`/
+  `height`/`sha1`/`path`, campi di revisione. Idempotente.
+- **[src/Game/MediaAsset.php](src/Game/MediaAsset.php)** — motore:
+  `storeUpload()` valida tipo (PNG/JPEG/WebP/GIF), peso (il minimo fra il
+  valore di config e `upload_max_filesize`/`post_max_size` del php.ini) e
+  dimensioni (32–4096 px per lato), poi **ricodifica con GD** in PNG —
+  l'avatar ritagliato quadrato ≤512, il logo a proporzioni ≤512 — così da
+  spogliare EXIF e payload nascosti. I file finiscono in
+  `storage/uploads/` (fuori dal web). `approve()` promuove e ritira
+  l'approvato precedente; `reject($note)` archivia con motivazione;
+  `removeOwn()` per il proprietario; `current()` restituisce **solo**
+  l'asset approvato; `queue()`/`forOwner()` alimentano le UI. `purgeFile()`
+  non cancella un file ancora referenziato da un'altra riga (dedup sha1).
+- **[src/Core/Request.php](src/Core/Request.php)** — `file()`: accesso
+  tipizzato a una voce di `$_FILES`.
+- **[src/Controllers/MediaController.php](src/Controllers/MediaController.php)**
+  — serve le immagini (i file non sono raggiungibili via URL diretto):
+  `GET /media/c/{id}/{kind}` (solo approvato, `public, max-age=300`, ETag +
+  `304`), `GET /gioco/profilo/media/{kind}` (il proprio pending, `private`),
+  `GET /admin/media/{id}/file` (qualsiasi asset, solo admin, per la
+  moderazione).
+- **[src/Controllers/ProfileController.php](src/Controllers/ProfileController.php)**
+  / **[views/game/profilo.php](views/game/profilo.php)** — sezione
+  «Immagini caricate»: upload per avatar e logo, anteprima dello stato
+  (approvato / in attesa), motivo dell'eventuale rifiuto, rimozione. Rotte
+  `POST /gioco/profilo/media` e `.../media/rimuovi`.
+- **[src/Controllers/AdminController.php](src/Controllers/AdminController.php)**
+  / **[views/admin/dashboard.php](views/admin/dashboard.php)** — riquadro
+  «Immagini in attesa» con anteprima e Approva/Rifiuta (con motivazione
+  via `prompt`); azioni tracciate nell'audit log (`media.approve`,
+  `media.reject`). Rotte `POST /admin/media/{id}/approva|rifiuta`.
+- **[views/partials/idchip.php](views/partials/idchip.php)** — l'avatar
+  approvato sostituisce lo stemma nella targhetta d'identità (quindi in
+  plancia e classifica); parametro `avatar` per forzare/saltare la
+  risoluzione.
+- **[src/Game/Leaderboard.php](src/Game/Leaderboard.php)** /
+  **[views/game/leaderboard.php](views/game/leaderboard.php)** —
+  `topPlayers()` fa `LEFT JOIN` su `media_assets` ed espone `pid` +
+  `has_avatar`; la classifica mostra l'avatar o lo stemma.
+- **[views/game/index.php](views/game/index.php)** — status bar di plancia:
+  avatar al posto dello stemma quando approvato, logo di flotta accanto al
+  nome del comandante.
+- **[assets/css/app.css](assets/css/app.css)** — `.idchip-avatar`,
+  `.ld-avatar`, `.fleet-logo`, `.media-slots`/`.media-slot`/`.media-preview`
+  (editor), `.media-review`/`.media-review-card` (coda admin).
+- **[config/config.example.php](config/config.example.php)** — blocco
+  `media` (`max_bytes`).
+- **[.gitignore](.gitignore)** — `storage/uploads/*` (solo `.gitkeep`
+  versionato).
+- **[sw.js](sw.js)** — cache `subspazio-v22`.
+
 ## 2026-09-10 — Identità del comandante (roadmap post-beta, slice #1)
 
 Prima slice della roadmap post-beta: personalizzazione leggera del

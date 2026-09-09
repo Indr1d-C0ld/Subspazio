@@ -746,6 +746,17 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 .crest { display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; flex: none; }
 .crest svg { display: block; width: 100%; height: 100%; color: var(--crest-color, var(--accent)); }
 
+/* avatar caricato: stesso ingombro dello stemma, disco con bordo dell'accento */
+.idchip-avatar, .ld-avatar {
+  flex: none; border-radius: 50%; object-fit: cover; vertical-align: middle;
+  background: var(--panel-2); box-shadow: 0 0 0 1px var(--crest-color, var(--line));
+}
+.ld-avatar { width: 20px; height: 20px; margin-right: .45rem; }
+.fleet-logo {
+  height: 1.05rem; width: auto; max-width: 3.2rem; object-fit: contain;
+  vertical-align: middle; opacity: .9; border-radius: 3px;
+}
+
 .idchip { display: inline-flex; align-items: center; gap: .55rem; }
 .idchip-txt { display: flex; flex-direction: column; line-height: 1.22; min-width: 0; }
 .idchip-name { font-weight: 700; letter-spacing: .01em; }
@@ -787,6 +798,30 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 .crest-opt:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 .id-actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+
+/* --- immagini caricate: editor nel profilo --- */
+.media-slots { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; }
+.media-slot { border: 1px solid var(--line); border-radius: 10px; padding: .9rem 1rem; background: var(--panel-2); }
+.media-slot h3 { margin: 0 0 .5rem; font-size: .95rem; }
+.media-state { display: flex; gap: .8rem; flex-wrap: wrap; align-items: flex-start; min-height: 2rem; }
+.media-preview { margin: 0; display: flex; flex-direction: column; gap: .3rem; align-items: center; }
+.media-preview img {
+  width: 96px; height: 96px; object-fit: cover; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--bg-soft);
+}
+.media-note { font-size: .82rem; color: var(--ink-soft); margin: .5rem 0 0; }
+.media-up { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; margin: .7rem 0 .4rem; }
+.media-up input[type=file] { font-size: .8rem; max-width: 100%; }
+
+/* --- coda di moderazione admin --- */
+.media-review { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 1rem; }
+.media-review-card { margin: 0; border: 1px solid var(--line); border-radius: 10px; padding: .7rem; background: var(--panel-2); }
+.media-review-card img {
+  width: 100%; height: 150px; object-fit: contain; border-radius: 6px;
+  background: var(--bg-soft); border: 1px solid var(--line-soft);
+}
+.media-review-card figcaption { font-size: .78rem; color: var(--ink-soft); margin: .5rem 0; line-height: 1.4; }
+.media-review-actions { display: flex; gap: .5rem; }
 
 /* =========================================================================
    Responsive — smartphone / tablet in portrait (<= 820px).

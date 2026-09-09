@@ -9,6 +9,7 @@ use App\Core\Database;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Game\MediaAsset;
 
 final class AdminController
 {
@@ -46,12 +47,37 @@ final class AdminController
         );
 
         return Response::html(view('admin/dashboard', [
-            'title'   => 'Amministrazione',
-            'counts'  => $counts,
-            'pending' => $pending,
-            'recent'  => $recent,
-            'audit'   => $audit,
+            'title'         => 'Amministrazione',
+            'counts'        => $counts,
+            'pending'       => $pending,
+            'recent'        => $recent,
+            'audit'         => $audit,
+            'media_pending' => MediaAsset::queue(),
         ]));
+    }
+
+    public function approveMedia(Request $request, string $id): Response
+    {
+        $res = MediaAsset::approve((int) $id, Auth::id() ?? 0);
+        if ($res['ok']) {
+            $this->audit('media.approve', (int) $id, $request->ip());
+            Session::flash('success', 'Immagine approvata: ora è visibile agli altri comandanti.');
+        } else {
+            Session::flash('error', $res['error'] ?? 'Operazione non riuscita.');
+        }
+        return redirect('/admin');
+    }
+
+    public function rejectMedia(Request $request, string $id): Response
+    {
+        $res = MediaAsset::reject((int) $id, Auth::id() ?? 0, $request->str('note'));
+        if ($res['ok']) {
+            $this->audit('media.reject', (int) $id, $request->ip());
+            Session::flash('success', 'Immagine rifiutata e rimossa.');
+        } else {
+            Session::flash('error', $res['error'] ?? 'Operazione non riuscita.');
+        }
+        return redirect('/admin');
     }
 
     public function approve(Request $request, string $id): Response

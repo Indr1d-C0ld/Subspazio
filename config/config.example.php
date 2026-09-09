@@ -42,6 +42,13 @@ return [
         'root' => '/data/html/subspazio',
     ],
 
+    // Immagini caricate dagli utenti (avatar comandante, logo di flotta).
+    // I file vivono in <root>/storage/uploads/ (fuori dal web); il limite
+    // effettivo e' comunque il minimo fra questo e upload_max_filesize/post_max_size.
+    'media' => [
+        'max_bytes' => 2 * 1024 * 1024,
+    ],
+
     // Trasporto e-mail (opzionale). 'transport' = 'log' disattiva l'invio reale.
     // Con 'smtp', 'from_email' deve essere un mittente verificato dal provider.
     'mail' => [
