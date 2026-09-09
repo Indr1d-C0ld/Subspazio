@@ -44,6 +44,8 @@ final class GameController
             'shiplog'    => \App\Game\ShipLog::recent((int) $player['id'], 6),
             'digest'     => $digest,
             'craftjobs'  => \App\Game\Industry::craftJobs((int) $player['id']),
+            'limpet_tracked' => \App\Game\Limpet::tracked((int) $player['id']),
+            'limpet_tags'    => \App\Game\Limpet::tagCount((int) $ship['id']),
         ]));
     }
 

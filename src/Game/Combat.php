@@ -713,9 +713,20 @@ final class Combat
     {
         $sectorId = (int) $player['sector_id'];
         $events = [];
+        $sec = Universe::sector($sectorId);
 
-        if ((bool) Universe::sector($sectorId)['is_fedspace']) {
-            return ['events' => [], 'player' => $player, 'ship' => $ship, 'destroyed' => false];
+        // allo StarDock i tecnici staccano ogni mina Limpet dallo scafo
+        if ((bool) ($sec['is_stardock'] ?? false)) {
+            $scraped = Limpet::scrape((int) $ship['id']);
+            if ($scraped > 0) {
+                $events[] = $scraped === 1
+                    ? 'Allo StarDock i tecnici rimuovono una mina Limpet dallo scafo.'
+                    : "Allo StarDock i tecnici rimuovono {$scraped} mine Limpet dallo scafo.";
+            }
+        }
+
+        if ((bool) $sec['is_fedspace']) {
+            return ['events' => $events, 'player' => $player, 'ship' => $ship, 'destroyed' => false];
         }
 
         $pid = (int) $player['id'];
@@ -772,6 +783,11 @@ final class Combat
                 $d = self::destroyShip($player);
                 return ['events' => array_merge($events, [self::deathLine($d)]), 'player' => Database::first('SELECT * FROM players WHERE id = ?', [$pid]), 'ship' => PlayerService::ship((int) Database::first('SELECT ship_id FROM players WHERE id = ?', [$pid])['ship_id']), 'destroyed' => true];
             }
+        }
+
+        // 1b) mine Limpet: si agganciano allo scafo (nessun danno), abilitano il tracking
+        foreach (Limpet::onEnter($pid, (int) $ship['id'], $sectorId, $mine) as $ev) {
+            $events[] = $ev;
         }
 
         // 2) caccia: pedaggio, offensivi, difensivi (se il visitatore e' malvagio)

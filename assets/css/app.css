@@ -451,6 +451,7 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 .legend .vis  { background: #5a7fc8; }
 .legend .unk  { border: 1px dashed var(--ink-soft); }
 .legend .dock { background: var(--accent-2); }
+.legend .limpet { background: transparent; border: 2px dashed #ffcf6b; width: .8rem; height: .8rem; }
 
 /* --------------------------------------------------------- Porto / econ. --- */
 .port-teaser { margin: 1rem 0; padding: .85rem; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); }
@@ -627,6 +628,16 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 .officina-strip { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; padding: .6rem .9rem; }
 .officina-strip .btn.xs { margin-left: auto; }
 .craft-jobs .mut { font-family: var(--font-mono); font-size: .82rem; }
+
+/* --- mine Limpet: preda tracciata + avviso "sei agganciato" --- */
+.limpet-card { border-left: 3px solid var(--accent-2); }
+.limpet-card .limpet-head h2 { margin: 0 0 .5rem; }
+.limpet-card .limpet-head h2 .mut { font-weight: 400; font-size: .85rem; }
+.limpet-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .4rem; }
+.limpet-list li { display: flex; align-items: center; gap: .55rem; flex-wrap: wrap; }
+.limpet-list .lp-who { flex: 1 1 10rem; }
+.limpet-list time { font-family: var(--font-mono); font-size: .8rem; }
+.limpet-warn { border-left: 3px solid var(--warn); }
 
 /* --------------------------------------------------------- Traguardi / meta --- */
 .ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: .6rem; }

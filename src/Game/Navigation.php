@@ -380,6 +380,7 @@ final class Navigation
             'current' => (int) $player['sector_id'],
             'sectors' => $sectors,
             'warps'   => $warps,
+            'tracked' => Limpet::trackedSectorIds($pid),
         ];
     }
 

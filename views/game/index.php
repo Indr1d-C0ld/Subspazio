@@ -50,6 +50,12 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
   <div class="alert event-banner">⚡ <strong><?= e($ev['title']) ?></strong> — <?= e($ev['body']) ?></div>
 <?php endforeach; ?>
 
+<?php if (!empty($limpet_tags)): ?>
+  <div class="alert warn limpet-warn">📡 Hai <?= (int) $limpet_tags ?>
+    mina<?= $limpet_tags == 1 ? '' : 'e' ?> Limpet agganciat<?= $limpet_tags == 1 ? 'a' : 'e' ?>
+    allo scafo: la tua posizione è tracciata finché non raggiungi lo <strong>StarDock</strong>.</div>
+<?php endif; ?>
+
 <?php if (!empty($digest)): ?>
 <section class="panel digest-card">
   <h2>Rapporto di rientro <span class="mut">assente per <?= e($digest['away']) ?></span></h2>
@@ -152,6 +158,28 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
       </li>
     <?php endforeach; ?>
   </ul>
+</section>
+<?php endif; ?>
+
+<?php if (!empty($limpet_tracked)): ?>
+<section class="panel limpet-card">
+  <div class="limpet-head">
+    <h2>Prede tracciate <span class="mut">Limpet ×<?= count($limpet_tracked) ?></span></h2>
+  </div>
+  <ul class="limpet-list">
+    <?php foreach ($limpet_tracked as $t):
+      $m = (int) $t['expires_in_min'];
+      $left = $m >= 60 ? intdiv($m, 60) . 'h ' . ($m % 60) . 'm' : $m . 'm';
+    ?>
+      <li>
+        <span class="lp-who"><strong><?= e($t['handle']) ?></strong> <span class="mut"><?= e($t['ship_type']) ?></span></span>
+        <span class="pill">settore <?= (int) $t['sector_id'] ?></span>
+        <a class="btn xs ghost" href="<?= e(url('/gioco/rotta?to=' . (int) $t['sector_id'])) ?>">Rotta</a>
+        <time class="mut" title="tempo di aggancio residuo"><?= e($left) ?></time>
+      </li>
+    <?php endforeach; ?>
+  </ul>
+  <p class="hint">La mina si stacca quando la preda raggiunge lo StarDock o dopo la scadenza.</p>
 </section>
 <?php endif; ?>
 
@@ -400,6 +428,9 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
         <label>Qta <input type="number" name="qty" min="1" value="0" class="qty"></label>
         <button class="btn xs" type="submit">Dispiega</button>
       </form>
+      <p class="hint">Armid: danno alla nave che entra, poi si consuma. Limpet: si aggancia
+         allo scafo di chi passa (nessun danno) e te ne fa seguire la posizione dalla plancia
+         finché non raggiunge lo StarDock.</p>
     </details>
     <?php endif; ?>
 
@@ -503,6 +534,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
       <span class="dot vis"></span> esplorato
       <span class="dot unk"></span> noto
       <span class="dot dock"></span> StarDock
+      <?php if (!empty($limpet_tracked)): ?><span class="dot limpet"></span> preda Limpet<?php endif; ?>
     </p>
     <p class="hint map-help">Trascina per ruotare · rotella per lo zoom · Shift+trascina (o due dita) per spostare · clic su un settore adiacente per muoverti · doppio clic per centrarlo.</p>
   </section>

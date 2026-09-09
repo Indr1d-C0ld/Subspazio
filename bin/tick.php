@@ -48,6 +48,7 @@ try {
     $tasks['rate_limits_gc'] = RateLimiter::gc();
     $tasks['live_gc'] = Live::gc();
     $tasks['shiplog_gc'] = \App\Game\ShipLog::gc();
+    $tasks['limpets_gc'] = \App\Game\Limpet::gc();
 
     // 2) Reset turni giornaliero.
     $tasks['turn_reset'] = handleTurnReset();

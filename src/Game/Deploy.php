@@ -121,6 +121,16 @@ final class Deploy
         if ((bool) Universe::sector($sectorId)['is_fedspace']) {
             return ['ok' => false, 'error' => 'Vietato minare lo spazio della Federazione.'];
         }
+        if ($type === 'limpet') {
+            $cap = Limpet::fieldCap();
+            $here = (int) (Database::first(
+                "SELECT qty FROM sector_mines WHERE sector_id = ? AND owner_player_id = ? AND type = 'limpet'",
+                [$sectorId, $player['id']]
+            )['qty'] ?? 0);
+            if ($here + $qty > $cap) {
+                return ['ok' => false, 'error' => "Campo Limpet gia' al limite ({$cap}) per questo settore."];
+            }
+        }
 
         Database::run("UPDATE ships SET {$col} = {$col} - ? WHERE id = ?", [$qty, $ship['id']]);
         Database::run(

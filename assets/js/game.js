@@ -86,10 +86,12 @@
 
   function build() {
     byId = new Map();
+    const trackedSet = new Set(data.tracked || []);
     nodes = (data.sectors || []).map((s, i) => {
       const n = {
         id: s.id, name: s.name, color: s.color || '#5b6b8c',
         visited: !!s.visited, stardock: !!s.stardock, port: !!s.has_port, fed: !!s.fedspace,
+        tracked: trackedSet.has(s.id),
         adj: false, idx: i,
         ux: 0, uy: 0, uz: 0, px: 0, py: 0, pz: 0, proj: null,
       };
@@ -268,6 +270,15 @@
         ctx.strokeStyle = 'rgba(107,226,255,' + (0.5 * a) + ')';
         ctx.lineWidth = 1;
         ctx.stroke();
+      }
+      if (no.tracked) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r + 5.5, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,207,107,' + Math.min(1, a + 0.25) + ')';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([3, 3]);
+        ctx.stroke();
+        ctx.setLineDash([]);
       }
     }
 

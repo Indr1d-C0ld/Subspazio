@@ -4,6 +4,49 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-10 — Mine Limpet completate (roadmap post-beta, tema B)
+
+Lo schema c'era dal `0007` (`ship_limpets`, `sector_mines.type='limpet'`,
+`ships.mines_limpet`) ma nessuno lo leggeva: le Limpet si compravano e si
+dispiegavano, poi restavano inerti. Ora funzionano: **non fanno danno**, si
+agganciano allo scafo di chi entra nel settore e permettono al proprietario
+di seguirne la posizione finché la preda non raggiunge lo StarDock (o la
+mina scade).
+
+- **[db/migrations/0027_limpet.sql](db/migrations/0027_limpet.sql)** — solo
+  manopole in `game_config`: `limpet.ttl_hours` (12), `limpet.max_tracked`
+  (15), `limpet.field_cap` (50). Idempotente.
+- **[src/Game/Limpet.php](src/Game/Limpet.php)** — motore nuovo:
+  - `onEnter()` — all'ingresso in un settore ogni campo Limpet non alleato
+    aggancia **una** mina allo scafo (una per proprietario; non ne consuma
+    una seconda se già agganciata; salta chi entra se alleato). Se il
+    proprietario è al tetto di prede, stacca la più vecchia.
+  - `scrape()` — allo StarDock i tecnici rimuovono tutte le Limpet.
+  - `tracked()` — le prede che seguo, con posizione **live** (JOIN su
+    `players.sector_id`: l'occultamento non nasconde dalle Limpet) e TTL
+    residuo.
+  - `tagCount()`, `trackedSectorIds()`, `gc()` (distacco automatico oltre
+    `ttl_hours`, dal tick).
+- **[src/Game/Combat.php](src/Game/Combat.php)** — `onEnterSector`: blocco
+  Limpet subito dopo le mine Armid (nessun danno); lo scrape allo StarDock
+  gira **prima** del `return` anticipato per lo spazio Federazione.
+- **[src/Game/Deploy.php](src/Game/Deploy.php)** — `deployMines` applica il
+  tetto `limpet.field_cap` per settore/proprietario.
+- **[bin/tick.php](bin/tick.php)** — nuovo task `limpets_gc`.
+- **[views/game/index.php](views/game/index.php)** — pannello «Prede
+  tracciate» in plancia (handle, tipo nave, settore + pulsante Rotta, TTL
+  residuo) e avviso «hai N mine Limpet agganciate» per chi è tracciato.
+- **[src/Game/Navigation.php](src/Game/Navigation.php)** — `mapData()`
+  espone `tracked` (id dei settori delle prede).
+- **[assets/js/game.js](assets/js/game.js)** — la mappa stellare disegna un
+  anello ambra tratteggiato sui settori dove si trova una preda; legenda
+  aggiornata.
+- **[assets/css/app.css](assets/css/app.css)** — `.limpet-card`,
+  `.limpet-list`, `.limpet-warn`, marcatore di legenda.
+- Giornale di bordo + `Live::alert` al proprietario a ogni aggancio;
+  `combat_log` `kind='mines'`, `detail={"limpet":1}`.
+- **[sw.js](sw.js)** — cache `subspazio-v23`.
+
 ## 2026-09-10 — Avatar e logo di flotta caricati (roadmap post-beta, slice #1b)
 
 Seconda slice del tema Identità: i comandanti possono caricare un avatar

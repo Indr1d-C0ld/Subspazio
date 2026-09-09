@@ -35,7 +35,7 @@ sé.
 | **Tipi d'arma con profilo** (cinetico / energia / dispersione: penetrazione scudi, danno vs caccia, alpha strike) al posto del `combat_pct` piatto | M | `item_types.effects`, `Combat::duel()` |
 | **Griglia di potenza (EPS)** — ripartisci il reattore fra scudi / armi / motori / sensori / supporto | M | overlay su `ShipStats::effective`; dà all'Ingegnere un «sovraccarico» vero |
 | **Guasti ai sottosistemi** — un colpo mette offline un modulo; ripari allo StarDock o via Ingegnere sul tick; mira ai sottosistemi come opzione d'attacco | M | `combat_log`, giornale, Officina |
-| **Finire le mine Limpet** — si agganciano allo scafo di chi passa e ti fanno tracciare la preda per N tick | S–M | `ship_limpets` (schema abbozzato), star map |
+| **Finire le mine Limpet** ✅ fatto — 2026-09-10 — si agganciano allo scafo di chi passa e ti fanno tracciare la preda finché non raggiunge lo StarDock | S–M | `ship_limpets`, star map |
 
 ## C · Rigiocabilità e contenuto
 
@@ -98,7 +98,8 @@ dopo ogni cluster.
 |---|---|
 | **#1 — Identità del comandante** (colori, stemma, motto, titolo derivato, nome + registro nave) | fatto — 2026-09-10 |
 | **#1b — Avatar + logo caricati** (coda di approvazione admin, riuso della coda iscrizioni) | fatto — 2026-09-10 |
-| **#2 — Combattimento B1: tipi d'arma con profilo** | prossimo |
+| **B — Mine Limpet completate** (aggancio allo scafo + tracking preda, rimozione allo StarDock) | fatto — 2026-09-10 |
+| **#2 — Combattimento B1: tipi d'arma con profilo** | in valutazione (rischio di macchinosità — vedi discussione: forse ridurre a un solo asse «penetrazione scudi», o priorità a EPS) |
 
 ### #1 — dettaglio di quanto consegnato
 
@@ -138,3 +139,25 @@ dopo ogni cluster.
 - Display: l'avatar approvato sostituisce lo stemma in `idchip` (plancia,
   classifica); il logo di flotta compare accanto al nome in plancia.
 - `.gitignore` → `storage/uploads/*` (solo `.gitkeep` versionato). `sw.js` → v22.
+
+### B (Limpet) — dettaglio di quanto consegnato
+
+- Migrazione `0027_limpet` — solo manopole in `game_config`:
+  `limpet.ttl_hours` (12), `limpet.max_tracked` (15), `limpet.field_cap` (50).
+  Lo schema (`ship_limpets`, `sector_mines.type='limpet'`, `ships.mines_limpet`)
+  esisteva dal `0007` ma nessuno lo leggeva.
+- `App\Game\Limpet` — `onEnter()` (aggancio all'ingresso: una per proprietario,
+  consuma dal campo, non ridoppia, salta gli alleati, tetto prede col distacco
+  del più vecchio), `scrape()` (StarDock), `tracked()` (posizione live della
+  preda, l'occultamento non aiuta), `tagCount()`, `trackedSectorIds()`, `gc()`.
+- `Combat::onEnterSector` — blocco Limpet dopo le Armid (nessun danno) + scrape
+  allo StarDock prima del `return` per Fedspace.
+- `Deploy::deployMines` — tetto `limpet.field_cap` per settore/proprietario.
+- `bin/tick.php` — task `limpets_gc`.
+- Plancia: pannello «Prede tracciate» (handle, tipo nave, settore + rotta, TTL
+  residuo) e avviso «hai N Limpet agganciate» per la preda.
+- Mappa stellare: `Navigation::mapData` espone `tracked` (id settori);
+  `game.js` disegna un anello tratteggiato ambra sui settori delle prede.
+- Giornale + `Live::alert` al proprietario a ogni aggancio; `combat_log`
+  `kind='mines'` `detail={limpet:1}`.
+- `sw.js` → v23. e2e `scratchpad/test_limpet.php` (22 check).
