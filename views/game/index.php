@@ -474,18 +474,28 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
       <p class="hint">Armid: danno alla nave che entra, poi si consuma. Limpet: si aggancia
          allo scafo di chi passa (nessun danno) e te ne fa seguire la posizione dalla plancia
          finché non raggiunge lo StarDock.</p>
+    </details>
+    <?php endif; ?>
 
-      <?php if (\App\Game\Cloak::has($ship)): ?>
+    <?php if (\App\Game\Cloak::has($ship)): ?>
+    <details class="tools"<?= !empty($ship['cloaked']) ? ' open' : '' ?>>
+      <summary>Occultamento <?= !empty($ship['cloaked']) ? '· 🌫 attivo' : '' ?></summary>
       <form method="post" action="<?= e(url('/gioco/occulta')) ?>" class="row">
         <?= csrf_field() ?>
         <input type="hidden" name="state" value="<?= !empty($ship['cloaked']) ? 'off' : 'on' ?>">
-        <button class="btn xs<?= !empty($ship['cloaked']) ? ' danger' : '' ?>" type="submit">
+        <button class="btn xs<?= !empty($ship['cloaked']) ? ' danger' : '' ?>" type="submit"
+                <?= (empty($ship['cloaked']) && !empty($look['is_fedspace'])) ? 'disabled' : '' ?>>
           <?= !empty($ship['cloaked']) ? '🌫 Disattiva occultamento' : '🌫 Attiva occultamento' ?>
         </button>
       </form>
-      <p class="hint">Occultamento: sparisci dai sensori (ti vede solo chi ha uno scanner
-         olografico nel tuo settore). +<?= \App\Game\Cloak::warpPenalty() ?> turno per warp,
-         niente Fedspace, non ferma mine né Quasar, cade se apri il fuoco, attracchi o salti in Transwarp.</p>
+      <?php if (empty($ship['cloaked']) && !empty($look['is_fedspace'])): ?>
+      <p class="hint">I sensori della Federazione impediscono l'occultamento in questo spazio:
+         esci dallo spazio Fed per attivarlo.</p>
+      <?php else: ?>
+      <p class="hint">Sparisci dai sensori — ti vede solo chi ha uno scanner olografico nel tuo
+         settore, e superi caccia e NPC senza ingaggio. +<?= \App\Game\Cloak::warpPenalty() ?>
+         turno per warp, niente Fedspace, non ferma mine né Quasar, cade se apri il fuoco,
+         dispieghi, attracchi allo StarDock o salti in Transwarp.</p>
       <?php endif; ?>
     </details>
     <?php endif; ?>
