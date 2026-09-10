@@ -20,7 +20,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
     <span class="k">Comandante</span>
     <span class="v">
       <?php if ($hasAvatar): ?>
-        <img class="idchip-avatar" style="--crest-color:<?= e($idc['color']) ?>;width:18px;height:18px"
+        <img class="idchip-avatar" style="--crest-color:<?= e($idc['color']) ?>;width:24px;height:24px"
              src="<?= e(url('/media/c/' . $pid . '/avatar')) ?>" alt="" title="<?= e($idc['title']) ?>">
       <?php else: ?>
         <?= partial('crest', ['crest' => $idc['crest'], 'color' => $idc['color'], 'size' => 16, 'title' => $idc['title']]) ?>

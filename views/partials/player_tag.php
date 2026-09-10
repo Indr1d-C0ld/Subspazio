@@ -3,14 +3,14 @@
  * Etichetta compatta di un comandante presente (lista "navi qui" / forze).
  * Parametri:
  *   p    (array)  richiede id, handle; opzionali color, crest, has_avatar, ship_type, protected
- *   size (int)    lato dell'emblema in px, default 15
+ *   size (int)    lato dell'emblema in px, default 22
  *   ship (bool)   mostra "(tipo nave)" accanto al nome (default true)
  */
 use App\Game\Identity;
 
 $color = isset(Identity::PALETTE[$p['color'] ?? '']) ? $p['color'] : Identity::DEFAULT_COLOR;
 $crest = in_array($p['crest'] ?? '', Identity::CRESTS, true) ? $p['crest'] : Identity::DEFAULT_CREST;
-$sz = (int) ($size ?? 15);
+$sz = (int) ($size ?? 22);
 $pid = (int) ($p['id'] ?? 0);
 ?><span class="who-chip">
   <?php if (!empty($p['has_avatar']) && $pid > 0): ?>

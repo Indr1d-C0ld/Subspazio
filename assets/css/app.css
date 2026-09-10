@@ -799,12 +799,12 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
   flex: none; border-radius: 50%; object-fit: cover; vertical-align: middle;
   background: var(--panel-2); box-shadow: 0 0 0 1px var(--crest-color, var(--line));
 }
-.ld-avatar { width: 20px; height: 20px; margin-right: .45rem; }
+.ld-avatar { width: 26px; height: 26px; margin-right: .45rem; }
 .fleet-logo {
-  display: block; height: 1.4rem; width: auto; max-width: 5rem; object-fit: contain;
+  display: block; height: 1.9rem; width: auto; max-width: 7rem; object-fit: contain;
   vertical-align: middle; opacity: .92; border-radius: 3px;
 }
-.statusbar .sb-logo .v { display: flex; align-items: center; min-height: 1.4rem; }
+.statusbar .sb-logo .v { display: flex; align-items: center; min-height: 1.9rem; }
 
 .idchip { display: inline-flex; align-items: center; gap: .55rem; }
 .idchip-txt { display: flex; flex-direction: column; line-height: 1.22; min-width: 0; }

@@ -100,13 +100,62 @@ dopo ogni cluster.
 | **#1b — Avatar + logo caricati** (coda di approvazione admin, riuso della coda iscrizioni) | fatto — 2026-09-10 |
 | **#1c — Identità nelle liste** (stemma/avatar + nome colorato in «navi qui» / «Forze nel settore»; auto-approvazione upload admin) | fatto — 2026-09-10 |
 | **B — Mine Limpet completate** (aggancio allo scafo + tracking preda, rimozione allo StarDock) | fatto — 2026-09-10 |
-| **#2 — Combattimento B1: tipi d'arma con profilo** | ~~scartato~~ — non si fa: snatura il combattimento (nessuna agency nel momento, morra cinese a info nascosta con pochi giocatori, superficie di bilanciamento enorme). In alternativa, se in futuro si vuole texture d'arma: un solo asse «penetrazione scudi» (S), o priorità a EPS (B2). I tipi d'arma veri hanno senso solo con le classi di nave (tema D). |
+| **B2 — Griglia di potenza (EPS)** (8 tacche su 4 canali Scudi/Armi/Motori/Sensori, ±25%, ri-taratura = 1 turno) | fatto — 2026-09-10 |
+| **B3 — Guasti ai sottosistemi** (un colpo mette offline un modulo; StarDock / Ingegnere / auto-riparazione; sovraccarico EPS come 2ª fonte) | fatto — 2026-09-10 |
+| **#2 — Combattimento B1: tipi d'arma con profilo** | ~~scartato~~ — non si fa: snatura il combattimento (nessuna agency nel momento, morra cinese a info nascosta con pochi giocatori, superficie di bilanciamento enorme). In alternativa, se in futuro si vuole texture d'arma: un solo asse «penetrazione scudi» (S). I tipi d'arma veri hanno senso solo con le classi di nave (tema D). |
 
-### Tema B — cosa resta
+### Tema B — completo
 
-- **EPS / griglia di potenza** (B2) — ripartisci il reattore fra scudi/armi/motori/sensori; dà una decisione *prima* dello scontro + tributo Star Trek.
-- **Guasti ai sottosistemi** (B3) — un colpo mette offline un modulo, si ripara allo StarDock o via Ingegnere.
-- (I tipi d'arma con profilo restano fuori: vedi sopra.)
+I tipi d'arma con profilo restano fuori (vedi sopra). Se in futuro si vuole
+tornare sul combattimento: un solo asse «penetrazione scudi» (S), oppure
+aspettare le classi di nave del tema D.
+
+### B3 — dettaglio di quanto consegnato
+
+- Migrazione `0029_subsystems` — `ship_modules.broken_at DATETIME NULL`;
+  config `subsys.break_chance` 10, `strain_chance` 4, `repair_cost_each` 450,
+  `auto_repair_hours` 18, `engineer_fix_chance` 25.
+- `src/Game/Subsystems.php` — `maybeBreak()` (chance × colpo incassato, ×2 se
+  pesante; mette offline un modulo funzionante a caso), `maybeStrain()`
+  (per warp, se un canale EPS è al massimo; mitigata dall'Ingegnere; preferisce
+  il comparto stressato), `brokenList/brokenCount`, `repairAll()` (StarDock, a
+  pagamento), `tick()` (auto-riparazione oltre il TTL + l'Ingegnere di bordo
+  rimette in linea un modulo per tick).
+- `ShipStats::effective()` — un modulo `broken_at IS NOT NULL` **non
+  contribuisce** agli effetti; espone `$ship['mod_broken']` e `broken` per
+  ogni voce di `mod_list`.
+- Innesti in `Combat`: `attackShip` (attaccante → flash, difensore → giornale),
+  Quasar, mine Armid, scontro coi caccia in `onEnterSector`. Innesto EPS-strain
+  in `Navigation::move`. Task `subsystems` in `bin/tick.php`.
+- UI: striscia rossa in plancia se hai moduli fuori uso; badge «fuori uso» +
+  barrato nella pagina Moduli; sezione «Riparazioni» al Cantiere con
+  `POST /gioco/cantiere/riparazioni`; nota «rischio di guasti per
+  sovraccarico» sul canale EPS al massimo. `sw.js` → v28.
+- e2e `scratchpad/test_subsys.php` (17 check).
+
+### B2 — dettaglio di quanto consegnato
+
+- Migrazione `0028_eps` — `ships.eps_shields/eps_weapons/eps_engines/eps_sensors`
+  (TINYINT, default 2); config `eps.pips_total` 8, `eps.step_pct` 12.5,
+  `eps.realloc_turn_cost` 1.
+- `src/Game/PowerGrid.php` — `read/mults/validate/save/describe`. Nominale =
+  pips_total/4 = 2; max per canale = 4; `mult(pips) = 1 + (pips-2)·12.5%`
+  (0 → −25%, 4 → +25%). `save()` valida (somma esatta = 8, canale 0–4),
+  costa 1 turno (0 se allocazione identica), **adegua subito capacità e
+  carica scudi** al nuovo canale Scudi. Vietato in capsula.
+- `ShipStats::effective()` — overlay finale: Armi × `combat_rating`; Scudi ×
+  `max_shields` e `mod_shield_regen`; Motori ±1 a `turns_per_warp` agli
+  estremi (utile solo per scafi con tpw ≥ 2); Sensori sposta di un gradino
+  lo scanner effettivo (none↔density↔holo). Espone `$ship['eps']` (descrittore
+  UI) e `$ship['eps_nominal']`.
+- `EpsController` + `GET/POST /gioco/eps`; `views/game/eps.php` (campi numerici
+  0–4, `assets/js/eps.js` li arricchisce con +/−, budget live, anteprima
+  effetti — **JS esterno: la CSP blocca gli script inline**). Voce «Griglia»
+  in game-nav; striscia EPS read-only nel pannello laterale della plancia.
+- `Navigation::look()` ora accetta la nave effettiva (2° param) per lo
+  scanner potenziato/declassato da EPS; callers aggiornati.
+- Anche `views/game/profilo.php` spostato a `assets/js/profile.js` (stesso
+  motivo CSP). `sw.js` → v27. e2e `scratchpad/test_eps.php` (27 check).
 
 ### #1 — dettaglio di quanto consegnato
 
