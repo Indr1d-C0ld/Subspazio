@@ -39,18 +39,26 @@ final class Navigation
         }
 
         $playersHere = Database::all(
-            'SELECT p.id, p.handle, p.alignment, p.protected_until, t.name AS ship_type
+            "SELECT p.id, p.handle, p.alignment, p.protected_until, p.color, p.crest,
+                    t.name AS ship_type,
+                    ma.id AS avatar_id
              FROM players p
              JOIN ships s ON s.id = p.ship_id
              JOIN ship_types t ON t.ckey = s.type_key
-             WHERE p.sector_id = ? AND p.id <> ?',
+             LEFT JOIN media_assets ma
+                    ON ma.owner_type = 'player' AND ma.owner_id = p.id
+                   AND ma.kind = 'avatar' AND ma.status = 'approved'
+             WHERE p.sector_id = ? AND p.id <> ?",
             [$sectorId, (int) $player['id']]
         );
         $playersHere = array_map(static fn ($o) => [
-            'id'        => (int) $o['id'],
-            'handle'    => $o['handle'],
-            'ship_type' => $o['ship_type'],
-            'protected' => $o['protected_until'] !== null && strtotime((string) $o['protected_until']) > time(),
+            'id'         => (int) $o['id'],
+            'handle'     => $o['handle'],
+            'ship_type'  => $o['ship_type'],
+            'protected'  => $o['protected_until'] !== null && strtotime((string) $o['protected_until']) > time(),
+            'color'      => Identity::color($o),
+            'crest'      => Identity::crest($o),
+            'has_avatar' => (int) ($o['avatar_id'] ?? 0) > 0,
         ], $playersHere);
 
         $ownShip = Database::first('SELECT dev_scanner FROM ships s JOIN players p ON p.ship_id = s.id WHERE p.id = ?', [(int) $player['id']]);

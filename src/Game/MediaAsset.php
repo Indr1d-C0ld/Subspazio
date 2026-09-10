@@ -152,13 +152,15 @@ final class MediaAsset
     // --- scrittura ------------------------------------------------------
 
     /**
-     * Valida + ricodifica + registra un upload come `pending`, sostituendo
-     * l'eventuale pending precedente dello stesso (owner, kind).
+     * Valida + ricodifica + registra un upload. Di norma entra come `pending`
+     * e sostituisce l'eventuale pending precedente; con $autoApprove (upload
+     * fatto da un admin) entra direttamente come `approved`, ritirando quello
+     * approvato prima.
      *
      * @param array{name?:string,type?:string,tmp_name?:string,error?:int,size?:int} $file  voce di $_FILES
-     * @return array{ok:bool, errors?:list<string>, asset?:array<string,mixed>}
+     * @return array{ok:bool, errors?:list<string>, asset?:array<string,mixed>, auto_approved?:bool}
      */
-    public static function storeUpload(string $ownerType, int $ownerId, string $kind, array $file): array
+    public static function storeUpload(string $ownerType, int $ownerId, string $kind, array $file, bool $autoApprove = false): array
     {
         if (!isset(self::KINDS[$kind])) {
             return ['ok' => false, 'errors' => ['Tipo di immagine non valido.']];
@@ -221,7 +223,7 @@ final class MediaAsset
         if (@file_put_contents($abs, $png['data'], LOCK_EX) === false) {
             return ['ok' => false, 'errors' => ['Scrittura del file non riuscita.']];
         }
-        @chmod($abs, 0644);
+        @chmod($abs, 0664); // gruppo in scrittura: web (www-data) e CLI condividono il gruppo via setgid
 
         // registra il nuovo pending PRIMA di ritirare il vecchio, cosi' purgeFile()
         // non cancella un file condiviso (stesso sha1) fra i due.
@@ -245,7 +247,11 @@ final class MediaAsset
             );
         }
 
-        return ['ok' => true, 'asset' => self::get($id) ?? []];
+        if ($autoApprove) {
+            self::promote($id, $ownerId, 'auto-approvato (admin)');
+        }
+
+        return ['ok' => true, 'asset' => self::get($id) ?? [], 'auto_approved' => $autoApprove];
     }
 
     public static function approve(int $id, int $adminId): array
@@ -257,23 +263,30 @@ final class MediaAsset
         if ($a['status'] !== 'pending') {
             return ['ok' => false, 'error' => 'Solo gli asset in attesa possono essere approvati.'];
         }
+        self::promote($id, $adminId, null);
+        return ['ok' => true];
+    }
 
-        // l'asset approvato precedente viene ritirato (file rimosso)
+    /** Porta un asset a `approved`, ritirando quello approvato prima per lo stesso (owner, kind). */
+    private static function promote(int $id, int $reviewerId, ?string $note): void
+    {
+        $a = self::get($id);
+        if ($a === null) {
+            return;
+        }
         $prev = self::current((string) $a['owner_type'], (int) $a['owner_id'], (string) $a['kind']);
         if ($prev !== null && (int) $prev['id'] !== $id) {
             self::purgeFile($prev);
             Database::run(
                 "UPDATE media_assets SET status = 'rejected', review_note = 'sostituito da #{$id}', reviewed_by = ?, reviewed_at = NOW() WHERE id = ?",
-                [$adminId, (int) $prev['id']]
+                [$reviewerId, (int) $prev['id']]
             );
         }
-
         Database::run(
-            "UPDATE media_assets SET status = 'approved', review_note = NULL, reviewed_by = ?, reviewed_at = NOW() WHERE id = ?",
-            [$adminId, $id]
+            "UPDATE media_assets SET status = 'approved', review_note = ?, reviewed_by = ?, reviewed_at = NOW() WHERE id = ?",
+            [$note, $reviewerId, $id]
         );
         self::$cache = [];
-        return ['ok' => true];
     }
 
     public static function reject(int $id, int $adminId, string $note = ''): array
@@ -366,10 +379,23 @@ final class MediaAsset
 
     private static function ensureDir(string $dir): bool
     {
-        if (is_dir($dir)) {
-            return true;
+        if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
+            return false;
         }
-        return @mkdir($dir, 0775, true) && is_dir($dir);
+        // Forza setgid + scrittura di gruppo sui livelli sotto uploads/: il bit
+        // di gruppo che la umask del processo toglie va rimesso, cosi' web
+        // (www-data) e CLI (proprietario del repo) — stesso gruppo via setgid —
+        // possono entrambi gestire i file. Best-effort: @chmod fallisce in
+        // silenzio sulle dir non di proprieta' del processo corrente.
+        $root = rtrim(self::uploadsRoot(), '/');
+        if (str_starts_with($dir, $root)) {
+            $path = $root;
+            foreach (array_filter(explode('/', trim(substr($dir, strlen($root)), '/'))) as $seg) {
+                $path .= '/' . $seg;
+                @chmod($path, 02775);
+            }
+        }
+        return is_dir($dir);
     }
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Auth\Auth;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -53,11 +54,13 @@ final class ProfileController
             return redirect('/gioco/profilo');
         }
 
-        $res = MediaAsset::storeUpload('player', (int) Ctx::$player['id'], $kind, $file);
+        $res = MediaAsset::storeUpload('player', (int) Ctx::$player['id'], $kind, $file, Auth::isAdmin());
 
         if ($res['ok']) {
             $label = MediaAsset::KINDS[$kind]['label'] ?? 'Immagine';
-            Session::flash('success', $label . ' caricata: in attesa di approvazione dell\'amministratore.');
+            Session::flash('success', !empty($res['auto_approved'])
+                ? $label . ' caricata e approvata.'
+                : $label . ' caricata: in attesa di approvazione dell\'amministratore.');
         } else {
             Session::flash('errors', $res['errors'] ?? ['Caricamento non riuscito.']);
         }

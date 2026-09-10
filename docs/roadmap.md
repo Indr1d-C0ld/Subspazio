@@ -98,8 +98,15 @@ dopo ogni cluster.
 |---|---|
 | **#1 — Identità del comandante** (colori, stemma, motto, titolo derivato, nome + registro nave) | fatto — 2026-09-10 |
 | **#1b — Avatar + logo caricati** (coda di approvazione admin, riuso della coda iscrizioni) | fatto — 2026-09-10 |
+| **#1c — Identità nelle liste** (stemma/avatar + nome colorato in «navi qui» / «Forze nel settore»; auto-approvazione upload admin) | fatto — 2026-09-10 |
 | **B — Mine Limpet completate** (aggancio allo scafo + tracking preda, rimozione allo StarDock) | fatto — 2026-09-10 |
-| **#2 — Combattimento B1: tipi d'arma con profilo** | in valutazione (rischio di macchinosità — vedi discussione: forse ridurre a un solo asse «penetrazione scudi», o priorità a EPS) |
+| **#2 — Combattimento B1: tipi d'arma con profilo** | ~~scartato~~ — non si fa: snatura il combattimento (nessuna agency nel momento, morra cinese a info nascosta con pochi giocatori, superficie di bilanciamento enorme). In alternativa, se in futuro si vuole texture d'arma: un solo asse «penetrazione scudi» (S), o priorità a EPS (B2). I tipi d'arma veri hanno senso solo con le classi di nave (tema D). |
+
+### Tema B — cosa resta
+
+- **EPS / griglia di potenza** (B2) — ripartisci il reattore fra scudi/armi/motori/sensori; dà una decisione *prima* dello scontro + tributo Star Trek.
+- **Guasti ai sottosistemi** (B3) — un colpo mette offline un modulo, si ripara allo StarDock o via Ingegnere.
+- (I tipi d'arma con profilo restano fuori: vedi sopra.)
 
 ### #1 — dettaglio di quanto consegnato
 
@@ -161,3 +168,24 @@ dopo ogni cluster.
 - Giornale + `Live::alert` al proprietario a ogni aggancio; `combat_log`
   `kind='mines'` `detail={limpet:1}`.
 - `sw.js` → v23. e2e `scratchpad/test_limpet.php` (22 check).
+
+### #1c — dettaglio di quanto consegnato
+
+- `Navigation::look` — `players_here` porta ora `color`, `crest`, `has_avatar`
+  (LEFT JOIN `media_assets` per l'avatar approvato).
+- `views/partials/player_tag.php` — etichetta compatta riusabile: avatar (se
+  approvato) o stemma + nome colorato + `(tipo nave)` + 🛡 protezione novizio.
+- `views/game/index.php` — sia «Altre navi qui» (scheda settore) sia «Forze
+  nel settore → Navi:» usano `player_tag`. `.who-chip` ridisegnato a
+  `inline-flex`.
+- **Auto-approvazione admin**: `MediaAsset::storeUpload($autoApprove)` — un
+  upload fatto da un utente `role='admin'` entra direttamente `approved`
+  (ritira il precedente via `promote()`, `review_note='auto-approvato (admin)'`);
+  `ProfileController::uploadMedia` passa `Auth::isAdmin()`, messaggio flash
+  differenziato. `approve()` rifattorizzato per condividere `promote()`.
+- `MediaAsset::ensureDir` — chmod `02775` best-effort sui livelli sotto
+  `storage/uploads/` + file a `0664`, così web (www-data) e CLI (proprietario
+  del repo, stesso gruppo via setgid) possono entrambi gestire i file.
+- Mappa: **niente roster globale** (romperebbe la nebbia di guerra); l'unica
+  identità sulla mappa resta l'anello Limpet delle prede tracciate.
+- `sw.js` → v24. e2e `scratchpad/test_media.php` esteso (auto-approvazione).

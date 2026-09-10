@@ -4,6 +4,48 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-10 — Identità nelle liste + auto-approvazione admin (roadmap #1c)
+
+Follow-up piccolo dell'identità: lo stemma (o l'avatar approvato) e il nome
+colorato del comandante compaiono ora anche nelle liste di settore, non
+solo in classifica e sulla propria plancia. E l'admin non deve più
+approvare i propri upload.
+
+- **[src/Game/Navigation.php](src/Game/Navigation.php)** — `look()`:
+  `players_here` porta `color`, `crest`, `has_avatar` (LEFT JOIN
+  `media_assets` sull'avatar approvato).
+- **[views/partials/player_tag.php](views/partials/player_tag.php)** —
+  nuovo partial: etichetta compatta con avatar (se approvato) o stemma +
+  nome colorato + `(tipo nave)` + 🛡 se in protezione novizio.
+- **[views/game/index.php](views/game/index.php)** — sia «Altre navi qui»
+  (scheda settore) sia «Forze nel settore → Navi:» usano `player_tag`.
+- **[assets/css/app.css](assets/css/app.css)** — `.who-chip` ridisegnato
+  `inline-flex` con emblema + nome.
+- **Mappa stellare**: deciso di **non** mostrare un roster globale dei
+  giocatori (romperebbe la nebbia di guerra / la tensione della caccia);
+  l'unica identità sulla mappa resta l'anello ambra delle prede Limpet.
+- **[src/Game/MediaAsset.php](src/Game/MediaAsset.php)** —
+  `storeUpload($autoApprove)`: un upload fatto da un utente `role='admin'`
+  entra direttamente `approved` (ritira il precedente via il nuovo
+  `promote()`, `review_note='auto-approvato (admin)'`); `approve()`
+  rifattorizzato per condividere `promote()`. `ensureDir()` ora forza
+  `02775` (setgid + scrittura di gruppo) sui livelli sotto
+  `storage/uploads/` e i file a `0664`, così web (`www-data`) e CLI
+  (proprietario del repo, stesso gruppo via setgid) possono entrambi
+  gestire i file.
+- **[src/Controllers/ProfileController.php](src/Controllers/ProfileController.php)**
+  — `uploadMedia` passa `Auth::isAdmin()`; messaggio flash differenziato
+  («caricata e approvata» vs «in attesa di approvazione»).
+- **[sw.js](sw.js)** — cache `subspazio-v24`.
+- **Combattimento — tipi d'arma con profilo (#2): scartato.** Snatura il
+  combattimento (nessuna agency nel momento — è una scelta di loadout
+  pre-fatta; morra cinese a informazione nascosta con pochi giocatori;
+  superficie di bilanciamento enorme senza telemetria; innesto di genere
+  estraneo a TradeWars). Se in futuro si vorrà texture d'arma: un solo
+  asse «penetrazione scudi» (piccolo), oppure priorità alla griglia di
+  potenza EPS. I tipi d'arma veri hanno senso solo con le classi di nave
+  (tema D). Vedi `docs/roadmap.md`.
+
 ## 2026-09-10 — Mine Limpet completate (roadmap post-beta, tema B)
 
 Lo schema c'era dal `0007` (`ship_limpets`, `sector_mines.type='limpet'`,

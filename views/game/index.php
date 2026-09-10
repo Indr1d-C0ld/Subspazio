@@ -212,7 +212,9 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
 
     <?php if (!empty($look['players_here'])): ?>
       <p class="ships-here">Altre navi qui:
-        <?= e(implode(', ', array_map(fn ($p) => $p['handle'] . ' (' . $p['ship_type'] . ')', $look['players_here']))) ?>
+        <?php foreach ($look['players_here'] as $ph): ?>
+          <?= partial('player_tag', ['p' => $ph]) ?>
+        <?php endforeach; ?>
       </p>
     <?php endif; ?>
 
@@ -300,7 +302,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
       <?php if ($others !== []): ?>
         <p class="ships-here">Navi:
           <?php foreach ($others as $o): ?>
-            <span class="who-chip"><?= e($o['handle']) ?> <small>(<?= e($o['ship_type']) ?>)</small><?= $o['protected'] ? ' 🛡' : '' ?></span>
+            <?= partial('player_tag', ['p' => $o]) ?>
           <?php endforeach; ?>
         </p>
       <?php endif; ?>
