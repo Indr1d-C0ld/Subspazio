@@ -38,9 +38,11 @@ Due hardware già in vendita al Cantiere (`dev_cloak` 35k, `dev_transwarp`
 - **[src/Controllers/GameController.php](src/Controllers/GameController.php)**
   / **[src/routes.php](src/routes.php)** — `POST /gioco/occulta`
   (`cloak`), `POST /gioco/transwarp` (`transwarp`).
-- **[views/game/index.php](views/game/index.php)** — toggle occultamento
-  in «Armi e dispiegamento», form Transwarp in «Computer di bordo»,
-  badge «🌫 Occultato» nella barra di stato, entrambi con nota d'aiuto.
+- **[views/game/index.php](views/game/index.php)** — `<details>`
+  «Occultamento» dedicato (sempre reso quando la nave ha `dev_cloak`; in
+  Fedspace il pulsante «Attiva» è disabilitato con spiegazione, si apre
+  da solo quando l'occultamento è attivo), form Transwarp in «Computer
+  di bordo», badge «🌫 Occultato» nella barra di stato, note d'aiuto.
 - **[views/game/guide.php](views/game/guide.php)** — nuova sezione
   «Occultamento & Transwarp».
 - **[assets/css/app.css](assets/css/app.css)** — stile `.cloak-on`.
