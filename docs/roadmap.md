@@ -41,7 +41,7 @@ sé.
 
 | Voce | Dim. | Aggancio |
 |---|---|---|
-| **Tabella incontri** — `encounter_table` data-driven, probabilità a ogni warp, 2–3 scelte con esiti; poi se ne aggiungono all'infinito | M motore + S/incontro | `Navigation::move`, plancia, giornale |
+| **Tabella incontri** ✅ fatto — 2026-09-10 (C1) — `encounters` data-driven, tiro a ogni warp, 2–3 scelte con esiti pesati + skill-check; 10 incontri di lancio | M motore + S/incontro | `Navigation::move`, plancia, giornale |
 | **Canale FedNews / Frontier Broadcast** — un NPC radio che ogni giorno racconta lo stato della galassia | S–M | radio, `Events`, threat clock |
 | **NPC nominati ricorrenti** — capitani con stato, taglia, dialogo; scalano a stagione | M | `Npc`, `Contracts` |
 | **Operazioni a tempo** — obiettivi settimanali seminabili dall'admin, barra condivisa, ricompense | M | tick, plancia, `/admin/gioco` |
@@ -102,6 +102,8 @@ dopo ogni cluster.
 | **B — Mine Limpet completate** (aggancio allo scafo + tracking preda, rimozione allo StarDock) | fatto — 2026-09-10 |
 | **B2 — Griglia di potenza (EPS)** (8 tacche su 4 canali Scudi/Armi/Motori/Sensori, ±25%, ri-taratura = 1 turno) | fatto — 2026-09-10 |
 | **B3 — Guasti ai sottosistemi** (un colpo mette offline un modulo; StarDock / Ingegnere / auto-riparazione; sovraccarico EPS come 2ª fonte) | fatto — 2026-09-10 |
+| **C1 — Tabella incontri** (`encounters` data-driven, tiro a ogni warp, 2–3 scelte + skill-check, 10 incontri di lancio) | fatto — 2026-09-10 |
+| **C3 — FedNews / Frontier Broadcast** (bollettino quotidiano nella Radio da stato reale) | prossimo |
 | **#2 — Combattimento B1: tipi d'arma con profilo** | ~~scartato~~ — non si fa: snatura il combattimento (nessuna agency nel momento, morra cinese a info nascosta con pochi giocatori, superficie di bilanciamento enorme). In alternativa, se in futuro si vuole texture d'arma: un solo asse «penetrazione scudi» (S). I tipi d'arma veri hanno senso solo con le classi di nave (tema D). |
 
 ### Tema B — completo
@@ -132,6 +134,32 @@ aspettare le classi di nave del tema D.
   `POST /gioco/cantiere/riparazioni`; nota «rischio di guasti per
   sovraccarico» sul canale EPS al massimo. `sw.js` → v28.
 - e2e `scratchpad/test_subsys.php` (17 check).
+
+### C1 — dettaglio di quanto consegnato
+
+- Migrazione `0030_encounters` — tabelle `encounters` (template data-driven:
+  `weight`, `conditions` JSON, `choices` JSON, `cooldown_min`, `once`,
+  `enabled`) e `player_encounters` (pending/resolved/expired per giocatore);
+  config `encounter.chance` 15, `encounter.cooldown_min` 10,
+  `encounter.per_encounter_repeat_min` 720. **10 incontri di lancio** seminati
+  (tono ME / TNG / MoO).
+- `src/Game/Encounters.php` — `maybeSpawn($player)` (uno alla volta, cooldown
+  globale, tiro `chance`, filtro `eligible()` su regione/allineamento/exp/stive,
+  cooldown per-incontro, `once`, estrazione pesata → riga pending);
+  `pending($pid)` per il pannello; `resolve($pid,$choice)` (skill-check
+  `officerSkill + d6 ≥ dc` → esiti taggati `if:pass|fail`, estrazione pesata,
+  `applyEffects()` con whitelist rigida — crediti/exp/leghe/cristalli/
+  componenti/allineamento/turni/fazioni/scudi/caccia/carico/modulo — tutto
+  clampato, riassunto leggibile); `expireStale()` (riparti senza scegliere →
+  il pending scade); `gc()` (pending dimenticati > 6h).
+- `Navigation::move` — dopo `onEnterSector`: `expireStale` + `maybeSpawn`,
+  teaser negli entry-events. `GameController::index` passa `encounter`.
+- `views/game/index.php` — pannello `.encounter-card` (titolo, corpo, bottoni
+  scelta con «prova di <ruolo>» se skill-check). `EncounterController` +
+  `POST /gioco/incontro`. Task `encounters_gc` in `bin/tick.php`. `sw.js` → v32.
+- e2e `scratchpad/test_encounters.php` (12 check) + smoke HTTP (pannello +
+  resolve «spoglia» → +40 leghe, giornale).
+- **Aggiungere incontri = righe SQL in `encounters`** (o un form admin, da fare).
 
 ### B2 — dettaglio di quanto consegnato
 

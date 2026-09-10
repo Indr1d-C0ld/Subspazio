@@ -4,6 +4,46 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-10 — Tabella incontri (roadmap C1)
+
+A ogni warp, con probabilità `encounter.chance` e rispettando un cooldown,
+l'engine estrae un **incontro** compatibile col contesto (regione,
+allineamento, esperienza, stive) e lo mette *in sospeso*: sulla plancia
+compare un pannello con **2–3 scelte**, ognuna con esiti pesati ed
+eventuale **skill-check d'equipaggio**. Il contenuto è data-driven:
+aggiungere incontri = righe nella tabella `encounters`.
+
+- **[db/migrations/0030_encounters.sql](db/migrations/0030_encounters.sql)**
+  — tabelle `encounters` (template: `weight`, `conditions` JSON,
+  `choices` JSON, `cooldown_min`, `once`, `enabled`) e
+  `player_encounters` (stato per giocatore: pending / resolved /
+  expired). Config `encounter.chance` (15), `encounter.cooldown_min`
+  (10), `encounter.per_encounter_repeat_min` (720). **10 incontri di
+  lancio** seminati, con echi di Mass Effect / Star Trek: TNG / Master of
+  Orion.
+- **[src/Game/Encounters.php](src/Game/Encounters.php)** — motore:
+  `maybeSpawn()` (uno alla volta, cooldown globale + per-incontro, tiro
+  `chance`, filtro `eligible()`, `once`, estrazione pesata),
+  `pending()` per il pannello, `resolve()` (skill-check
+  `skill officiale + d6 ≥ dc` con esiti taggati `if: pass|fail`,
+  estrazione pesata, `applyEffects()` a **whitelist rigida e clampata**
+  — crediti, esperienza, leghe, cristalli, componenti, allineamento,
+  turni, reputazione di fazione, scudi, caccia, carico, modulo — più un
+  riassunto leggibile), `expireStale()` (riparti senza scegliere →
+  l'occasione svanisce), `gc()` (pending dimenticati oltre 6 h).
+- **[src/Game/Navigation.php](src/Game/Navigation.php)** — `move()` dopo
+  `onEnterSector`: `expireStale` + `maybeSpawn`, con un teaser negli
+  entry-events.
+- **[src/Controllers/GameController.php](src/Controllers/GameController.php)**
+  / **[views/game/index.php](views/game/index.php)** — pannello
+  `.encounter-card` sulla plancia (titolo, corpo, bottoni-scelta con
+  «prova di <ruolo>» quando c'è uno skill-check).
+- **[src/Controllers/EncounterController.php](src/Controllers/EncounterController.php)**
+  / **src/routes.php** — `POST /gioco/incontro`.
+- **[bin/tick.php](bin/tick.php)** — task `encounters_gc`.
+- **[assets/css/app.css](assets/css/app.css)** — stili `.encounter-*`.
+- **[sw.js](sw.js)** — cache `subspazio-v32`.
+
 ## 2026-09-10 — Tooltip su avatar/logo + logo visibile ovunque
 
 - **[views/partials/media_hover.php](views/partials/media_hover.php)** —
