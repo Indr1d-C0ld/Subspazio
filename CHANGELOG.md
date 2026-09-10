@@ -4,6 +4,32 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-10 — Iconcine sui beni commerciati
+
+Un'iconcina per ogni tipo di bene, per leggere a colpo d'occhio le liste
+di commercio: **⛏️ Minerale · 🌿 Organico · 🔧 Equipaggiamento · 👥 Coloni**.
+
+- **[src/Game/Economy.php](src/Game/Economy.php)** — `ICONS` (mappa
+  bene→emoji, include `colonists` che non è una commodity di mercato ma
+  occupa stive), `icon()` (stringa vuota se sconosciuto), `labelIcon()`
+  («⛏️ Minerale»).
+- **[views/game/port.php](views/game/port.php)** — colonna «Merce» con
+  icona davanti all'etichetta.
+- **[views/game/index.php](views/game/index.php)** — teaser del porto
+  nella scheda settore con icona; cella «Stive» della barra di stato con
+  **mini-riepilogo del carico** (icona + quantità per ogni tipo a bordo)
+  e `title` col dettaglio esteso.
+- **[views/game/planet.php](views/game/planet.php)** — tabella «Coloni e
+  produzione» con icona per categoria; riga «👥 Coloni a bordo».
+- **[views/game/planets.php](views/game/planets.php)** — «👥 Coloni a
+  bordo» nella barra di stato.
+- **[views/game/blackmarket.php](views/game/blackmarket.php)** /
+  **[views/game/contracts.php](views/game/contracts.php)** — `<option>`
+  del select merce con icona; lista contratti di consegna via
+  `Economy::labelIcon()`.
+- **[assets/css/app.css](assets/css/app.css)** — `.cargo-mini`.
+- **[sw.js](sw.js)** — cache `subspazio-v36`.
+
 ## 2026-09-10 — Occultamento + Transwarp (i due dispositivi-fantasma)
 
 Due hardware già in vendita al Cantiere (`dev_cloak` 35k, `dev_transwarp`
