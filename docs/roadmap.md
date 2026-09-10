@@ -104,6 +104,7 @@ dopo ogni cluster.
 | **B3 — Guasti ai sottosistemi** (un colpo mette offline un modulo; StarDock / Ingegnere / auto-riparazione; sovraccarico EPS come 2ª fonte) | fatto — 2026-09-10 |
 | **C1 — Tabella incontri** (`encounters` data-driven, tiro a ogni warp, 2–3 scelte + skill-check, 10 incontri di lancio) | fatto — 2026-09-10 |
 | **C3 — FedNews / Frontier Broadcast** (bollettino quotidiano nella Radio da stato reale) | fatto — 2026-09-10 |
+| **Dispositivi-fantasma — Occultamento + Transwarp** (meccanica reale a due hardware finora inerti) | fatto — 2026-09-10 |
 | **C — resta** | NPC nominati ricorrenti · operazioni a tempo · anomalia della stagione |
 | **#2 — Combattimento B1: tipi d'arma con profilo** | ~~scartato~~ — non si fa: snatura il combattimento (nessuna agency nel momento, morra cinese a info nascosta con pochi giocatori, superficie di bilanciamento enorme). In alternativa, se in futuro si vuole texture d'arma: un solo asse «penetrazione scudi» (S). I tipi d'arma veri hanno senso solo con le classi di nave (tema D). |
 
@@ -178,6 +179,38 @@ aspettare le classi di nave del tema D.
   con badge. Teaser `.fednews-card` in cima alla plancia (fino a 4 titoli +
   link alla Radio). Task `fednews` in `bin/tick.php`. `sw.js` → v34.
 - e2e `scratchpad/test_fednews.php` (9 check).
+
+### Dispositivi-fantasma — dettaglio di quanto consegnato
+
+- Migrazione `0032_devices` — `ships.cloaked TINYINT`; config
+  `cloak.warp_turn_penalty` 1, `cloak.fedspace_forbidden` 1,
+  `transwarp.turn_cost` 5.
+- `src/Game/Cloak.php` — `has()`, `isActive()`,
+  `seesCloaked($scanner)` (vero solo con scanner olografico),
+  `toggle($player,$ship,$on)` (rifiuta in Fedspace, ShipLog),
+  `drop($shipId,$reason)` (decloak forzato, torna true se era occultata).
+- **Occultamento**: da cloaked sei fuori dai sensori — ti vede solo chi ha
+  scanner olografico nel tuo settore (`Navigation::look` filtra i cloaked),
+  e in `Combat::onEnterSector` scivoli oltre caccia schierati e NPC senza
+  ingaggio. In cambio: `+cloak.warp_turn_penalty` a `turns_per_warp`
+  (`ShipStats::effective`), vietato in Fedspace, non ferma mine né Quasar,
+  e **cade** se apri il fuoco (`attackShip/Port/Npc`), dispieghi
+  (`Deploy`), attracchi allo StarDock o entri in Fedspace
+  (`onEnterSector`), o salti in Transwarp. `attackShip` rifiuta comunque
+  un bersaglio occultato.
+- **Transwarp**: `Navigation::transwarp($player,$ship,$toSector)` — salto
+  diretto a un settore già in `player_visited_sectors`, ignora le rotte,
+  costo fisso `transwarp.turn_cost` turni, `move_log.mode='transwarp'`,
+  smaschera. Estratta `Navigation::arrive()` (sequenza post-arrivo:
+  intercettazioni, strain EPS, incontri, live, giornale) condivisa con
+  `move()`.
+- Rotte `POST /gioco/occulta` (`GameController::cloak`) e
+  `POST /gioco/transwarp` (`GameController::transwarp`).
+- UI plancia: toggle in «Armi e dispiegamento», form Transwarp in
+  «Computer di bordo», badge «🌫 Occultato» nella barra di stato, note
+  d'aiuto. Sezione «Occultamento & Transwarp» nella guida in-game.
+  `sw.js` → v35.
+- e2e `scratchpad/test_devices.php` (29 check, tutto verde).
 
 ### B2 — dettaglio di quanto consegnato
 
