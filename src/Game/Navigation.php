@@ -41,7 +41,7 @@ final class Navigation
         $playersHere = Database::all(
             "SELECT p.id, p.handle, p.alignment, p.protected_until, p.color, p.crest,
                     t.name AS ship_type,
-                    ma.id AS avatar_id
+                    ma.path AS avatar_path
              FROM players p
              JOIN ships s ON s.id = p.ship_id
              JOIN ship_types t ON t.ckey = s.type_key
@@ -58,7 +58,7 @@ final class Navigation
             'protected'  => $o['protected_until'] !== null && strtotime((string) $o['protected_until']) > time(),
             'color'      => Identity::color($o),
             'crest'      => Identity::crest($o),
-            'has_avatar' => (int) ($o['avatar_id'] ?? 0) > 0,
+            'has_avatar' => !empty($o['avatar_path']) && MediaAsset::fileExists(['path' => $o['avatar_path']]),
         ], $playersHere);
 
         $ownShip = Database::first('SELECT dev_scanner FROM ships s JOIN players p ON p.ship_id = s.id WHERE p.id = ?', [(int) $player['id']]);

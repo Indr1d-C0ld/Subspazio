@@ -70,12 +70,12 @@ final class Leaderboard
             'color'      => Identity::color($r),
             'crest'      => Identity::crest($r),
             'pid'        => (int) $r['id'],
-            'has_avatar' => (int) $r['avatar_id'] > 0,
+            'has_avatar' => !empty($r['avatar_path']) && MediaAsset::fileExists(['path' => $r['avatar_path']]),
         ], Database::all(
             "SELECT p.id, p.handle, p.rating, p.experience, p.kills, p.deaths, p.alignment,
                     p.color, p.crest,
                     c.tag AS corp_tag,
-                    ma.id AS avatar_id,
+                    ma.path AS avatar_path,
                     (SELECT COUNT(*) FROM planets pl WHERE pl.owner_player_id = p.id AND pl.destroyed = 0) AS planet_count
              FROM players p
              LEFT JOIN corp_members m ON m.player_id = p.id

@@ -104,6 +104,7 @@ $crestLabels = [
       $ap = $media[$kind]['approved'] ?? null;
       $pe = $media[$kind]['pending'] ?? null;
       $re = $media[$kind]['rejected'] ?? null;
+      $missing = !empty($media[$kind]['missing']);
       $showReject = $re !== null && $pe === null
         && ($ap === null || (int) $re['id'] > (int) $ap['id']);
     ?>
@@ -127,10 +128,15 @@ $crestLabels = [
           </figure>
         <?php endif; ?>
 
-        <?php if ($ap === null && $pe === null): ?>
+        <?php if ($ap === null && $pe === null && !$missing): ?>
           <p class="hint">Nessuna immagine: al suo posto compare il tuo stemma.</p>
         <?php endif; ?>
       </div>
+
+      <?php if ($missing): ?>
+        <p class="media-note"><span class="pill err">non disponibile</span>
+           L'immagine approvata non è più sul server. Ricaricala qui sotto.</p>
+      <?php endif; ?>
 
       <?php if ($showReject): ?>
         <p class="media-note"><span class="pill err">respinta</span>

@@ -20,17 +20,20 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
     <span class="k">Comandante</span>
     <span class="v">
       <?php if ($hasAvatar): ?>
-        <img class="idchip-avatar" style="--crest-color:<?= e($idc['color']) ?>;width:16px;height:16px"
-             src="<?= e(url('/media/c/' . $pid . '/avatar')) ?>" alt="" title="<?= e($idc['title']) ?>" loading="lazy">
+        <img class="idchip-avatar" style="--crest-color:<?= e($idc['color']) ?>;width:18px;height:18px"
+             src="<?= e(url('/media/c/' . $pid . '/avatar')) ?>" alt="" title="<?= e($idc['title']) ?>">
       <?php else: ?>
         <?= partial('crest', ['crest' => $idc['crest'], 'color' => $idc['color'], 'size' => 16, 'title' => $idc['title']]) ?>
       <?php endif; ?>
       <a href="<?= e(url('/gioco/profilo')) ?>" style="color:<?= e($idc['color']) ?>"><?= e($player['handle']) ?></a>
-      <?php if ($hasLogo): ?>
-        <img class="fleet-logo" src="<?= e(url('/media/c/' . $pid . '/logo')) ?>" alt="logo di flotta" loading="lazy">
-      <?php endif; ?>
     </span>
   </div>
+  <?php if ($hasLogo): ?>
+  <div class="sb-logo">
+    <span class="k">Flotta</span>
+    <span class="v"><img class="fleet-logo" src="<?= e(url('/media/c/' . $pid . '/logo')) ?>" alt="" title="Logo di flotta"></span>
+  </div>
+  <?php endif; ?>
   <div><span class="k">Grado</span><span class="v"><?= e($rank) ?></span></div>
   <div><span class="k">Turni</span><span class="v" data-bind="turns"><?= (int) $player['turns'] ?></span></div>
   <div><span class="k">Crediti</span><span class="v" data-bind="credits"><?= number_format((int) $player['credits'], 0, ',', '.') ?></span></div>

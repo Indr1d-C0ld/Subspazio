@@ -4,6 +4,40 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-10 — Fix: le immagini caricate vivono fuori dall'albero git
+
+Avatar e logo caricati potevano sparire dopo un'operazione git o un
+redeploy: `storage/uploads/` sta dentro il working tree ed è gitignorato
+(solo `.gitkeep` tracciato), quindi un `git clean -fdx` o un checkout
+pulito lo azzera.
+
+- **[src/Game/MediaAsset.php](src/Game/MediaAsset.php)** —
+  `uploadsRoot()` ora legge la chiave config **`paths.uploads`** se
+  presente (in produzione va impostata a una dir **fuori dall'albero di
+  git**, come il file di config; fallback a `<root>/storage/uploads` solo
+  per lo sviluppo). `current()` verifica che il file esista ancora su
+  disco: se manca ritorna `null`, così la plancia / `idchip` / classifica
+  / «navi qui» **degradano allo stemma** invece di mostrare un'immagine
+  rotta. Nuovi `fileExists()` e `flushCache()`. `forOwner()` espone un
+  flag `missing`. `promote()` ritira il precedente approvato con una
+  query DB (non più via `current()`, che ora filtra per file presente),
+  evitando doppioni dopo un ri-upload.
+- **[src/Game/Leaderboard.php](src/Game/Leaderboard.php)**,
+  **[src/Game/Navigation.php](src/Game/Navigation.php)** — `has_avatar`
+  controlla anche l'esistenza del file (`ma.path` + `fileExists`).
+- **[views/game/profilo.php](views/game/profilo.php)** — se un'immagine
+  approvata ha perso il file: badge «non disponibile» + invito a
+  ricaricarla, invece di un'anteprima rotta.
+- **[views/game/index.php](views/game/index.php)** — il logo di flotta
+  passa a una **cella dedicata `.sb-logo`** nella status bar: prima era
+  incastrato nella cella del nome, e quando l'immagine non caricava il
+  suo `alt` sfondava il layout. Immagini decorative con `alt=""`.
+- **[assets/css/app.css](assets/css/app.css)** — regole `.sb-logo` /
+  `.fleet-logo`; `.sb-id .v` va a capo se stretto.
+- **[config/config.example.php](config/config.example.php)** — blocco
+  `paths.uploads` documentato.
+- **[sw.js](sw.js)** — cache `subspazio-v25`.
+
 ## 2026-09-10 — Identità nelle liste + auto-approvazione admin (roadmap #1c)
 
 Follow-up piccolo dell'identità: lo stemma (o l'avatar approvato) e il nome

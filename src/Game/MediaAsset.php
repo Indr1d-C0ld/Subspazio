@@ -32,6 +32,12 @@ final class MediaAsset
 
     // --- lettura ------------------------------------------------------------
 
+    /** Svuota la cache di richiesta di current() (usata da approve/reject/remove; utile nei test). */
+    public static function flushCache(): void
+    {
+        self::$cache = [];
+    }
+
     /** Limite effettivo: il minimo fra config e limiti del php.ini (onesto verso l'utente). */
     public static function maxBytes(): int
     {
@@ -62,7 +68,13 @@ final class MediaAsset
         };
     }
 
-    /** Ultimo asset approvato per (owner, kind), o null. @return array<string,mixed>|null */
+    /**
+     * Ultimo asset approvato per (owner, kind) il cui file esiste ancora su
+     * disco, o null. Il controllo del file fa sì che una perdita di dati
+     * (file sparito ma riga rimasta) degradi con grazia allo stemma invece
+     * di mostrare un'immagine rotta.
+     * @return array<string,mixed>|null
+     */
     public static function current(string $ownerType, int $ownerId, string $kind): ?array
     {
         $key = "$ownerType:$ownerId:$kind";
@@ -75,7 +87,16 @@ final class MediaAsset
              ORDER BY id DESC LIMIT 1",
             [$ownerType, $ownerId, $kind]
         );
+        if ($row !== null && !is_file(self::absPath($row))) {
+            $row = null;
+        }
         return self::$cache[$key] = $row;
+    }
+
+    /** true se l'asset ha ancora il suo file su disco. @param array<string,mixed> $asset */
+    public static function fileExists(array $asset): bool
+    {
+        return isset($asset['path']) && is_file(self::absPath($asset));
     }
 
     /** Asset in attesa per (owner, kind), o null. @return array<string,mixed>|null */
@@ -91,8 +112,9 @@ final class MediaAsset
 
     /**
      * Stato per la UI del profilo: per ogni kind, l'asset approvato, quello in
-     * coda e l'ultimo rifiutato (solo per mostrare la motivazione).
-     * @return array<string,array{approved:?array<string,mixed>,pending:?array<string,mixed>,rejected:?array<string,mixed>}>
+     * coda, l'ultimo rifiutato (per la motivazione) e un flag se l'approvato
+     * ha perso il file su disco.
+     * @return array<string,array{approved:?array<string,mixed>,pending:?array<string,mixed>,rejected:?array<string,mixed>,missing:bool}>
      */
     public static function forOwner(string $ownerType, int $ownerId): array
     {
@@ -104,10 +126,18 @@ final class MediaAsset
                  ORDER BY id DESC LIMIT 1",
                 [$ownerType, $ownerId, $kind]
             );
+            $approvedRow = Database::first(
+                "SELECT * FROM media_assets
+                 WHERE owner_type = ? AND owner_id = ? AND kind = ? AND status = 'approved'
+                 ORDER BY id DESC LIMIT 1",
+                [$ownerType, $ownerId, $kind]
+            );
+            $missing = $approvedRow !== null && !self::fileExists($approvedRow);
             $out[$kind] = [
-                'approved' => self::current($ownerType, $ownerId, $kind),
+                'approved' => $missing ? null : $approvedRow,
                 'pending'  => self::pendingFor($ownerType, $ownerId, $kind),
                 'rejected' => $rejected,
+                'missing'  => $missing,
             ];
         }
         return $out;
@@ -137,8 +167,18 @@ final class MediaAsset
 
     // --- percorsi ---------------------------------------------------------
 
+    /**
+     * Radice dei file caricati. In produzione va tenuta FUORI dall'albero di
+     * git (come /data/subspazio-config/): un `git clean` o un redeploy non deve
+     * poter cancellare i contenuti degli utenti. `paths.uploads` nel config
+     * punta lì; il fallback sotto storage/ serve solo allo sviluppo.
+     */
     private static function uploadsRoot(): string
     {
+        $custom = trim((string) Config::get('paths.uploads', ''));
+        if ($custom !== '') {
+            return rtrim($custom, '/');
+        }
         $root = (string) (Config::get('paths.root') ?: ($GLOBALS['__project_root'] ?? getcwd()));
         return rtrim($root, '/') . '/storage/uploads';
     }
@@ -274,8 +314,14 @@ final class MediaAsset
         if ($a === null) {
             return;
         }
-        $prev = self::current((string) $a['owner_type'], (int) $a['owner_id'], (string) $a['kind']);
-        if ($prev !== null && (int) $prev['id'] !== $id) {
+        // Ritira OGNI altro approvato per lo stesso (owner, kind) — via DB, non
+        // via current(), che ora filtra per file presente e mancherebbe le
+        // righe il cui file e' andato perso.
+        foreach (Database::all(
+            "SELECT * FROM media_assets
+             WHERE owner_type = ? AND owner_id = ? AND kind = ? AND status = 'approved' AND id <> ?",
+            [(string) $a['owner_type'], (int) $a['owner_id'], (string) $a['kind'], $id]
+        ) as $prev) {
             self::purgeFile($prev);
             Database::run(
                 "UPDATE media_assets SET status = 'rejected', review_note = 'sostituito da #{$id}', reviewed_by = ?, reviewed_at = NOW() WHERE id = ?",

@@ -40,10 +40,16 @@ return [
 
     'paths' => [
         'root' => '/data/html/subspazio',
+        // Radice dei file caricati dagli utenti. TIENILA FUORI dall'albero di
+        // git (come questo file di config): un redeploy o un `git clean` non
+        // deve poter cancellare i contenuti degli utenti. La dir va creata a
+        // mano con permessi 2775 e gruppo del web server (setgid).
+        // Se vuota/assente, fallback a <root>/storage/uploads/ (solo per lo sviluppo).
+        'uploads' => '',   // es. '/data/subspazio-uploads'
     ],
 
     // Immagini caricate dagli utenti (avatar comandante, logo di flotta).
-    // I file vivono in <root>/storage/uploads/ (fuori dal web); il limite
+    // I file vivono in paths.uploads (fuori dal web e fuori da git); il limite
     // effettivo e' comunque il minimo fra questo e upload_max_filesize/post_max_size.
     'media' => [
         'max_bytes' => 2 * 1024 * 1024,
