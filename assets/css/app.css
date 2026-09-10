@@ -709,6 +709,10 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 /* --- occultamento (dispositivi-fantasma) --- */
 .statusbar .v.cloak-on { color: #b98cff; font-weight: 600; letter-spacing: .02em; }
 
+/* mini-riepilogo del carico nella barra di stato */
+.cargo-mini { display: inline-flex; gap: .35rem; margin-left: .3rem; font-weight: 600; opacity: .85; }
+.cargo-mini > span { white-space: nowrap; }
+
 /* --------------------------------------------------------- Traguardi / meta --- */
 .ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: .6rem; }
 .ach {

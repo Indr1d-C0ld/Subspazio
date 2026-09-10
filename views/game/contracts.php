@@ -25,7 +25,7 @@ $U = e(url('/gioco/contratti'));
             <?php if ($c['kind'] === 'bounty'): ?>
               Taglia su <strong><?= e($c['target'] ?? '?') ?></strong> · da <?= e($c['issuer']) ?>
             <?php else: ?>
-              <?= (int) $c['qty'] ?> <?= e(\App\Game\Economy::label((string) $c['commodity'])) ?> → settore <strong><?= (int) $c['sector_id'] ?></strong> · da <?= e($c['issuer']) ?>
+              <?= (int) $c['qty'] ?> <?= e(\App\Game\Economy::labelIcon((string) $c['commodity'])) ?> → settore <strong><?= (int) $c['sector_id'] ?></strong> · da <?= e($c['issuer']) ?>
             <?php endif; ?>
           </td>
           <td class="ta-r"><?= number_format((int) $c['reward'], 0, ',', '.') ?></td>
@@ -52,7 +52,7 @@ $U = e(url('/gioco/contratti'));
     </form>
     <form method="post" action="<?= $U ?>" class="row">
       <?= csrf_field() ?><input type="hidden" name="op" value="delivery">
-      <label>Consegna <select name="commodity"><option value="ore">Minerale</option><option value="organics">Organico</option><option value="equipment">Equip.</option></select></label>
+      <label>Consegna <select name="commodity"><option value="ore">⛏️ Minerale</option><option value="organics">🌿 Organico</option><option value="equipment">🔧 Equip.</option></select></label>
       <label>Qta <input type="number" name="qty" min="1" value="100" class="qty"></label>
       <label>al settore <input type="number" name="sector" min="1" value="1" class="qty"></label>
       <label>Ricompensa <input type="number" name="reward" min="500" value="2000" class="qty"></label>

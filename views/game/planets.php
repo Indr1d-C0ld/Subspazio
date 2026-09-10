@@ -6,7 +6,7 @@
 <section class="statusbar">
   <div><span class="k">Settore</span><span class="v"><?= (int) $player['sector_id'] ?></span></div>
   <div><span class="k">Genesi a bordo</span><span class="v"><?= (int) $ship['genesis'] ?></span></div>
-  <div><span class="k">Coloni a bordo</span><span class="v"><?= number_format((int) $ship['hold_colonists'], 0, ',', '.') ?></span></div>
+  <div><span class="k">👥 Coloni a bordo</span><span class="v"><?= number_format((int) $ship['hold_colonists'], 0, ',', '.') ?></span></div>
   <div><a href="<?= e(url('/gioco')) ?>">← Plancia</a></div>
 </section>
 

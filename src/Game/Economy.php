@@ -21,12 +21,36 @@ final class Economy
         'equipment' => 'Equipaggiamento',
     ];
 
+    /**
+     * Iconcina per tipo di bene. Include `colonists` (non è una commodity
+     * di mercato ma occupa stive ed è mostrato accanto agli altri).
+     */
+    public const ICONS = [
+        'ore'       => '⛏️',
+        'organics'  => '🌿',
+        'equipment' => '🔧',
+        'colonists' => '👥',
+    ];
+
     /** @var array<string,float> */
     private static array $regionBaseCache = [];
 
     public static function label(string $c): string
     {
         return self::LABELS[$c] ?? $c;
+    }
+
+    /** Iconcina del bene, stringa vuota se sconosciuto. */
+    public static function icon(string $c): string
+    {
+        return self::ICONS[$c] ?? '';
+    }
+
+    /** "⛏️ Minerale" — icona + etichetta, per le liste. */
+    public static function labelIcon(string $c): string
+    {
+        $ico = self::icon($c);
+        return ($ico !== '' ? $ico . ' ' : '') . self::label($c);
     }
 
     public static function prefix(string $c): string

@@ -37,7 +37,7 @@ $used = \App\Game\Economy::holdsUsed($ship);
     <tbody>
     <?php foreach ($rows as $r): ?>
       <tr>
-        <td><strong><?= e($r['label']) ?></strong></td>
+        <td><strong><?= e(\App\Game\Economy::icon((string) $r['commodity'])) ?> <?= e($r['label']) ?></strong></td>
         <td>
           <?php if ($r['mode'] === 'sell'): ?><span class="pill ok">vende a te</span>
           <?php else: ?><span class="pill warn">compra da te</span><?php endif; ?>

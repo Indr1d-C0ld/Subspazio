@@ -22,7 +22,7 @@ $U = e(url('/gioco/mercato-nero'));
     <h2>Piazza merce (premio sul prezzo equo)</h2>
     <form method="post" action="<?= $U ?>" class="row">
       <?= csrf_field() ?><input type="hidden" name="op" value="sell">
-      <label>Merce <select name="commodity"><option value="ore">Minerale</option><option value="organics">Organico</option><option value="equipment">Equipaggiamento</option></select></label>
+      <label>Merce <select name="commodity"><option value="ore">⛏️ Minerale</option><option value="organics">🌿 Organico</option><option value="equipment">🔧 Equipaggiamento</option></select></label>
       <label>Qta <input type="number" name="qty" min="1" value="10" class="qty"></label>
       <button class="btn xs" type="submit">Vendi</button>
     </form>

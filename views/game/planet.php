@@ -12,7 +12,7 @@ $u = url('/gioco/pianeta/' . (int) $p['id']);
 <section class="statusbar">
   <div><span class="k">Crediti</span><span class="v"><?= number_format((int) $player['credits'], 0, ',', '.') ?></span></div>
   <div><span class="k">Stive</span><span class="v"><?= $used ?>/<?= (int) $ship['holds_total'] ?></span></div>
-  <div><span class="k">Coloni a bordo</span><span class="v"><?= number_format((int) $ship['hold_colonists'], 0, ',', '.') ?></span></div>
+  <div><span class="k">👥 Coloni a bordo</span><span class="v"><?= number_format((int) $ship['hold_colonists'], 0, ',', '.') ?></span></div>
   <div><span class="k">Caccia</span><span class="v"><?= number_format((int) $ship['fighters'], 0, ',', '.') ?></span></div>
   <div><a href="<?= e(url('/gioco')) ?>">← Plancia</a></div>
 </section>
@@ -43,12 +43,12 @@ $u = url('/gioco/pianeta/' . (int) $p['id']);
     <thead><tr><th>Categoria</th><th class="ta-r">Coloni</th><th class="ta-r">Magazzino</th><th>Produzione</th></tr></thead>
     <tbody>
       <?php foreach ([
-        ['ore', 'Minerale', 'col_ore', 'stock_ore', 'prod_ore'],
-        ['org', 'Organico', 'col_org', 'stock_org', 'prod_org'],
-        ['equ', 'Equipaggiamento', 'col_equ', 'stock_equ', 'prod_equ'],
-      ] as [$b, $lbl, $cc, $sc, $pc]): ?>
+        ['ore', 'Minerale', 'col_ore', 'stock_ore', 'prod_ore', 'ore'],
+        ['org', 'Organico', 'col_org', 'stock_org', 'prod_org', 'organics'],
+        ['equ', 'Equipaggiamento', 'col_equ', 'stock_equ', 'prod_equ', 'equipment'],
+      ] as [$b, $lbl, $cc, $sc, $pc, $ck]): ?>
       <tr>
-        <td><?= $lbl ?></td>
+        <td><?= e(\App\Game\Economy::icon($ck)) ?> <?= $lbl ?></td>
         <td class="ta-r"><?= number_format((int) $p[$cc], 0, ',', '.') ?></td>
         <td class="ta-r"><?= number_format((int) $p[$sc], 0, ',', '.') ?></td>
         <td><?= number_format((float) $p[$pc], 2, ',', '.') ?>/colono/h</td>

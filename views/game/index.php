@@ -41,7 +41,20 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
     echo e($sn !== '' ? $sn : $ship['type_name']);
     if ($shipReg !== '') { echo ' <span class="mut">' . e($shipReg) . '</span>'; }
   ?></span></div>
-  <div><span class="k">Stive</span><span class="v"><?= $holdsUsed ?>/<?= (int) $ship['holds_total'] ?></span></div>
+  <?php
+    $cargoRows = [
+        'ore'       => (int) $ship['hold_ore'],
+        'organics'  => (int) $ship['hold_organics'],
+        'equipment' => (int) $ship['hold_equipment'],
+        'colonists' => (int) $ship['hold_colonists'],
+    ];
+    $cargoTitle = [];
+    foreach ($cargoRows as $ck => $cv) {
+        if ($cv > 0) { $cargoTitle[] = \App\Game\Economy::label($ck) . ': ' . number_format($cv, 0, ',', '.'); }
+    }
+  ?>
+  <div><span class="k">Stive</span><span class="v"<?= $cargoTitle ? ' title="' . e(implode(' · ', $cargoTitle)) . '"' : '' ?>><?= $holdsUsed ?>/<?= (int) $ship['holds_total'] ?><?php
+    if ($holdsUsed > 0): ?> <span class="cargo-mini"><?php foreach ($cargoRows as $ck => $cv): if ($cv <= 0) continue; ?><span><?= \App\Game\Economy::icon($ck) ?><?= number_format($cv, 0, ',', '.') ?></span><?php endforeach; ?></span><?php endif; ?></span></div>
   <div><span class="k">Caccia</span><span class="v"><?= number_format((int) $ship['fighters'], 0, ',', '.') ?></span></div>
   <div><span class="k">Scudi</span><span class="v"><?= number_format((int) $ship['shields'], 0, ',', '.') ?></span></div>
   <?php if (!empty($ship['cloaked'])): ?>
@@ -291,7 +304,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
       <ul class="port-teaser-list">
         <?php foreach ($p['commodities'] as $c): ?>
           <li>
-            <span class="cl"><?= e($c['label']) ?></span>
+            <span class="cl"><?= e(\App\Game\Economy::icon((string) $c['commodity'])) ?> <?= e($c['label']) ?></span>
             <?php if ($c['mode'] === 'sell'): ?><span class="pill ok">vende</span>
             <?php else: ?><span class="pill warn">compra</span><?php endif; ?>
             <span class="pr"><?= number_format((float) $c['unit'], 2, ',', '.') ?> cr</span>
