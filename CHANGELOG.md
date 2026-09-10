@@ -4,6 +4,43 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-10 — Marca di flotta più varia: nuovi stemmi + sagome di nave
+
+La scelta della marca (che compare al posto dell'avatar quando non se ne
+carica uno) passa da 12 a **31 opzioni**: 6 stemmi astratti in più e le
+**13 sagome dei vascelli di gioco**.
+
+- **[src/Game/Identity.php](src/Game/Identity.php)** — `CRESTS` +6
+  (`teschio`, `fenice`, `ancora`, `fulmine`, `nova`, `chiave`);
+  `CREST_LABELS`. Nuovi `SHIP_MARKS` + `SHIP_MARK_LABELS` = le 13
+  `ship_types.ckey`, selezionabili come marca col valore `nave:<ckey>`.
+  `validCrest()` (stemma astratto **o** `nave:<ckey>`), `symbolId()`
+  (→ `crest-<k>` | `ship-<k>`), `crestLabel()`. `crest()` e `save()`
+  ora accettano anche le sagome.
+- **[views/partials/ship_sprite.php](views/partials/ship_sprite.php)** —
+  nuovo: 13 `<symbol id="ship-…">` (profilo laterale, `currentColor`,
+  solo riempimenti pieni per restare leggibili a 24–30 px). Incluso nel
+  layout subito dopo `crest_sprite`.
+- **[views/partials/crest_sprite.php](views/partials/crest_sprite.php)**
+  — i 6 nuovi `<symbol>`.
+- **[db/migrations/0033_crest_marks.sql](db/migrations/0033_crest_marks.sql)**
+  — `players.crest` e `corporations.crest` da `VARCHAR(24)` a
+  `VARCHAR(32)` (i valori `nave:<ckey>` sono più lunghi).
+- **[views/game/profilo.php](views/game/profilo.php)** — la sezione
+  «Marca di flotta» ora ha la griglia degli stemmi **più** una
+  sotto-griglia «Sagome di nave»; etichette da `Identity::crestLabel()`.
+- **[assets/js/profile.js](assets/js/profile.js)** — l'anteprima live
+  gestisce il prefisso `nave:` (→ `#ship-…`).
+- **[views/partials/crest.php](views/partials/crest.php)** /
+  **[views/partials/player_tag.php](views/partials/player_tag.php)** —
+  risolvono la marca via `Identity::symbolId()` / `validCrest()` (prima
+  scartavano ogni valore `nave:` e ripiegavano sul default).
+- **[views/game/shipyard.php](views/game/shipyard.php)** — silhouette
+  accanto a ogni modello nel catalogo navi.
+- **[assets/css/app.css](assets/css/app.css)** — `.crest-subhead`,
+  `.ship-mark`.
+- **[sw.js](sw.js)** — cache `subspazio-v37`.
+
 ## 2026-09-10 — Iconcine sui beni commerciati
 
 Un'iconcina per ogni tipo di bene, per leggere a colpo d'occhio le liste

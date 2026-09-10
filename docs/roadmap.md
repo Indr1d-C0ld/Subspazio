@@ -105,6 +105,7 @@ dopo ogni cluster.
 | **C1 — Tabella incontri** (`encounters` data-driven, tiro a ogni warp, 2–3 scelte + skill-check, 10 incontri di lancio) | fatto — 2026-09-10 |
 | **C3 — FedNews / Frontier Broadcast** (bollettino quotidiano nella Radio da stato reale) | fatto — 2026-09-10 |
 | **Dispositivi-fantasma — Occultamento + Transwarp** (meccanica reale a due hardware finora inerti) | fatto — 2026-09-10 |
+| **Rifiniture identità/UI** — iconcine sui beni · marca di flotta più varia (6 stemmi + 13 sagome di nave) | fatto — 2026-09-10 |
 | **C — resta** | NPC nominati ricorrenti · operazioni a tempo · anomalia della stagione |
 | **#2 — Combattimento B1: tipi d'arma con profilo** | ~~scartato~~ — non si fa: snatura il combattimento (nessuna agency nel momento, morra cinese a info nascosta con pochi giocatori, superficie di bilanciamento enorme). In alternativa, se in futuro si vuole texture d'arma: un solo asse «penetrazione scudi» (S). I tipi d'arma veri hanno senso solo con le classi di nave (tema D). |
 
@@ -179,6 +180,27 @@ aspettare le classi di nave del tema D.
   con badge. Teaser `.fednews-card` in cima alla plancia (fino a 4 titoli +
   link alla Radio). Task `fednews` in `bin/tick.php`. `sw.js` → v34.
 - e2e `scratchpad/test_fednews.php` (9 check).
+
+### Rifiniture identità/UI — dettaglio di quanto consegnato
+
+- **Iconcine sui beni** (`Economy::ICONS`/`icon()`/`labelIcon()`): ⛏️ Minerale ·
+  🌿 Organico · 🔧 Equipaggiamento · 👥 Coloni. In: porto (colonna Merce),
+  teaser porto in plancia, tabella produzione pianeta, «Coloni a bordo»,
+  select merce di mercato nero e contratti, lista contratti di consegna.
+  Cella «Stive» della barra di stato con mini-riepilogo del carico a bordo.
+  `sw.js` → v36.
+- **Marca di flotta più varia**: `Identity::CRESTS` +6 (teschio, fenice,
+  ancora, fulmine, nova, chiave); `SHIP_MARKS`/`SHIP_MARK_LABELS` = le 13
+  `ship_types.ckey` selezionabili come marca col valore `nave:<ckey>`.
+  Nuovo `views/partials/ship_sprite.php` (13 `<symbol>` profilo laterale,
+  `currentColor`), incluso nel layout dopo `crest_sprite`.
+  `Identity::validCrest()`/`symbolId()`/`crestLabel()`; `crest()`/`save()`
+  accettano le sagome. Migrazione `0033_crest_marks` (`players.crest` e
+  `corporations.crest` `VARCHAR(24)`→`(32)`). Editor profilo con
+  sotto-griglia «Sagome di nave» + anteprima live (`profile.js` gestisce
+  il prefisso `nave:`). `crest.php`/`player_tag.php` risolvono la marca
+  via `symbolId`/`validCrest`. Silhouette nel catalogo del Cantiere.
+  CSS `.crest-subhead`/`.ship-mark`. `sw.js` → v37.
 
 ### Dispositivi-fantasma — dettaglio di quanto consegnato
 
