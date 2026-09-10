@@ -36,6 +36,22 @@ $cr = (int) $player['credits'];
   </div>
   <?php endif; ?>
 
+  <?php if (!empty($broken)): ?>
+  <div class="repair-box">
+    <h2>Riparazioni <span class="pill err"><?= count($broken) ?> fuori uso</span></h2>
+    <ul class="repair-list">
+      <?php foreach ($broken as $b): ?>
+        <li><strong><?= e($b['name']) ?></strong> <span class="mut">(slot <?= e($b['slot']) ?>) — fuori uso dal <?= e(fmt_dt($b['broken_at'])) ?></span></li>
+      <?php endforeach; ?>
+    </ul>
+    <form method="post" action="<?= e(url('/gioco/cantiere/riparazioni')) ?>" class="inline">
+      <?= csrf_field() ?>
+      <button class="btn" type="submit">Ripara tutto — <?= number_format(count($broken) * (int) $repair_each, 0, ',', '.') ?> cr</button>
+    </form>
+    <p class="hint"><?= number_format((int) $repair_each, 0, ',', '.') ?> cr a modulo. In alternativa: l'Ingegnere di bordo ne rimette in linea sul tick, e dopo qualche ora un modulo si ripristina da solo.</p>
+  </div>
+  <?php endif; ?>
+
   <h2>Potenziamenti</h2>
   <div class="upg-grid">
     <form method="post" action="<?= e(url('/gioco/cantiere/upgrade')) ?>" class="row">

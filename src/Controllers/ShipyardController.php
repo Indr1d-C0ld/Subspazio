@@ -34,6 +34,8 @@ final class ShipyardController
             'title'    => 'Cantiere StarDock',
             'player'   => $player,
             'ship'     => $ship,
+            'broken'      => \App\Game\Subsystems::brokenList((int) $ship['id']),
+            'repair_each' => \App\Game\Subsystems::repairCostEach(),
             'catalog'  => Shipyard::catalog(),
             'trade_in' => Shipyard::tradeInValue($ship),
             'used'     => Economy::holdsUsed($ship),
@@ -105,6 +107,22 @@ final class ShipyardController
         Session::flash($res['ok'] ? 'success' : 'error', $res['ok']
             ? 'Acquistato: ' . $request->str('item') . (isset($res['qty']) ? " x{$res['qty']}" : '') . " per {$res['cost']} cr."
             : $res['error']);
+        return redirect('/gioco/cantiere');
+    }
+
+    public function repair(Request $request): Response
+    {
+        if ($r = $this->factionGate()) {
+            return $r;
+        }
+        if (!Shipyard::atShipyard((int) Ctx::$player['sector_id'])) {
+            Session::flash('error', 'Le riparazioni si fanno solo allo StarDock.');
+            return redirect('/gioco');
+        }
+        $res = \App\Game\Subsystems::repairAll((int) Ctx::$ship['id'], Ctx::$player);
+        Session::flash($res['ok'] ? 'success' : 'error', $res['ok']
+            ? "Rimessi in linea {$res['count']} moduli per {$res['cost']} cr."
+            : ($res['error'] ?? 'Riparazione non riuscita.'));
         return redirect('/gioco/cantiere');
     }
 }

@@ -205,6 +205,21 @@ final class Navigation
         $enc = Combat::onEnterSector($player, $ship);
         $player = $enc['player'];
         $ship = $enc['ship'];
+
+        // sovraccarico della griglia di potenza (canale EPS al massimo)
+        if (empty($enc['destroyed']) && ($ship['type_key'] ?? '') !== 'escape_pod') {
+            $engSkill = (int) (Database::first(
+                "SELECT JSON_EXTRACT(skills, '$.engineering') AS e FROM officers
+                 WHERE player_id = ? AND role = 'engineer' AND assigned = 1 AND status <> 'dead'
+                 ORDER BY level DESC LIMIT 1",
+                [(int) $player['id']]
+            )['e'] ?? 0);
+            $strain = Subsystems::maybeStrain((int) $ship['id'], PowerGrid::read($ship), $engSkill);
+            if ($strain !== null) {
+                $enc['events'][] = "Sovraccarico della griglia: {$strain} fuori uso.";
+            }
+        }
+
         if ($warpNote !== null) {
             array_unshift($enc['events'], $warpNote);
         }

@@ -49,6 +49,7 @@ try {
     $tasks['live_gc'] = Live::gc();
     $tasks['shiplog_gc'] = \App\Game\ShipLog::gc();
     $tasks['limpets_gc'] = \App\Game\Limpet::gc();
+    $tasks['subsystems'] = \App\Game\Subsystems::tick();
 
     // 2) Reset turni giornaliero.
     $tasks['turn_reset'] = handleTurnReset();

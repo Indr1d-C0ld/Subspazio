@@ -4,6 +4,55 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-10 — Guasti ai sottosistemi — roadmap B3
+
+Un colpo incassato in combattimento — o il **sovraccarico della griglia
+di potenza** (un canale EPS al massimo) — può mettere **OFFLINE** un
+modulo installato: finché è fuori uso non fornisce i suoi effetti. Si
+ripara allo **StarDock** (a pagamento), l'**Ingegnere** di bordo ne
+rimette in linea sul tick, e dopo qualche ora un modulo si ripristina da
+solo (jury-rig).
+
+- **[db/migrations/0029_subsystems.sql](db/migrations/0029_subsystems.sql)**
+  — `ship_modules.broken_at DATETIME NULL`; config `subsys.break_chance`
+  (10), `subsys.strain_chance` (4), `subsys.repair_cost_each` (450),
+  `subsys.auto_repair_hours` (18), `subsys.engineer_fix_chance` (25).
+- **[src/Game/Subsystems.php](src/Game/Subsystems.php)** — motore:
+  `maybeBreak()` (chance in base al colpo, ×2 se pesante; mette offline un
+  modulo funzionante a caso), `maybeStrain()` (per warp, se un canale EPS
+  è al massimo; mitigata dall'Ingegnere; preferisce il comparto stressato
+  — armi→weapon, scudi→defense, motori→drive, sensori→computer),
+  `brokenList`/`brokenCount`, `repairAll()` (StarDock, `repair_cost_each`
+  cr a modulo), `tick()` (ripristino automatico oltre il TTL +
+  l'Ingegnere di bordo rimette in linea un modulo per tick, con chance
+  scalata dalla skill).
+- **[src/Game/ShipStats.php](src/Game/ShipStats.php)** — `effective()`:
+  un modulo `broken_at IS NOT NULL` **non contribuisce** agli effetti;
+  nuovo `$ship['mod_broken']` (conteggio) e `broken` per ogni voce di
+  `mod_list`.
+- **[src/Game/Combat.php](src/Game/Combat.php)** — inneschi: `attackShip`
+  (attaccante → nel messaggio; difensore → giornale di bordo), cannone
+  Quasar, mine Armid, scontro coi caccia dispiegati in `onEnterSector`.
+- **[src/Game/Navigation.php](src/Game/Navigation.php)** — `move()`
+  innesca lo strain EPS dopo l'arrivo, con la skill dell'Ingegnere
+  assegnato.
+- **[bin/tick.php](bin/tick.php)** — nuovo task `subsystems`.
+- **[src/Controllers/ShipyardController.php](src/Controllers/ShipyardController.php)**
+  / **src/routes.php** — `POST /gioco/cantiere/riparazioni` →
+  `Subsystems::repairAll`.
+- **[views/game/index.php](views/game/index.php)** — striscia rossa in
+  plancia quando hai moduli fuori uso.
+- **[views/game/modules.php](views/game/modules.php)** — badge «fuori
+  uso» e nome barrato sui moduli offline.
+- **[views/game/shipyard.php](views/game/shipyard.php)** — sezione
+  «Riparazioni» con l'elenco dei moduli fuori uso e il costo totale.
+- **[views/game/eps.php](views/game/eps.php)** /
+  **[assets/js/eps.js](assets/js/eps.js)** — nota «rischio di guasti per
+  sovraccarico» sul canale EPS portato al massimo.
+- **[assets/css/app.css](assets/css/app.css)** — `.subsys-warn`,
+  `.repair-box`, `.module-row.broken`, `.eps-strain`.
+- **[sw.js](sw.js)** — cache `subspazio-v28`.
+
 ## 2026-09-10 — Griglia di potenza (EPS) — roadmap B2
 
 Il reattore fornisce un budget fisso di **8 tacche** da ripartire su

@@ -28,7 +28,7 @@ final class ShipStats
 
         try {
             $mods = Database::all(
-                'SELECT sm.slot, sm.item_key, sm.rolled, it.effects, it.name, it.rarity
+                'SELECT sm.slot, sm.item_key, sm.rolled, sm.broken_at, it.effects, it.name, it.rarity
                  FROM ship_modules sm JOIN item_types it ON it.ckey = sm.item_key
                  WHERE sm.ship_id = ?',
                 [(int) $ship['id']]
@@ -38,6 +38,7 @@ final class ShipStats
             $ship['mod_effects'] = [];
             $ship['mod_count'] = 0;
             $ship['mod_list'] = [];
+            $ship['mod_broken'] = 0;
             return $ship;
         }
 
@@ -46,21 +47,27 @@ final class ShipStats
         $cloak = 0;
         $list = [];
 
+        $brokenCount = 0;
         foreach ($mods as $m) {
             $eff = self::decode($m['rolled']) ?: self::decode($m['effects']) ?: [];
-            foreach ($eff as $k => $v) {
-                if ($k === 'scanner') {
-                    if ($scanner === null || (self::SCANNER_RANK[$v] ?? 0) > (self::SCANNER_RANK[$scanner] ?? 0)) {
-                        $scanner = (string) $v;
+            $broken = ($m['broken_at'] ?? null) !== null;
+            if ($broken) {
+                $brokenCount++;
+            } else {
+                foreach ($eff as $k => $v) {
+                    if ($k === 'scanner') {
+                        if ($scanner === null || (self::SCANNER_RANK[$v] ?? 0) > (self::SCANNER_RANK[$scanner] ?? 0)) {
+                            $scanner = (string) $v;
+                        }
+                        continue;
                     }
-                    continue;
-                }
-                if ($k === 'cloak') {
-                    $cloak = max($cloak, (int) $v);
-                    continue;
-                }
-                if (is_numeric($v)) {
-                    $sum[$k] = ($sum[$k] ?? 0) + (float) $v;
+                    if ($k === 'cloak') {
+                        $cloak = max($cloak, (int) $v);
+                        continue;
+                    }
+                    if (is_numeric($v)) {
+                        $sum[$k] = ($sum[$k] ?? 0) + (float) $v;
+                    }
                 }
             }
             $list[] = [
@@ -69,6 +76,7 @@ final class ShipStats
                 'name'   => $m['name'],
                 'rarity' => $m['rarity'],
                 'eff'    => $eff,
+                'broken' => $broken,
             ];
         }
 
@@ -115,6 +123,7 @@ final class ShipStats
         $ship['mod_drop_luck']    = (float) ($sum['drop_luck_pct'] ?? 0) + (float) $crew['drop_luck_pct'];
         $ship['mod_count'] = count($list);
         $ship['mod_list']  = $list;
+        $ship['mod_broken'] = $brokenCount;
         $ship['crew_count']            = (int) $crew['count'];
         $ship['crew_warp_discount_pct'] = (float) $crew['warp_discount_pct'];
         $ship['crew_align_shield_pct']  = (float) $crew['align_shield_pct'];

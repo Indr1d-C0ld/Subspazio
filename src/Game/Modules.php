@@ -42,7 +42,7 @@ final class Modules
     public static function installed(int $shipId): array
     {
         return Database::all(
-            'SELECT sm.id, sm.slot, sm.item_key, sm.rolled,
+            'SELECT sm.id, sm.slot, sm.item_key, sm.rolled, sm.broken_at,
                     it.name, it.category, it.rarity, it.effects, it.base_salvage, it.descr
              FROM ship_modules sm JOIN item_types it ON it.ckey = sm.item_key
              WHERE sm.ship_id = ?

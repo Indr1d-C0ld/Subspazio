@@ -203,6 +203,7 @@ final class PowerGrid
                 'pips'   => $alloc[$c],
                 'mult'   => $m,
                 'pct'    => $pct,
+                'strain' => $alloc[$c] >= self::maxPerChannel(),
                 'effect' => self::effectText($c, $m, $pct),
             ];
         }

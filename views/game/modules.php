@@ -63,9 +63,10 @@ foreach ($installed as $m) {
         <div class="slot-cat">
           <h3><?= e($CATLBL[$cat] ?? $cat) ?> <span class="mut"><?= (int) ($usedByCat[$cat] ?? 0) ?>/<?= (int) $tot ?></span></h3>
           <?php foreach ($installed as $m): if ($m['category'] !== $cat) continue; ?>
-            <div class="module-row">
+            <div class="module-row<?= !empty($m['broken_at']) ? ' broken' : '' ?>">
               <span class="rarity rarity-<?= e($m['rarity']) ?>"><?= e($RARITY[$m['rarity']] ?? $m['rarity']) ?></span>
               <strong><?= e($m['name']) ?></strong>
+              <?php if (!empty($m['broken_at'])): ?><span class="pill err" title="fuori uso dal <?= e(fmt_dt($m['broken_at'])) ?>">fuori uso</span><?php endif; ?>
               <span class="mut"><?= e($fmtEffects($m['rolled'], $m['effects'])) ?></span>
               <?php if ($at_dock): ?>
                 <form method="post" action="<?= e(url('/gioco/moduli/rimuovi')) ?>" class="inline">

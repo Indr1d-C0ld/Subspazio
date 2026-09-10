@@ -47,6 +47,7 @@
                    min="0" max="<?= (int) $max_per ?>" step="1" inputmode="numeric" data-role="input">
           </label>
           <p class="eps-effect" data-role="effect"><?= e($ch['effect']) ?></p>
+          <p class="eps-strain" data-role="strain"<?= empty($ch['strain']) ? ' hidden' : '' ?>>⚠ canale al massimo: rischio di guasti per sovraccarico a ogni warp</p>
         </div>
       <?php endforeach; ?>
     </div>

@@ -107,6 +107,7 @@ final class CombatController
         if ($res['destroyed_self']) {
             return ['error', "La tua nave e' stata distrutta da {$res['target_handle']}. Capsula allo StarDock."];
         }
-        return ['success', "Scontro con {$res['target_handle']} ({$res['rounds']} round): persi {$res['attacker_lost']} caccia, inflitti -{$res['defender_lost']}."];
+        $extra = !empty($res['subsys_events']) ? ' ' . implode(' ', $res['subsys_events']) : '';
+        return ['success', "Scontro con {$res['target_handle']} ({$res['rounds']} round): persi {$res['attacker_lost']} caccia, inflitti -{$res['defender_lost']}.{$extra}"];
     }
 }

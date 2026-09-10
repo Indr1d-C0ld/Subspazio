@@ -51,6 +51,8 @@
       m.className = 'eps-mult' + (pc > 0 ? ' up' : (pc < 0 ? ' down' : ''));
       var fn = effects[c.dataset.key] || function () { return ''; };
       c.querySelector('[data-role=effect]').textContent = fn(pc);
+      var strain = c.querySelector('[data-role=strain]');
+      if (strain) strain.hidden = p < MAX;
       var st = c.querySelector('.eps-stepper');
       if (st) {
         st.querySelector('button:first-child').disabled = p <= 0;

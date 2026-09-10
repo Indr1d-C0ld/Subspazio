@@ -59,6 +59,14 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
     allo scafo: la tua posizione è tracciata finché non raggiungi lo <strong>StarDock</strong>.</div>
 <?php endif; ?>
 
+<?php if (!empty($ship['mod_broken'])): ?>
+  <div class="alert err subsys-warn">🛠 <?= (int) $ship['mod_broken'] ?>
+    modul<?= $ship['mod_broken'] == 1 ? 'o' : 'i' ?> fuori uso: nessun effetto finché non
+    <?= $ship['mod_broken'] == 1 ? 'viene riparato' : 'vengono riparati' ?>.
+    <a href="<?= e(url('/gioco/moduli')) ?>">Dettaglio</a> ·
+    <a href="<?= e(url('/gioco/cantiere')) ?>">riparazione allo StarDock</a>.</div>
+<?php endif; ?>
+
 <?php if (!empty($digest)): ?>
 <section class="panel digest-card">
   <h2>Rapporto di rientro <span class="mut">assente per <?= e($digest['away']) ?></span></h2>

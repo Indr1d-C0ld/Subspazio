@@ -72,6 +72,7 @@ $router->post('/gioco/cantiere/nave', [ShipyardController::class, 'buyShip'], $g
 $router->post('/gioco/cantiere/soccorso', [ShipyardController::class, 'rescue'], $game);
 $router->post('/gioco/cantiere/upgrade', [ShipyardController::class, 'upgrade'], $game);
 $router->post('/gioco/cantiere/hardware', [ShipyardController::class, 'hardware'], $game);
+$router->post('/gioco/cantiere/riparazioni', [ShipyardController::class, 'repair'], $game);
 
 // Officina moduli (HTML)
 $router->get('/gioco/moduli', [ModuleController::class, 'index'], $game);

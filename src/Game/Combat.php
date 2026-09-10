@@ -197,9 +197,19 @@ final class Combat
             throw $e;
         }
 
+        // guasti ai sottosistemi (fuori dalla transazione: non deve poter annullare l'esito)
+        $subsysEvents = [];
+        if (!$destroyedAtk && ($hit = Subsystems::maybeBreak((int) $atkShip['id'], 'attacco', $r['att_lost'] > max(1, $commit) * 0.3, false))) {
+            $subsysEvents[] = "Un tuo sistema è andato fuori uso: {$hit}.";
+        }
+        if (!$destroyedTarget) {
+            Subsystems::maybeBreak((int) $tShip['id'], 'attacco di ' . $atkPlayer['handle'], $r['def_lost'] > max(1, (int) $r['def_ftr0']) * 0.3, true);
+        }
+
         return [
             'ok'               => true,
             'kind'             => 'ship',
+            'subsys_events'    => $subsysEvents,
             'rounds'           => $r['rounds'],
             'attacker_lost'    => $r['att_lost'],
             'defender_lost'    => $r['def_lost'],
@@ -760,6 +770,9 @@ final class Combat
                 ['quasar', $sectorId, $pid, $dead ? 'att_destroyed' : 'passed', json_encode(['planet' => $pl['name'], 'dmg' => $dmg], JSON_UNESCAPED_UNICODE)]
             );
             $events[] = "Cannone Quasar di {$pl['name']}: {$dmg} danni alla nave.";
+            if (!$dead && ($hit = Subsystems::maybeBreak((int) $ship['id'], 'Quasar', true, false))) {
+                $events[] = "  Sistema fuori uso: {$hit}.";
+            }
             if ($dead) {
                 $d = self::destroyShip($player);
                 return ['events' => array_merge($events, [self::deathLine($d)]), 'player' => Database::first('SELECT * FROM players WHERE id = ?', [$pid]), 'ship' => PlayerService::ship((int) Database::first('SELECT ship_id FROM players WHERE id = ?', [$pid])['ship_id']), 'destroyed' => true];
@@ -779,6 +792,9 @@ final class Combat
                 ['mines', $sectorId, $pid, $dead ? 'att_destroyed' : 'passed', json_encode(['armid' => (int) $m['qty'], 'dmg' => $dmg], JSON_UNESCAPED_UNICODE)]
             );
             $events[] = "Campo minato Armid ({$m['qty']} mine): {$dmg} danni alla nave.";
+            if (!$dead && ($hit = Subsystems::maybeBreak((int) $ship['id'], 'mine Armid', (int) $ship['shields'] === 0, false))) {
+                $events[] = "  Sistema fuori uso: {$hit}.";
+            }
             if ($dead) {
                 $d = self::destroyShip($player);
                 return ['events' => array_merge($events, [self::deathLine($d)]), 'player' => Database::first('SELECT * FROM players WHERE id = ?', [$pid]), 'ship' => PlayerService::ship((int) Database::first('SELECT ship_id FROM players WHERE id = ?', [$pid])['ship_id']), 'destroyed' => true];
@@ -848,6 +864,9 @@ final class Combat
                     ($r['def_ftr'] <= 0 && $r['def_shd'] <= 0) ? 'att_destroyed' : 'passed', json_encode($r, JSON_UNESCAPED_UNICODE)]
             );
             $events[] = sprintf('  Scontro: persi %d tuoi caccia, distrutti %d nemici.', $r['def_lost'], $r['att_lost']);
+            if ($r['def_lost'] > 0 && ($hit = Subsystems::maybeBreak((int) $ship['id'], 'scontro coi caccia', (int) $ship['shields'] === 0, false))) {
+                $events[] = "  Sistema fuori uso: {$hit}.";
+            }
 
             if ($r['def_ftr'] <= 0 && $r['def_shd'] <= 0 && $r['att_ftr'] > 0) {
                 $d = self::destroyShip($player);
