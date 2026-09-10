@@ -10,6 +10,7 @@ use App\Controllers\CombatController;
 use App\Controllers\CodexController;
 use App\Controllers\CorpController;
 use App\Controllers\CrewController;
+use App\Controllers\EpsController;
 use App\Controllers\FactionController;
 use App\Controllers\GameApiController;
 use App\Controllers\GameController;
@@ -83,6 +84,9 @@ $router->post('/gioco/moduli/crafta', [ModuleController::class, 'craft'], $game)
 $router->post('/gioco/moduli/annulla-lavoro', [ModuleController::class, 'cancelJob'], $game);
 
 // Equipaggio (HTML)
+$router->get('/gioco/eps', [EpsController::class, 'show'], $game);
+$router->post('/gioco/eps', [EpsController::class, 'save'], $game);
+
 $router->get('/gioco/equipaggio', [CrewController::class, 'index'], $game);
 $router->post('/gioco/equipaggio/assumi', [CrewController::class, 'hire'], $game);
 $router->post('/gioco/equipaggio/assegna', [CrewController::class, 'assign'], $game);

@@ -121,7 +121,44 @@ final class ShipStats
         $ship['crew_scan_range']        = (int) round($crew['scan_range']);
         $ship['crew_away_medicine']     = (float) $crew['away_medicine'];
 
+        // --- Griglia di potenza (EPS, slice B2): overlay finale --------------
+        if (($ship['type_key'] ?? '') !== 'escape_pod') {
+            $eps = PowerGrid::mults($ship);
+
+            if ($eps['weapons'] !== 1.0) {
+                $ship['combat_rating'] = round((float) ($ship['combat_rating'] ?? 1.0) * $eps['weapons'], 4);
+            }
+            if ($eps['shields'] !== 1.0 && isset($ship['max_shields'])) {
+                $ship['max_shields']      = (int) round((int) $ship['max_shields'] * $eps['shields']);
+                $ship['mod_shield_regen'] = (int) round((int) $ship['mod_shield_regen'] * $eps['shields']);
+            }
+            if ($eps['engines'] >= 1.2) {
+                $ship['turns_per_warp'] = max(1, (int) $ship['turns_per_warp'] - 1);
+            } elseif ($eps['engines'] <= 0.8) {
+                $ship['turns_per_warp'] = (int) $ship['turns_per_warp'] + 1;
+            }
+            if ($eps['sensors'] >= 1.2) {
+                $ship['dev_scanner'] = self::scannerStep((string) ($ship['dev_scanner'] ?? 'none'), +1);
+            } elseif ($eps['sensors'] <= 0.8) {
+                $ship['dev_scanner'] = self::scannerStep((string) ($ship['dev_scanner'] ?? 'none'), -1);
+            }
+
+            $ship['eps']         = PowerGrid::describe($ship);
+            $ship['eps_nominal'] = PowerGrid::isNominal(PowerGrid::read($ship));
+        }
+
         return $ship;
+    }
+
+    /** Sposta il livello scanner di N gradini lungo none<density<holo. */
+    private static function scannerStep(string $level, int $delta): string
+    {
+        $order = ['none', 'density', 'holo'];
+        $i = array_search($level, $order, true);
+        if ($i === false) {
+            $i = 0;
+        }
+        return $order[max(0, min(count($order) - 1, $i + $delta))];
     }
 
     /** slot totali dello scafo per categoria */

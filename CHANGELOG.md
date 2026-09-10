@@ -4,6 +4,53 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-10 — Griglia di potenza (EPS) — roadmap B2
+
+Il reattore fornisce un budget fisso di **8 tacche** da ripartire su
+quattro canali — **Scudi / Armi / Motori / Sensori** — dove potenziarne
+uno significa toglierlo a un altro. Ogni tacca di scostamento dal nominale
+(2) sposta la stat del canale del 12,5%; a ±2 tacche fa ±25%. È una
+decisione che prendi *prima* di uno scontro o di un viaggio; ri-tararla
+costa 1 turno (tributo a «potenza agli scudi» di Star Trek).
+
+- **[db/migrations/0028_eps.sql](db/migrations/0028_eps.sql)** — colonne
+  `ships.eps_shields/eps_weapons/eps_engines/eps_sensors` (TINYINT,
+  default 2); config `eps.pips_total` (8), `eps.step_pct` (12.5),
+  `eps.realloc_turn_cost` (1). Idempotente.
+- **[src/Game/PowerGrid.php](src/Game/PowerGrid.php)** — motore:
+  `read/mults/validate/save/describe`. Nominale = pips_total/4 = 2, tetto
+  per canale = 4; `mult(pips) = 1 + (pips − 2)·step_pct/100`. `save()`
+  valida (somma esatta = 8, canale 0–4), costa 1 turno (0 se l'allocazione
+  è identica), e **adegua subito capacità e carica degli scudi** al nuovo
+  livello del canale Scudi. Vietato in capsula di salvataggio.
+- **[src/Game/ShipStats.php](src/Game/ShipStats.php)** — `effective()`
+  applica la griglia come **overlay finale**: Armi × `combat_rating`;
+  Scudi × `max_shields` e rigenerazione; Motori ±1 `turns_per_warp` agli
+  estremi (rilevante per scafi da 2+ turni/warp); Sensori sposta di un
+  gradino lo scanner effettivo (`none↔density↔holo`). Espone
+  `$ship['eps']` (descrittore per la UI) e `$ship['eps_nominal']`.
+- **[src/Controllers/EpsController.php](src/Controllers/EpsController.php)**,
+  **src/routes.php** — `GET`/`POST /gioco/eps`.
+- **[views/game/eps.php](views/game/eps.php)** — pannello con quattro campi
+  numerici 0–4; **[assets/js/eps.js](assets/js/eps.js)** li arricchisce con
+  `+`/`−`, budget «potenza distribuita» live e anteprima degli effetti
+  (progressive enhancement: senza JS i campi restano numerici e il server
+  valida la somma).
+- **[views/layout.php](views/layout.php)** — voce «Griglia» nella game-nav.
+- **[views/game/index.php](views/game/index.php)** — striscia EPS
+  read-only (🛡⚔🚀📡 + tacche) nel pannello laterale della plancia, con
+  link «Rialloca».
+- **[src/Game/Navigation.php](src/Game/Navigation.php)** — `look()` accetta
+  la nave effettiva come 2° parametro, così lo scanner potenziato/declassato
+  dalla griglia si riflette su cosa vedi nel settore; `GameController` e
+  `GameApiController` aggiornati.
+- **CSP**: la policy `script-src 'self'` blocca gli `<script>` inline.
+  Per questo `eps.js` è esterno; nello stesso passaggio il preview live di
+  **[views/game/profilo.php](views/game/profilo.php)** è stato spostato in
+  **[assets/js/profile.js](assets/js/profile.js)**.
+- **[assets/css/app.css](assets/css/app.css)** — stili `.eps-*`.
+- **[sw.js](sw.js)** — cache `subspazio-v27`.
+
 ## 2026-09-10 — Fix: le immagini caricate vivono fuori dall'albero git
 
 Avatar e logo caricati potevano sparire dopo un'operazione git o un

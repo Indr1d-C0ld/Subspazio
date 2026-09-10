@@ -72,6 +72,7 @@ $errors = is_array($errors) ? $errors : [];
   <a href="<?= e(url('/gioco/cantiere')) ?>">Cantiere</a>
   <a href="<?= e(url('/gioco/banca')) ?>">Banca</a>
   <a href="<?= e(url('/gioco/moduli')) ?>">Moduli</a>
+  <a href="<?= e(url('/gioco/eps')) ?>">Griglia</a>
   <a href="<?= e(url('/gioco/equipaggio')) ?>">Equipaggio</a>
   <a href="<?= e(url('/gioco/missioni')) ?>">Missioni</a>
   <a href="<?= e(url('/gioco/fazioni')) ?>">Fazioni</a>

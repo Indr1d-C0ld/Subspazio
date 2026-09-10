@@ -40,7 +40,7 @@ final class GameApiController
         return Response::json([
             'player' => self::playerDto($player),
             'ship'   => self::shipDto(Ctx::$ship),
-            'sector' => Navigation::look($player),
+            'sector' => Navigation::look($player, Ctx::$ship),
             'events' => Events::active(),
             'unread' => Radio::unread($player),
         ]);
@@ -64,7 +64,7 @@ final class GameApiController
         }
         $probe = $player;
         $probe['sector_id'] = $sid;
-        return Response::json(['ok' => true, 'sector' => Navigation::look($probe)]);
+        return Response::json(['ok' => true, 'sector' => Navigation::look($probe, Ctx::$ship)]);
     }
 
     public function move(Request $request): Response
@@ -528,7 +528,7 @@ final class GameApiController
 
     public function currentSector(Request $request): Response
     {
-        return Response::json(['ok' => true, 'sector' => Navigation::look(TurnManager::sync(Ctx::$player))]);
+        return Response::json(['ok' => true, 'sector' => Navigation::look(TurnManager::sync(Ctx::$player), Ctx::$ship)]);
     }
 
     public function battles(Request $request): Response

@@ -465,6 +465,16 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
         Cristalli <?= number_format((int) ($player['crystals'] ?? 0), 0, ',', '.') ?> ·
         Componenti <?= number_format((int) ($player['components'] ?? 0), 0, ',', '.') ?>
       </p>
+      <?php if (!empty($ship['eps']) && ($ship['type_key'] ?? '') !== 'escape_pod'): ?>
+      <p class="hint mod-summary eps-strip" style="margin-top:.3rem;border-top:0;padding-top:0;">
+        Griglia:
+        <?php foreach ($ship['eps'] as $ch): ?>
+          <span class="eps-tag<?= $ch['pct'] > 0 ? ' up' : ($ch['pct'] < 0 ? ' down' : '') ?>"
+                title="<?= e($ch['label'] . ': ' . $ch['effect']) ?>"><?= $ch['icon'] ?> <?= (int) $ch['pips'] ?></span>
+        <?php endforeach; ?>
+        <a class="btn xs ghost" href="<?= e(url('/gioco/eps')) ?>">Rialloca</a>
+      </p>
+      <?php endif; ?>
       <?php $rep = \App\Game\Faction::all((int) $player['id']); ?>
       <p class="hint mod-summary" style="margin-top:.3rem;border-top:0;padding-top:0;">
         Rep: Fed <?= $rep['fed'] > 0 ? '+' : '' ?><?= $rep['fed'] ?> ·

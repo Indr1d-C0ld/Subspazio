@@ -16,9 +16,12 @@ final class Navigation
      * "Guarda" il settore corrente del giocatore.
      *
      * @param array<string,mixed> $player
+     * @param array<string,mixed>|null $ship  nave EFFETTIVA del giocatore (per lo
+     *        scanner, che con la griglia di potenza può salire/scendere di livello);
+     *        se assente si rilegge da DB (senza overlay EPS).
      * @return array<string,mixed>
      */
-    public static function look(array $player): array
+    public static function look(array $player, ?array $ship = null): array
     {
         $sectorId = (int) $player['sector_id'];
         $sector = Universe::sector($sectorId);
@@ -61,8 +64,10 @@ final class Navigation
             'has_avatar' => !empty($o['avatar_path']) && MediaAsset::fileExists(['path' => $o['avatar_path']]),
         ], $playersHere);
 
-        $ownShip = Database::first('SELECT dev_scanner FROM ships s JOIN players p ON p.ship_id = s.id WHERE p.id = ?', [(int) $player['id']]);
-        $seesMines = ($ownShip['dev_scanner'] ?? 'none') !== 'none';
+        $scanner = $ship !== null
+            ? (string) ($ship['dev_scanner'] ?? 'none')
+            : (string) (Database::first('SELECT dev_scanner FROM ships s JOIN players p ON p.ship_id = s.id WHERE p.id = ?', [(int) $player['id']])['dev_scanner'] ?? 'none');
+        $seesMines = $scanner !== 'none';
         $forces = Deploy::forces($sectorId, (int) $player['id'], $seesMines);
 
         $planets = array_map(static function ($pl) use ($player) {

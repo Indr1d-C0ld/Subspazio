@@ -26,7 +26,7 @@ final class GameController
             $player = \App\Game\PlayerService::forUser((int) $player['user_id']) ?? $player;
         }
 
-        $look = Navigation::look($player);
+        $look = Navigation::look($player, \App\Game\Ctx::$ship);
 
         $digest = \App\Game\Digest::forView($player);
         if ($digest !== null) {
