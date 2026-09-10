@@ -106,7 +106,7 @@ dopo ogni cluster.
 | **C3 — FedNews / Frontier Broadcast** (bollettino quotidiano nella Radio da stato reale) | fatto — 2026-09-10 |
 | **Dispositivi-fantasma — Occultamento + Transwarp** (meccanica reale a due hardware finora inerti) | fatto — 2026-09-10 |
 | **Rifiniture identità/UI** — iconcine sui beni · marca di flotta più varia (6 stemmi + 13 sagome di nave) | fatto — 2026-09-10 |
-| **Illustrazioni dei modelli di nave** — `ship_art()` in plancia/classifica/navi qui/Cantiere; fallback alla sagoma SVG finché mancano i PNG | fatto — 2026-09-11 |
+| **Illustrazioni dei modelli di nave** — `ship_art()` in plancia/classifica/navi qui/Cantiere; i 13 PNG 512px caricati il 2026-09-11 (fallback SVG se un file manca) | fatto — 2026-09-11 |
 | **Aiuto contestuale «?»** — `Help` + partial in CSS puro su ~55 intestazioni di sezione | fatto — 2026-09-11 |
 | **fix FedNews** — doppio bollettino ravvicinato (e2e distruttivo vs cron) | fatto — 2026-09-11 |
 | **C — resta** | NPC nominati ricorrenti · operazioni a tempo · anomalia della stagione |
@@ -209,7 +209,7 @@ aspettare le classi di nave del tema D.
   JOIN ships/ship_types → `ship_key`, `ship_type`.
 - Usato in `player_tag.php` (navi qui/forze), `leaderboard.php`,
   `index.php` (riga «Scafo» pannello laterale), `shipyard.php` (catalogo).
-- CSS `.ship-art`, `.hull-line`. **In attesa dei 13 PNG dall'utente**
+- CSS `.ship-art`, `.hull-line`. **13 PNG 512px trasparenti caricati in `assets/ships/` il 2026-09-11** (in repo, ~2,1 MB); dimensioni in-game: navi qui 28px, classifica 30px, catalogo Cantiere 34px, riga Scafo 40px. `sw.js` -> v39.
   (trasparenti, quadrati, in `assets/ships/`).
 
 ### fix FedNews — doppio bollettino

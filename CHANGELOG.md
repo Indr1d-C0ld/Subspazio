@@ -4,6 +4,19 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-11 — Le 13 illustrazioni di nave sono arrivate
+
+- **[assets/ships/](assets/ships/)** — i 13 PNG (512×512, trasparenti), uno
+  per `ship_types.ckey`. `ship_art()` li serve ora al posto della sagoma
+  SVG in plancia (riga «Scafo»), classifica, «navi qui» e catalogo del
+  Cantiere.
+- **[views/game/leaderboard.php](views/game/leaderboard.php)** /
+  **[views/game/shipyard.php](views/game/shipyard.php)** /
+  **[views/game/index.php](views/game/index.php)** — dimensioni ritoccate
+  per leggibilità: classifica 30 px, catalogo 34 px, riga «Scafo» 40 px
+  («navi qui» resta 28 px).
+- **[sw.js](sw.js)** — cache `subspazio-v39`.
+
 ## 2026-09-11 — Aiuto contestuale «?» su ogni sezione
 
 - **[src/Game/Help.php](src/Game/Help.php)** — registro centrale dei testi
