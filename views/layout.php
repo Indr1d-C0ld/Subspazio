@@ -21,7 +21,7 @@ $errors = is_array($errors) ? $errors : [];
 <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
 </head>
 <body>
-<?php if ($u !== null && ($u['status'] ?? '') === 'active') { echo partial('crest_sprite'); } ?>
+<?php if ($u !== null && ($u['status'] ?? '') === 'active') { echo partial('crest_sprite'); echo partial('ship_sprite'); } ?>
 <header class="topbar">
   <a class="brand" href="<?= e(url('/')) ?>"><?= e(config('app.name', 'SubSpazio')) ?></a>
   <input type="checkbox" id="nav-toggle" class="nav-toggle">

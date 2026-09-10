@@ -11,11 +11,6 @@ $curColor = Identity::color($player);
 $curCrest = Identity::crest($player);
 $curMotto = (string) ($player['motto'] ?? '');
 $isPod    = ($ship['type_key'] ?? '') === 'escape_pod';
-$crestLabels = [
-    'delta' => 'Delta', 'orbita' => 'Orbita', 'stella' => 'Stella', 'corona' => 'Corona',
-    'mirino' => 'Mirino', 'cometa' => 'Cometa', 'sciabole' => 'Sciabole', 'esagono' => 'Esagono',
-    'tridente' => 'Tridente', 'occhio' => 'Occhio', 'alloro' => 'Alloro', 'rotta' => 'Rotta',
-];
 ?>
 <section class="statusbar">
   <div><span class="k">Profilo</span><span class="v"><?= e($player['handle']) ?></span></div>
@@ -49,13 +44,25 @@ $crestLabels = [
     </fieldset>
 
     <fieldset class="id-field">
-      <legend>Stemma di flotta</legend>
-      <div class="crest-grid">
+      <legend>Marca di flotta</legend>
+      <p class="hint">Uno stemma astratto oppure la <strong>sagoma di una nave</strong>. Compare
+         al posto dell'avatar quando non ne hai caricato uno.</p>
+      <div class="crest-grid" data-crest-group>
         <?php foreach ($crests as $key): ?>
-          <label class="crest-opt" title="<?= e($crestLabels[$key] ?? $key) ?>">
+          <label class="crest-opt" title="<?= e(Identity::crestLabel($key)) ?>">
             <input type="radio" name="crest" value="<?= e($key) ?>" <?= $key === $curCrest ? 'checked' : '' ?>>
             <?= partial('crest', ['crest' => $key, 'color' => $curColor, 'size' => 30]) ?>
-            <span class="crest-label"><?= e($crestLabels[$key] ?? $key) ?></span>
+            <span class="crest-label"><?= e(Identity::crestLabel($key)) ?></span>
+          </label>
+        <?php endforeach; ?>
+      </div>
+      <p class="crest-subhead">Sagome di nave</p>
+      <div class="crest-grid" data-crest-group>
+        <?php foreach (Identity::SHIP_MARKS as $sk): $key = 'nave:' . $sk; ?>
+          <label class="crest-opt" title="<?= e(Identity::crestLabel($key)) ?>">
+            <input type="radio" name="crest" value="<?= e($key) ?>" <?= $key === $curCrest ? 'checked' : '' ?>>
+            <?= partial('crest', ['crest' => $key, 'color' => $curColor, 'size' => 30]) ?>
+            <span class="crest-label"><?= e(Identity::SHIP_MARK_LABELS[$sk] ?? $sk) ?></span>
           </label>
         <?php endforeach; ?>
       </div>

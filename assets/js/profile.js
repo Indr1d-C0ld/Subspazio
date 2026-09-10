@@ -28,7 +28,11 @@
     }
     if (t.name === 'crest' && preview) {
       var use = preview.querySelector('use');
-      if (use) use.setAttribute('href', '#crest-' + t.value);
+      if (use) {
+        use.setAttribute('href', t.value.indexOf('nave:') === 0
+          ? '#ship-' + t.value.slice(5)
+          : '#crest-' + t.value);
+      }
     }
   });
 

@@ -900,6 +900,13 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 .crest-label { font-size: .72rem; color: var(--ink-soft); }
 .crest-opt:has(input:checked) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .crest-opt:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
+.crest-subhead { margin: .9rem 0 .4rem; font-size: .78rem; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--ink-soft); }
+
+/* sagoma di nave nel catalogo del Cantiere */
+.ship-mark { display: inline-flex; width: 1.6rem; height: 1.6rem; vertical-align: middle;
+  margin-right: .5rem; color: var(--accent); flex: none; }
+.ship-mark svg { display: block; width: 100%; height: 100%; }
 
 .id-actions { display: flex; gap: .6rem; flex-wrap: wrap; }
 

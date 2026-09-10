@@ -69,5 +69,39 @@
       <circle cx="4" cy="19" r="2.2" fill="currentColor"/>
       <circle cx="20" cy="5" r="2.6" fill="none" stroke="currentColor" stroke-width="2"/>
     </symbol>
+    <symbol id="crest-teschio" viewBox="0 0 24 24">
+      <path d="M12 3 C7 3 4 6.5 4 11 C4 13.5 5.2 15 6.5 16 L6.5 19 H17.5 L17.5 16 C18.8 15 20 13.5 20 11 C20 6.5 17 3 12 3 Z"
+            fill="currentColor"/>
+      <circle cx="9" cy="11" r="2" fill="#000" opacity=".45"/>
+      <circle cx="15" cy="11" r="2" fill="#000" opacity=".45"/>
+      <path d="M11 15 L12 13 L13 15 Z" fill="#000" opacity=".45"/>
+      <path d="M8.5 19 V21 M12 19 V21.5 M15.5 19 V21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="crest-fenice" viewBox="0 0 24 24">
+      <path d="M12 21 C10 17 10 14 12 11 C14 14 14 17 12 21 Z" fill="currentColor"/>
+      <path d="M12 12 C7 12 4 8 3 3 C8 5 10 6 12 9 C14 6 16 5 21 3 C20 8 17 12 12 12 Z" fill="currentColor" opacity=".8"/>
+      <circle cx="12" cy="9.5" r="1.6" fill="currentColor"/>
+    </symbol>
+    <symbol id="crest-ancora" viewBox="0 0 24 24">
+      <circle cx="12" cy="4.5" r="2.2" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M12 6.5 V20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <path d="M7 11 H17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <path d="M4 14 C4 19 8.5 20.5 12 20.5 C15.5 20.5 20 19 20 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <path d="M4 14 L3 11 L6.5 12.5 Z M20 14 L21 11 L17.5 12.5 Z" fill="currentColor"/>
+    </symbol>
+    <symbol id="crest-fulmine" viewBox="0 0 24 24">
+      <path d="M13 2 L5 13 H11 L9 22 L19 10 H12.5 Z" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="crest-nova" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3.2" fill="currentColor"/>
+      <path d="M12 1 L13.4 7 L12 5 L10.6 7 Z M12 23 L10.6 17 L12 19 L13.4 17 Z M1 12 L7 10.6 L5 12 L7 13.4 Z M23 12 L17 13.4 L19 12 L17 10.6 Z"
+            fill="currentColor"/>
+      <path d="M4 4 L9 9 M20 4 L15 9 M4 20 L9 15 M20 20 L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".6"/>
+    </symbol>
+    <symbol id="crest-chiave" viewBox="0 0 24 24">
+      <circle cx="7" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="2"/>
+      <circle cx="7" cy="12" r="1.4" fill="currentColor"/>
+      <path d="M11.5 12 H21 M18 12 V16 M21 12 V15.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
   </defs>
 </svg>

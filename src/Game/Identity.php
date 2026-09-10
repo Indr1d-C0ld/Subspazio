@@ -34,8 +34,69 @@ final class Identity
     public const CRESTS = [
         'delta', 'orbita', 'stella', 'corona', 'mirino', 'cometa',
         'sciabole', 'esagono', 'tridente', 'occhio', 'alloro', 'rotta',
+        'teschio', 'fenice', 'ancora', 'fulmine', 'nova', 'chiave',
     ];
     public const DEFAULT_CREST = 'delta';
+
+    /** Etichette leggibili degli stemmi astratti. */
+    public const CREST_LABELS = [
+        'delta' => 'Delta', 'orbita' => 'Orbita', 'stella' => 'Stella', 'corona' => 'Corona',
+        'mirino' => 'Mirino', 'cometa' => 'Cometa', 'sciabole' => 'Sciabole', 'esagono' => 'Esagono',
+        'tridente' => 'Tridente', 'occhio' => 'Occhio', 'alloro' => 'Alloro', 'rotta' => 'Rotta',
+        'teschio' => 'Teschio', 'fenice' => 'Fenice', 'ancora' => 'Ancora', 'fulmine' => 'Fulmine',
+        'nova' => 'Nova', 'chiave' => 'Chiave',
+    ];
+
+    /**
+     * Sagome di nave selezionabili come marca di flotta (prefisso "nave:").
+     * Le chiavi = ship_types.ckey; i <symbol id="ship-…"> stanno in
+     * partials/ship_sprite.php.
+     */
+    public const SHIP_MARKS = [
+        'escape_pod', 'scout_marauder', 'merchant_cruiser', 'missile_frigate',
+        'constellation', 'merchant_freighter', 'cargo_transport', 'colonial_transport',
+        'corporate_flagship', 'havoc_gunstar', 'imperial_starship', 'tholian_sentinel',
+        'interdictor',
+    ];
+    public const SHIP_MARK_LABELS = [
+        'escape_pod' => 'Capsula di salvataggio', 'scout_marauder' => 'Scout Marauder',
+        'merchant_cruiser' => 'Merchant Cruiser', 'missile_frigate' => 'Missile Frigate',
+        'constellation' => 'Constellation', 'merchant_freighter' => 'Merchant Freighter',
+        'cargo_transport' => 'Cargo Transport', 'colonial_transport' => 'Colonial Transport',
+        'corporate_flagship' => 'Corporate Flagship', 'havoc_gunstar' => 'Havoc Gunstar',
+        'imperial_starship' => 'Imperial StarShip', 'tholian_sentinel' => 'Tholian Sentinel',
+        'interdictor' => 'Interdictor Cruiser',
+    ];
+
+    /** true se $k è uno stemma astratto valido o una sagoma "nave:<ckey>". */
+    public static function validCrest(string $k): bool
+    {
+        if (in_array($k, self::CRESTS, true)) {
+            return true;
+        }
+        if (str_starts_with($k, 'nave:')) {
+            return in_array(substr($k, 5), self::SHIP_MARKS, true);
+        }
+        return false;
+    }
+
+    /** id del <symbol> SVG da referenziare con <use href="#…">. */
+    public static function symbolId(string $crest): string
+    {
+        if (str_starts_with($crest, 'nave:') && in_array(substr($crest, 5), self::SHIP_MARKS, true)) {
+            return 'ship-' . substr($crest, 5);
+        }
+        return 'crest-' . (in_array($crest, self::CRESTS, true) ? $crest : self::DEFAULT_CREST);
+    }
+
+    /** Etichetta leggibile di uno stemma o di una sagoma di nave. */
+    public static function crestLabel(string $crest): string
+    {
+        if (str_starts_with($crest, 'nave:')) {
+            return self::SHIP_MARK_LABELS[substr($crest, 5)] ?? substr($crest, 5);
+        }
+        return self::CREST_LABELS[$crest] ?? $crest;
+    }
 
     /** @param array<string,mixed> $player @return array{color:string,crest:string,motto:string,title:string} */
     public static function forPlayer(array $player): array
@@ -59,7 +120,7 @@ final class Identity
     public static function crest(array $p): string
     {
         $c = (string) ($p['crest'] ?? '');
-        return in_array($c, self::CRESTS, true) ? $c : self::DEFAULT_CREST;
+        return self::validCrest($c) ? $c : self::DEFAULT_CREST;
     }
 
     /** Titolo derivato: grado + suffisso di fazione (o "Fuorilegge"). @param array<string,mixed> $player */
@@ -109,7 +170,7 @@ final class Identity
         if ($color !== '' && !isset(self::PALETTE[$color])) {
             $errors[] = 'Colore non valido.';
         }
-        if ($crest !== '' && !in_array($crest, self::CRESTS, true)) {
+        if ($crest !== '' && !self::validCrest($crest)) {
             $errors[] = 'Stemma non valido.';
         }
         if (mb_strlen($motto) > 80) {

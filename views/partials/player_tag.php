@@ -10,7 +10,7 @@
 use App\Game\Identity;
 
 $color = isset(Identity::PALETTE[$p['color'] ?? '']) ? $p['color'] : Identity::DEFAULT_COLOR;
-$crest = in_array($p['crest'] ?? '', Identity::CRESTS, true) ? $p['crest'] : Identity::DEFAULT_CREST;
+$crest = Identity::validCrest((string) ($p['crest'] ?? '')) ? $p['crest'] : Identity::DEFAULT_CREST;
 $sz  = (int) ($size ?? 28);
 $pid = (int) ($p['id'] ?? 0);
 ?><span class="who-chip">
