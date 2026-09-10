@@ -40,8 +40,23 @@ final class FedNews
             return ['posted' => false];
         }
 
+        $intervalSec = self::intervalHours() * 3600;
+
+        // guardia 1: ultima riga d'archivio
         $last = Database::first("SELECT created_at FROM fednews ORDER BY id DESC LIMIT 1");
-        if ($last !== null && (time() - strtotime((string) $last['created_at'])) < self::intervalHours() * 3600) {
+        if ($last !== null && (time() - strtotime((string) $last['created_at'])) < $intervalSec) {
+            return ['posted' => false];
+        }
+
+        // guardia 2: ultimo bollettino andato in onda sulla Radio. Sopravvive a
+        // un troncamento di `fednews` (es. durante un e2e che corre insieme al
+        // cron) ed evita così il doppio invio ravvicinato.
+        $lastAir = Database::first(
+            "SELECT created_at FROM messages
+             WHERE channel = 'fedcomm' AND body LIKE 'NOTIZIARIO DELLA FEDERAZIONE%'
+             ORDER BY id DESC LIMIT 1"
+        );
+        if ($lastAir !== null && (time() - strtotime((string) $lastAir['created_at'])) < $intervalSec) {
             return ['posted' => false];
         }
 

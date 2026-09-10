@@ -24,7 +24,7 @@ $SK = Crew::SKILL_LABEL;
 <?php endif; ?>
 
 <section class="panel">
-  <h1>Missioni disponibili</h1>
+  <h1>Missioni disponibili<?= partial('help', ['key' => 'missioni.disponibili']) ?></h1>
   <?php if ($missions === []): ?>
     <p class="hint">Nessuna missione al momento. Se ne generano di nuove col tempo e cambiano con la regione in cui ti trovi.</p>
   <?php endif; ?>

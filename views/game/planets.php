@@ -11,7 +11,7 @@
 </section>
 
 <section class="panel">
-  <h1>Pianeti — settore <?= (int) $player['sector_id'] ?></h1>
+  <h1>Pianeti — settore <?= (int) $player['sector_id'] ?><?= partial('help', ['key' => 'pianeti.settore']) ?></h1>
 
   <?php if ($planets === []): ?>
     <p class="hint">Nessun pianeta in questo settore.</p>

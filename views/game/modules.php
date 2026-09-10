@@ -54,7 +54,7 @@ foreach ($installed as $m) {
 
 <div class="game-grid plancia-grid">
   <section class="panel">
-    <h1>Slot dello scafo</h1>
+    <h1>Slot dello scafo<?= partial('help', ['key' => 'moduli.slot']) ?></h1>
     <?php if (($ship['type_key'] ?? '') === 'escape_pod'): ?>
       <p class="hint">La capsula di salvataggio non ha slot. Procurati una nave al Cantiere.</p>
     <?php else: ?>
@@ -89,7 +89,7 @@ foreach ($installed as $m) {
   </section>
 
   <section class="panel">
-    <h1>Inventario moduli</h1>
+    <h1>Inventario moduli<?= partial('help', ['key' => 'moduli.inventario']) ?></h1>
     <?php if ($inventory === []): ?>
       <p class="hint">Nessun modulo. Si trovano abbattendo NPC e navi nemiche, meglio se in regioni di frontiera o profonde.</p>
     <?php else: ?>
@@ -137,7 +137,7 @@ foreach ($installed as $m) {
 
 <?php if (!empty($jobs)): ?>
 <section class="panel">
-  <h2>Officina — lavori in corso <span class="mut"><?= count($jobs) ?>/<?= (int) ($max_jobs ?? 3) ?></span></h2>
+  <h2>Officina — lavori in corso <span class="mut"><?= count($jobs) ?>/<?= (int) ($max_jobs ?? 3) ?></span><?= partial('help', ['key' => 'moduli.lavori']) ?></h2>
   <ul class="mod-list craft-jobs">
     <?php foreach ($jobs as $j):
       $s = (int) $j['secs_left'];
@@ -161,7 +161,7 @@ foreach ($installed as $m) {
 <?php endif; ?>
 
 <section class="panel">
-  <h1>Raffineria &amp; produzione</h1>
+  <h1>Raffineria &amp; produzione<?= partial('help', ['key' => 'moduli.raffineria']) ?></h1>
   <?php if (!$at_dock): ?>
     <p class="hint">Raffineria e avvio dei lavori disponibili allo StarDock<?= !empty($jobs) ? ' (i lavori già avviati proseguono ovunque)' : '' ?>.</p>
   <?php else: ?>
@@ -175,7 +175,7 @@ foreach ($installed as $m) {
     <button class="btn xs" type="submit">Raffina</button>
   </form>
 
-  <h2>Ricette</h2>
+  <h2>Ricette<?= partial('help', ['key' => 'moduli.raffineria']) ?></h2>
   <p class="hint">La fabbricazione richiede tempo: il modulo arriva quando il lavoro matura (dai ~4 min dei civili alle ~3 h dei Precursori). Massimo <?= (int) ($max_jobs ?? 3) ?> lavori in parallelo.</p>
   <ul class="mod-list">
     <?php foreach (($recipes ?? []) as $rc): ?>

@@ -20,7 +20,7 @@ $used = \App\Game\Economy::holdsUsed($ship);
          data-accept-url="<?= e(url('/api/porto/contratta/accetta')) ?>"
          data-abort-url="<?= e(url('/api/porto/contratta/lascia')) ?>">
   <header class="sector-head">
-    <h1><?= e($port['name']) ?></h1>
+    <h1><?= e($port['name']) ?><?= partial('help', ['key' => 'porto.commercio']) ?></h1>
     <span class="tag port">Classe <?= (int) $port['class'] ?> · <?= e($port['code']) ?></span>
     <span class="tag">Tech <?= (int) $port['tech'] ?></span>
     <?php if ($port['is_stardock']): ?><span class="tag dock">StarDock</span><?php endif; ?>

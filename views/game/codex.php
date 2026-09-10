@@ -12,7 +12,7 @@ foreach ($entries as $e) {
 </section>
 
 <section class="panel">
-  <h1>Codex</h1>
+  <h1>Codex<?= partial('help', ['key' => 'codex.home']) ?></h1>
   <p class="hint">Le voci si sbloccano scansionando, risolvendo anomalie e spingendosi oltre la Frontiera.</p>
 
   <?php foreach ($byCat as $cat => $list): ?>

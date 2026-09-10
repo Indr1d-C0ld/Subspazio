@@ -16,7 +16,7 @@
 </section>
 
 <section class="panel" id="eps-panel">
-  <h1>Griglia di potenza <span class="mut">EPS</span></h1>
+  <h1>Griglia di potenza <span class="mut">EPS</span><?= partial('help', ['key' => 'eps.griglia']) ?></h1>
   <p class="hint">Il reattore fornisce <strong><?= (int) $total ?> tacche</strong> di potenza da
      ripartire su quattro canali. Il nominale è <strong><?= (int) $nominal ?></strong> per canale
      (nessun effetto); la somma resta sempre <?= (int) $total ?>. A <strong>+<?= (int) $nominal ?> tacche</strong>

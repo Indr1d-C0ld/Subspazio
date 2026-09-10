@@ -19,7 +19,7 @@ $U = e(url('/gioco/mercato-nero'));
   <?php else: ?>
     <p class="hint">Ogni affare qui costa allineamento. Nessuna domanda.</p>
 
-    <h2>Piazza merce (premio sul prezzo equo)</h2>
+    <h2>Piazza merce (premio sul prezzo equo)<?= partial('help', ['key' => 'mercatonero.merce']) ?></h2>
     <form method="post" action="<?= $U ?>" class="row">
       <?= csrf_field() ?><input type="hidden" name="op" value="sell">
       <label>Merce <select name="commodity"><option value="ore">⛏️ Minerale</option><option value="organics">🌿 Organico</option><option value="equipment">🔧 Equipaggiamento</option></select></label>
@@ -27,7 +27,7 @@ $U = e(url('/gioco/mercato-nero'));
       <button class="btn xs" type="submit">Vendi</button>
     </form>
 
-    <h2>Hardware scontato</h2>
+    <h2>Hardware scontato<?= partial('help', ['key' => 'mercatonero.hardware']) ?></h2>
     <div class="upg-grid">
       <?php foreach ($catalog as $c): ?>
         <form method="post" action="<?= $U ?>" class="row">
@@ -41,7 +41,7 @@ $U = e(url('/gioco/mercato-nero'));
     </div>
 
     <?php if ((int) $player['bounty'] > 0): ?>
-    <h2>Ripulisci la taglia</h2>
+    <h2>Ripulisci la taglia<?= partial('help', ['key' => 'mercatonero.taglia']) ?></h2>
     <form method="post" action="<?= $U ?>" class="row">
       <?= csrf_field() ?><input type="hidden" name="op" value="bounty">
       <button class="btn xs danger" type="submit">Paga per cancellare <?= number_format((int) $player['bounty'], 0, ',', '.') ?> cr di taglia</button>

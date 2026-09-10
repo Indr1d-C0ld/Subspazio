@@ -45,7 +45,7 @@ $max = \App\Game\GameConfig::int('faction.max', 100);
   <p class="mut"><?= $v > 0 ? '+' : '' ?><?= $v ?> / <?= $max ?></p>
 
   <?php $fo = $offersByF[$f['ckey']] ?? []; if ($fo !== []): ?>
-    <h2>Emporio</h2>
+    <h2>Emporio<?= partial('help', ['key' => 'fazioni.emporio']) ?></h2>
     <ul class="mod-list">
       <?php foreach ($fo as $o): ?>
         <li class="fac-offer">
@@ -68,7 +68,7 @@ $max = \App\Game\GameConfig::int('faction.max', 100);
 
 <?php if ($log !== []): ?>
 <section class="panel">
-  <h2>Movimenti di reputazione</h2>
+  <h2>Movimenti di reputazione<?= partial('help', ['key' => 'fazioni.reputazione']) ?></h2>
   <table class="tbl compact">
     <thead><tr><th>Quando</th><th>Fazione</th><th class="ta-r">Δ</th><th>Motivo</th></tr></thead>
     <tbody>

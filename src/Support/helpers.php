@@ -60,6 +60,30 @@ if (!function_exists('root_url')) {
     }
 }
 
+if (!function_exists('ship_art')) {
+    /**
+     * URL dell'illustrazione di un modello di nave (assets/ships/<ckey>.png),
+     * o null se il file non è ancora presente — in tal caso i partial
+     * ripiegano sulla sagoma SVG. L'esistenza su disco è verificata una volta
+     * per richiesta e messa in cache.
+     */
+    function ship_art(string $typeKey): ?string
+    {
+        static $cache = [];
+        $typeKey = preg_replace('/[^a-z0-9_]/', '', $typeKey) ?? '';
+        if ($typeKey === '') {
+            return null;
+        }
+        if (!array_key_exists($typeKey, $cache)) {
+            $root = (string) (Config::get('paths.root') ?: ($GLOBALS['__project_root'] ?? getcwd()));
+            $cache[$typeKey] = is_file($root . '/assets/ships/' . $typeKey . '.png')
+                ? asset('ships/' . $typeKey . '.png')
+                : null;
+        }
+        return $cache[$typeKey];
+    }
+}
+
 if (!function_exists('view')) {
     /** @param array<string,mixed> $data */
     function view(string $name, array $data = [], ?string $layout = 'layout'): string

@@ -10,7 +10,7 @@
 </section>
 
 <section class="panel">
-  <h1>Classifica comandanti</h1>
+  <h1>Classifica comandanti<?= partial('help', ['key' => 'classifica.comandanti']) ?></h1>
   <table class="tbl">
     <thead><tr><th>#</th><th>Comandante</th><th>Corp</th><th>Grado</th><th class="ta-r">Rating</th><th class="ta-r">Exp</th><th class="ta-r">Kill</th><th class="ta-r">Morti</th><th class="ta-r">Pianeti</th><th>Allineamento</th></tr></thead>
     <tbody>
@@ -26,6 +26,9 @@
           <strong style="color:<?= e($r['color'] ?? '') ?>"><?= e($r['handle']) ?></strong>
           <?php if (!empty($r['has_logo'])): ?>
             <?= partial('media_hover', ['id' => (int) $r['pid'], 'kind' => 'logo', 'size' => 28, 'alt' => 'logo di ' . $r['handle']]) ?>
+          <?php endif; ?>
+          <?php if (!empty($r['ship_key'])): ?>
+            <?= partial('ship_art', ['type' => $r['ship_key'], 'size' => 26, 'color' => $r['color'] ?? null, 'title' => $r['ship_type'] ?? '']) ?>
           <?php endif; ?>
         </td>
         <td><?= $r['corp'] ? e($r['corp']) : '—' ?></td>
@@ -44,7 +47,7 @@
 </section>
 
 <section class="panel">
-  <h1>Classifica corporazioni</h1>
+  <h1>Classifica corporazioni<?= partial('help', ['key' => 'classifica.corp']) ?></h1>
   <table class="tbl">
     <thead><tr><th>#</th><th>Corporazione</th><th class="ta-r">Membri</th><th class="ta-r">Rating</th><th class="ta-r">Cassa</th><th class="ta-r">Pianeti</th></tr></thead>
     <tbody>

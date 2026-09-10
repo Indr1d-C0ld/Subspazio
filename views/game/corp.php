@@ -6,7 +6,7 @@
 /** @var bool $at_dock */
 ?>
 <section class="panel narrow">
-  <h1>Corporazione</h1>
+  <h1>Corporazione<?= partial('help', ['key' => 'corp.home']) ?></h1>
 
   <?php if ($corp === null): ?>
     <p class="hint">Non sei in nessuna corporazione. Fondarne una costa <?= number_format($cost, 0, ',', '.') ?> cr.</p>
@@ -51,7 +51,7 @@
       <p class="hint">Operazioni di cassa solo allo StarDock.</p>
     <?php endif; ?>
 
-    <h2>Alleanze</h2>
+    <h2>Alleanze<?= partial('help', ['key' => 'corp.alleanze']) ?></h2>
     <?php if (empty($alliances)): ?>
       <p class="hint">Nessuna alleanza.</p>
     <?php else: ?>

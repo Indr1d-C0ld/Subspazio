@@ -43,7 +43,7 @@ final class Navigation
 
         $playersHere = Database::all(
             "SELECT p.id, p.handle, p.alignment, p.protected_until, p.color, p.crest,
-                    t.name AS ship_type, s.cloaked,
+                    t.name AS ship_type, s.type_key AS ship_key, s.cloaked,
                     ma.path AS avatar_path, ml.path AS logo_path
              FROM players p
              JOIN ships s ON s.id = p.ship_id
@@ -61,6 +61,7 @@ final class Navigation
             'id'         => (int) $o['id'],
             'handle'     => $o['handle'],
             'ship_type'  => $o['ship_type'],
+            'ship_key'   => $o['ship_key'],
             'cloaked'    => (bool) $o['cloaked'],
             'protected'  => $o['protected_until'] !== null && strtotime((string) $o['protected_until']) > time(),
             'color'      => Identity::color($o),

@@ -18,7 +18,7 @@ $isPod    = ($ship['type_key'] ?? '') === 'escape_pod';
 </section>
 
 <section class="panel" id="profile-panel">
-  <h1>Identità del comandante</h1>
+  <h1>Identità del comandante<?= partial('help', ['key' => 'profilo.identita']) ?></h1>
   <p class="hint">Colore d'accento, stemma di flotta, motto e registro della nave. Compaiono
      nelle classifiche, sulla plancia e — presto — sulla mappa stellare e nella radio.
      Il <strong>titolo</strong> non si sceglie: lo derivano il tuo grado e i tuoi rapporti con le fazioni.</p>
@@ -99,7 +99,7 @@ $isPod    = ($ship['type_key'] ?? '') === 'escape_pod';
 </section>
 
 <section class="panel">
-  <h2>Immagini caricate</h2>
+  <h2>Immagini caricate<?= partial('help', ['key' => 'profilo.immagini']) ?></h2>
   <p class="hint">Avatar personale e logo di flotta. Ogni immagine passa da un
      <strong>controllo dell'amministratore</strong> prima di diventare visibile agli
      altri comandanti (stessa coda delle iscrizioni). PNG, JPEG, WebP o GIF, max

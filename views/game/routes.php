@@ -16,7 +16,7 @@
 
 <div class="game-grid">
   <section class="panel">
-    <h1>Ultimi spostamenti</h1>
+    <h1>Ultimi spostamenti<?= partial('help', ['key' => 'registro.spostamenti']) ?></h1>
     <table class="tbl compact">
       <thead><tr><th>Quando</th><th>Da → A</th><th>Modo</th><th class="ta-r">TL</th><th></th></tr></thead>
       <tbody>

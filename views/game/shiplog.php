@@ -11,7 +11,7 @@
 </section>
 
 <section class="panel">
-  <h1>Giornale di bordo</h1>
+  <h1>Giornale di bordo<?= partial('help', ['key' => 'giornale.home']) ?></h1>
   <p class="hint">Rapporti automatici del computer di bordo: scontri, pericoli ambientali,
      contatti NPC, comunicazioni diplomatiche, colonie e contratti. Aggiornato in tempo reale.</p>
 

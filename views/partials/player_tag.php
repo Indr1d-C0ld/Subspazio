@@ -20,7 +20,10 @@ $pid = (int) ($p['id'] ?? 0);
     <?= partial('crest', ['crest' => $crest, 'color' => $color, 'size' => $sz]) ?>
   <?php endif; ?>
   <span class="wc-name" style="color:<?= e($color) ?>"><?= e($p['handle'] ?? '') ?></span>
-  <?php if (($ship ?? true) && !empty($p['ship_type'])): ?><small>(<?= e($p['ship_type']) ?>)</small><?php endif; ?>
+  <?php if (($ship ?? true) && !empty($p['ship_type'])): ?>
+    <?php if (!empty($p['ship_key'])): ?><?= partial('ship_art', ['type' => $p['ship_key'], 'size' => $sz, 'color' => $color, 'title' => $p['ship_type']]) ?><?php endif; ?>
+    <small>(<?= e($p['ship_type']) ?>)</small>
+  <?php endif; ?>
   <?php if (!empty($p['has_logo']) && $pid > 0): ?>
     <?= partial('media_hover', ['id' => $pid, 'kind' => 'logo', 'size' => $sz, 'alt' => 'logo di ' . ($p['handle'] ?? '')]) ?>
   <?php endif; ?>
