@@ -110,6 +110,7 @@ dopo ogni cluster.
 | **Aiuto contestuale «?»** — `Help` + partial in CSS puro su ~55 intestazioni di sezione | fatto — 2026-09-11 |
 | **fix FedNews** — doppio bollettino ravvicinato (e2e distruttivo vs cron) | fatto — 2026-09-11 |
 | **C — resta** | NPC nominati ricorrenti · operazioni a tempo · anomalia della stagione |
+| **Coerenza distanze/tempi** — discussa 2026-09-11 (vedi sotto). Proposta: A economia dei turni come clock esplicito + C finestra di presenza async + E stardata condivisa. Non ancora slice. |
 | **#2 — Combattimento B1: tipi d'arma con profilo** | ~~scartato~~ — non si fa: snatura il combattimento (nessuna agency nel momento, morra cinese a info nascosta con pochi giocatori, superficie di bilanciamento enorme). In alternativa, se in futuro si vuole texture d'arma: un solo asse «penetrazione scudi» (S). I tipi d'arma veri hanno senso solo con le classi di nave (tema D). |
 
 ### Tema B — completo
@@ -378,3 +379,54 @@ aspettare le classi di nave del tema D.
 - Mappa: **niente roster globale** (romperebbe la nebbia di guerra); l'unica
   identità sulla mappa resta l'anello Limpet delle prede tracciate.
 - `sw.js` → v24. e2e `scratchpad/test_media.php` esteso (auto-approvazione).
+
+---
+
+## Coerenza distanze / tempi — analisi (2026-09-11)
+
+**Il problema sollevato**: «nel tempo in cui un giocatore fa 1 warp, un altro
+ne fa 10» — sembra incoerente che il tempo reale trascorso non pesi in modo
+uniforme sulla posizione dei giocatori.
+
+**Stato attuale della piattaforma**
+- Simulazione *lazy* dai timestamp: le azioni del giocatore sono istantanee,
+  il mondo (produzione, NPC, eventi, drift di mercato, decadimento fazioni)
+  avanza sul cron ogni minuto.
+- Economia dei turni: `turns.per_day` = **2500**, **reset secco alle 03:00**
+  (nessun accumulo/carry-over; chi non gioca li perde, chi gioca tanto in una
+  sessione può bruciarli e poi aspetta fino alle 03:00).
+- Warp = 1 turno (fino a 4 per l'Interdictor). L'autopilota somma i salti.
+- «Navi qui» / bersagli PvP = puntatore statico `players.sector_id`: puoi
+  attaccare chi ha lasciato lì la nave e si è disconnesso ore prima.
+
+**Cosa NON fare** (romperebbe il loop async «entra, fai i turni, esci» e
+punirebbe i 5 giocatori sparsi): movimento posizionale realtime, tick di
+fisica per-giocatore, timer di viaggio stile OGame che bloccano la plancia.
+
+**Leve disponibili**
+- **A — I turni SONO il clock (esplicitarlo).** Tutti ricevono gli stessi
+  2500/giorno; chi gioca 10 sessioni non va più veloce, spende solo prima la
+  stessa dotazione. Costo ~nullo: audit + documentare l'economia, eventualmente
+  passare da reset secco a refill a scaglioni con tetto (`max_banked`) per
+  premiare meno il «tutto in una volta».
+- **B — La distanza costa di più sulle tratte lunghe.** Es. «calore del drive»:
+  i turni/warp salgono con i salti consecutivi senza attracco, o carburante.
+  Dà texture «distanza = tempo» ma **rischio tedio** (EPS + guasti già
+  aggiungono attrito) → sconsigliata ora.
+- **C — Finestra di presenza async.** Un giocatore è «presente/intercettabile»
+  in un settore solo per una *grace window* dopo la sua ultima azione lì
+  (es. 10 min, da `last_move_at`/`last_seen_at`); scaduta, è «in transito» e
+  non attaccabile (oppure l'attacco diventa un colpo differito a cui può
+  rispondere al rientro). **Risolve davvero** l'incoerenza «imboscata a chi è
+  offline da 3 ore» senza timer né blocchi. Sforzo medio, resa alta.
+- **D — Rallentare il mondo, non il giocatore.** Già così: azioni istantanee,
+  processi del mondo sul wall-clock. La coerenza percepita è «torni dopo un
+  giorno e la galassia si è mossa» — già rinforzata dal Rapporto di rientro.
+- **E — Stardata condivisa.** Un orologio di galassia visibile che avanza col
+  tempo reale; i turni sono il tuo budget personale contro di esso. Pura
+  UI/fiction, lega insieme il tutto. Costo basso.
+
+**Raccomandazione**: pacchetto **A + C + E**. D è già fatto; B si scarta per
+il tedio. C è il vero rimedio al «10 warp vs 1» lato PvP: fa contare il tempo
+trascorso per l'interazione senza introdurre attese. Nessuno dei tre è ancora
+una slice: da schedulare quando si vuole affrontare il tema.
