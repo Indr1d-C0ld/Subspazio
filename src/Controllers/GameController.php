@@ -46,6 +46,7 @@ final class GameController
             'craftjobs'  => \App\Game\Industry::craftJobs((int) $player['id']),
             'limpet_tracked' => \App\Game\Limpet::tracked((int) $player['id']),
             'limpet_tags'    => \App\Game\Limpet::tagCount((int) $ship['id']),
+            'encounter'      => \App\Game\Encounters::pending((int) $player['id']),
         ]));
     }
 

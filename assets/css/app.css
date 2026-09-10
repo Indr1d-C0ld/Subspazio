@@ -643,6 +643,14 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 .limpet-list time { font-family: var(--font-mono); font-size: .8rem; }
 .limpet-warn { border-left: 3px solid var(--warn); }
 
+/* --- incontri (C1) --- */
+.encounter-card { border-left: 3px solid var(--accent-2); }
+.encounter-card h2 { margin: 0 0 .4rem; }
+.encounter-card .encounter-body { margin: 0 0 .9rem; }
+.encounter-choices { display: flex; flex-direction: column; gap: .5rem; align-items: flex-start; }
+.encounter-choices .btn { text-align: left; white-space: normal; }
+.encounter-choices .btn .mut { font-weight: 400; }
+
 /* --- griglia di potenza (EPS) --- */
 .eps-strip .eps-tag {
   display: inline-flex; align-items: center; gap: .2rem; margin-right: .4rem;

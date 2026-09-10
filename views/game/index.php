@@ -66,6 +66,24 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
     <a href="<?= e(url('/gioco/cantiere')) ?>">riparazione allo StarDock</a>.</div>
 <?php endif; ?>
 
+<?php if (!empty($encounter)): ?>
+<section class="panel encounter-card">
+  <h2>⚠ <?= e($encounter['title']) ?></h2>
+  <p class="encounter-body"><?= nl2br(e($encounter['body'])) ?></p>
+  <div class="encounter-choices">
+    <?php foreach ($encounter['choices'] as $c): ?>
+      <form method="post" action="<?= e(url('/gioco/incontro')) ?>" class="inline">
+        <?= csrf_field() ?>
+        <input type="hidden" name="choice" value="<?= e($c['key']) ?>">
+        <button class="btn" type="submit"><?= e($c['label']) ?><?php if (!empty($c['skill_label'])): ?>
+          <span class="mut">· prova di <?= e($c['skill_label']) ?></span><?php endif; ?></button>
+      </form>
+    <?php endforeach; ?>
+  </div>
+  <p class="hint">Se riparti senza decidere, l'occasione svanisce.</p>
+</section>
+<?php endif; ?>
+
 <?php if (!empty($digest)): ?>
 <section class="panel digest-card">
   <h2>Rapporto di rientro <span class="mut">assente per <?= e($digest['away']) ?></span></h2>

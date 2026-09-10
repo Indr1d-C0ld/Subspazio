@@ -224,6 +224,15 @@ final class Navigation
             }
         }
 
+        // incontri (slice C1): riparti senza scegliere -> il pending scade
+        if (empty($enc['destroyed'])) {
+            Encounters::expireStale((int) $player['id']);
+            $spawn = Encounters::maybeSpawn($player);
+            if ($spawn !== null) {
+                $enc['events'][] = '📡 Contatto: ' . $spawn['title'] . ' — decidi dalla plancia.';
+            }
+        }
+
         if ($warpNote !== null) {
             array_unshift($enc['events'], $warpNote);
         }
