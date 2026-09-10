@@ -539,7 +539,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
       ?>
       <dl class="side-stats">
         <div><dt>Scafo</dt><dd class="hull-line">
-          <?php if (!empty($ship['type_key'])): ?><?= partial('ship_art', ['type' => $ship['type_key'], 'size' => 28, 'color' => $idc['color'], 'title' => $ship['type_name']]) ?><?php endif; ?>
+          <?php if (!empty($ship['type_key'])): ?><?= partial('ship_art', ['type' => $ship['type_key'], 'size' => 40, 'color' => $idc['color'], 'title' => $ship['type_name']]) ?><?php endif; ?>
           <strong><?= e($ship['type_name']) ?></strong></dd></div>
         <div><dt>Moduli</dt><dd><?= (int) ($ship['mod_count'] ?? 0) ?>/<?= (int) $slotTot ?>
           <?php if (!empty($ship['mod_broken'])): ?><span class="pill err"><?= (int) $ship['mod_broken'] ?> fuori uso</span><?php endif; ?></dd></div>

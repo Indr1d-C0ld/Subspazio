@@ -28,7 +28,7 @@
             <?= partial('media_hover', ['id' => (int) $r['pid'], 'kind' => 'logo', 'size' => 28, 'alt' => 'logo di ' . $r['handle']]) ?>
           <?php endif; ?>
           <?php if (!empty($r['ship_key'])): ?>
-            <?= partial('ship_art', ['type' => $r['ship_key'], 'size' => 26, 'color' => $r['color'] ?? null, 'title' => $r['ship_type'] ?? '']) ?>
+            <?= partial('ship_art', ['type' => $r['ship_key'], 'size' => 30, 'color' => $r['color'] ?? null, 'title' => $r['ship_type'] ?? '']) ?>
           <?php endif; ?>
         </td>
         <td><?= $r['corp'] ? e($r['corp']) : '—' ?></td>

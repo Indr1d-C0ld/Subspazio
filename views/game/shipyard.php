@@ -110,7 +110,7 @@ $cr = (int) $player['credits'];
       $mine = $t['ckey'] === $ship['type_key'];
     ?>
       <tr<?= $mine ? ' class="row-current"' : '' ?>>
-        <td><span class="ship-mark"><?= partial('ship_art', ['type' => $t['ckey'], 'size' => 26, 'title' => $t['name']]) ?></span><strong><?= e($t['name']) ?></strong><?= $mine ? ' <span class="pill mut">attuale</span>' : '' ?></td>
+        <td><span class="ship-mark"><?= partial('ship_art', ['type' => $t['ckey'], 'size' => 34, 'title' => $t['name']]) ?></span><strong><?= e($t['name']) ?></strong><?= $mine ? ' <span class="pill mut">attuale</span>' : '' ?></td>
         <td class="ta-r"><?= (int) $t['base_holds'] ?>–<?= (int) $t['max_holds'] ?></td>
         <td class="ta-r"><?= number_format((int) $t['max_fighters'], 0, ',', '.') ?></td>
         <td class="ta-r"><?= number_format((int) $t['max_shields'], 0, ',', '.') ?></td>
