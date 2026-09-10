@@ -20,10 +20,9 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
     <span class="k">Comandante</span>
     <span class="v">
       <?php if ($hasAvatar): ?>
-        <img class="idchip-avatar" style="--crest-color:<?= e($idc['color']) ?>;width:24px;height:24px"
-             src="<?= e(url('/media/c/' . $pid . '/avatar')) ?>" alt="" title="<?= e($idc['title']) ?>">
+        <?= partial('media_hover', ['id' => $pid, 'kind' => 'avatar', 'size' => 30, 'frame' => $idc['color'], 'alt' => $idc['title']]) ?>
       <?php else: ?>
-        <?= partial('crest', ['crest' => $idc['crest'], 'color' => $idc['color'], 'size' => 16, 'title' => $idc['title']]) ?>
+        <?= partial('crest', ['crest' => $idc['crest'], 'color' => $idc['color'], 'size' => 18, 'title' => $idc['title']]) ?>
       <?php endif; ?>
       <a href="<?= e(url('/gioco/profilo')) ?>" style="color:<?= e($idc['color']) ?>"><?= e($player['handle']) ?></a>
     </span>
@@ -31,7 +30,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
   <?php if ($hasLogo): ?>
   <div class="sb-logo">
     <span class="k">Flotta</span>
-    <span class="v"><img class="fleet-logo" src="<?= e(url('/media/c/' . $pid . '/logo')) ?>" alt="" title="Logo di flotta"></span>
+    <span class="v"><?= partial('media_hover', ['id' => $pid, 'kind' => 'logo', 'size' => 38, 'alt' => 'Logo di flotta']) ?></span>
   </div>
   <?php endif; ?>
   <div><span class="k">Grado</span><span class="v"><?= e($rank) ?></span></div>
@@ -290,13 +289,12 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
 
     <?php
       $forces = $look['forces'] ?? ['fighters' => [], 'mines' => []];
-      $others = $look['players_here'] ?? [];
       $npcs = $look['npcs'] ?? [];
       $hasForces = $forces['fighters'] !== [] || $forces['mines'] !== [];
     ?>
-    <?php if ($hasForces || $others !== [] || $npcs !== []): ?>
+    <?php if ($hasForces || $npcs !== []): ?>
     <div class="forces-box">
-      <h2>Forze nel settore</h2>
+      <h2>Forze nel settore <span class="mut">caccia · mine · NPC</span></h2>
       <?php foreach ($npcs as $n): ?>
         <p class="force-line">
           <span class="pill <?= $n['kind'] === 'ferrengi' ? 'err' : ($n['kind'] === 'pirate' ? 'warn' : 'mut') ?>"><?= e($n['kind']) ?></span>
@@ -310,13 +308,6 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
           <?php endif; ?>
         </p>
       <?php endforeach; ?>
-      <?php if ($others !== []): ?>
-        <p class="ships-here">Navi:
-          <?php foreach ($others as $o): ?>
-            <?= partial('player_tag', ['p' => $o]) ?>
-          <?php endforeach; ?>
-        </p>
-      <?php endif; ?>
       <?php foreach ($forces['fighters'] as $f): ?>
         <p class="force-line">
           <?= number_format($f['qty'], 0, ',', '.') ?> caccia
@@ -395,7 +386,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
         <?= csrf_field() ?>
         <label>Attacca nave
           <select name="target" required>
-            <?php foreach ($others as $o): ?>
+            <?php foreach (($look['players_here'] ?? []) as $o): ?>
               <option value="<?= (int) $o['id'] ?>"<?= $o['protected'] ? ' disabled' : '' ?>>
                 <?= e($o['handle']) ?><?= $o['protected'] ? ' (protetto)' : '' ?>
               </option>

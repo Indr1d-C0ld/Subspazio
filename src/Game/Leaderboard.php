@@ -71,11 +71,12 @@ final class Leaderboard
             'crest'      => Identity::crest($r),
             'pid'        => (int) $r['id'],
             'has_avatar' => !empty($r['avatar_path']) && MediaAsset::fileExists(['path' => $r['avatar_path']]),
+            'has_logo'   => !empty($r['logo_path']) && MediaAsset::fileExists(['path' => $r['logo_path']]),
         ], Database::all(
             "SELECT p.id, p.handle, p.rating, p.experience, p.kills, p.deaths, p.alignment,
                     p.color, p.crest,
                     c.tag AS corp_tag,
-                    ma.path AS avatar_path,
+                    ma.path AS avatar_path, ml.path AS logo_path,
                     (SELECT COUNT(*) FROM planets pl WHERE pl.owner_player_id = p.id AND pl.destroyed = 0) AS planet_count
              FROM players p
              LEFT JOIN corp_members m ON m.player_id = p.id
@@ -83,6 +84,9 @@ final class Leaderboard
              LEFT JOIN media_assets ma
                     ON ma.owner_type = 'player' AND ma.owner_id = p.id
                    AND ma.kind = 'avatar' AND ma.status = 'approved'
+             LEFT JOIN media_assets ml
+                    ON ml.owner_type = 'player' AND ml.owner_id = p.id
+                   AND ml.kind = 'logo' AND ml.status = 'approved'
              ORDER BY p.rating DESC, p.experience DESC
              LIMIT ?",
             [$limit]

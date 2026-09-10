@@ -44,13 +44,16 @@ final class Navigation
         $playersHere = Database::all(
             "SELECT p.id, p.handle, p.alignment, p.protected_until, p.color, p.crest,
                     t.name AS ship_type,
-                    ma.path AS avatar_path
+                    ma.path AS avatar_path, ml.path AS logo_path
              FROM players p
              JOIN ships s ON s.id = p.ship_id
              JOIN ship_types t ON t.ckey = s.type_key
              LEFT JOIN media_assets ma
                     ON ma.owner_type = 'player' AND ma.owner_id = p.id
                    AND ma.kind = 'avatar' AND ma.status = 'approved'
+             LEFT JOIN media_assets ml
+                    ON ml.owner_type = 'player' AND ml.owner_id = p.id
+                   AND ml.kind = 'logo' AND ml.status = 'approved'
              WHERE p.sector_id = ? AND p.id <> ?",
             [$sectorId, (int) $player['id']]
         );
@@ -62,6 +65,7 @@ final class Navigation
             'color'      => Identity::color($o),
             'crest'      => Identity::crest($o),
             'has_avatar' => !empty($o['avatar_path']) && MediaAsset::fileExists(['path' => $o['avatar_path']]),
+            'has_logo'   => !empty($o['logo_path']) && MediaAsset::fileExists(['path' => $o['logo_path']]),
         ], $playersHere);
 
         $scanner = $ship !== null

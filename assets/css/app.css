@@ -799,12 +799,30 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
   flex: none; border-radius: 50%; object-fit: cover; vertical-align: middle;
   background: var(--panel-2); box-shadow: 0 0 0 1px var(--crest-color, var(--line));
 }
-.ld-avatar { width: 26px; height: 26px; margin-right: .45rem; }
+.ld-avatar { width: 30px; height: 30px; margin-right: .45rem; }
 .fleet-logo {
-  display: block; height: 1.9rem; width: auto; max-width: 7rem; object-fit: contain;
+  display: block; height: 2rem; width: auto; max-width: 8.5rem; object-fit: contain;
   vertical-align: middle; opacity: .92; border-radius: 3px;
 }
-.statusbar .sb-logo .v { display: flex; align-items: center; min-height: 1.9rem; }
+.statusbar .sb-logo .v { display: flex; align-items: center; min-height: 2.4rem; }
+.ld-cmd .media-hover + strong { margin-right: .35rem; }
+
+/* anteprima ingrandita di avatar / logo al passaggio del mouse o al focus */
+.media-hover { position: relative; display: inline-flex; align-items: center; flex: none; outline: none; }
+.media-hover::after {
+  content: ""; position: absolute; left: 50%; top: calc(100% + 8px);
+  transform: translateX(-50%) scale(.85); transform-origin: top center;
+  width: 168px; height: 168px;
+  background: var(--pop) center / contain no-repeat, var(--panel-2);
+  border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-panel);
+  opacity: 0; pointer-events: none; transition: opacity .12s ease, transform .12s ease; z-index: 60;
+}
+.media-hover.is-logo::after { width: 260px; height: 150px; }
+.media-hover:hover::after, .media-hover:focus::after, .media-hover:focus-visible::after,
+.media-hover:focus-within::after {
+  opacity: 1; transform: translateX(-50%) scale(1);
+}
+@media (hover: none) { .media-hover::after { top: auto; bottom: calc(100% + 8px); transform-origin: bottom center; } }
 
 .idchip { display: inline-flex; align-items: center; gap: .55rem; }
 .idchip-txt { display: flex; flex-direction: column; line-height: 1.22; min-width: 0; }
