@@ -110,7 +110,7 @@ dopo ogni cluster.
 | **Aiuto contestuale «?»** — `Help` + partial in CSS puro su ~55 intestazioni di sezione | fatto — 2026-09-11 |
 | **fix FedNews** — doppio bollettino ravvicinato (e2e distruttivo vs cron) | fatto — 2026-09-11 |
 | **C — resta** | NPC nominati ricorrenti · operazioni a tempo · anomalia della stagione |
-| **Coerenza distanze/tempi** — discussa 2026-09-11 (vedi sotto). Proposta: A economia dei turni come clock esplicito + C finestra di presenza async + E stardata condivisa. Non ancora slice. |
+| **Coerenza distanze/tempi** — discussa 2026-09-11 (analisi sotto). **Accantonata su decisione dell'utente**: nessuna delle leve A/B/C/E viene perseguita. |
 | **#2 — Combattimento B1: tipi d'arma con profilo** | ~~scartato~~ — non si fa: snatura il combattimento (nessuna agency nel momento, morra cinese a info nascosta con pochi giocatori, superficie di bilanciamento enorme). In alternativa, se in futuro si vuole texture d'arma: un solo asse «penetrazione scudi» (S). I tipi d'arma veri hanno senso solo con le classi di nave (tema D). |
 
 ### Tema B — completo
@@ -426,7 +426,10 @@ fisica per-giocatore, timer di viaggio stile OGame che bloccano la plancia.
   tempo reale; i turni sono il tuo budget personale contro di esso. Pura
   UI/fiction, lega insieme il tutto. Costo basso.
 
-**Raccomandazione**: pacchetto **A + C + E**. D è già fatto; B si scarta per
-il tedio. C è il vero rimedio al «10 warp vs 1» lato PvP: fa contare il tempo
-trascorso per l'interazione senza introdurre attese. Nessuno dei tre è ancora
-una slice: da schedulare quando si vuole affrontare il tema.
+**Raccomandazione (a suo tempo)**: pacchetto A + C + E; B scartata per il tedio,
+D già fatto.
+
+**Esito (2026-09-11)**: l'utente ha deciso di **non perseguire** il tema —
+nessuna delle leve A/B/C/E. La piattaforma resta com'è: azioni istantanee,
+turni giornalieri come unico equalizzatore, mondo che avanza sul cron. Sezione
+tenuta come nota storica.
