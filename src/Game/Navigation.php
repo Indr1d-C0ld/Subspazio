@@ -43,7 +43,7 @@ final class Navigation
 
         $playersHere = Database::all(
             "SELECT p.id, p.handle, p.alignment, p.protected_until, p.color, p.crest,
-                    t.name AS ship_type,
+                    t.name AS ship_type, s.cloaked,
                     ma.path AS avatar_path, ml.path AS logo_path
              FROM players p
              JOIN ships s ON s.id = p.ship_id
@@ -61,6 +61,7 @@ final class Navigation
             'id'         => (int) $o['id'],
             'handle'     => $o['handle'],
             'ship_type'  => $o['ship_type'],
+            'cloaked'    => (bool) $o['cloaked'],
             'protected'  => $o['protected_until'] !== null && strtotime((string) $o['protected_until']) > time(),
             'color'      => Identity::color($o),
             'crest'      => Identity::crest($o),
@@ -71,6 +72,11 @@ final class Navigation
         $scanner = $ship !== null
             ? (string) ($ship['dev_scanner'] ?? 'none')
             : (string) (Database::first('SELECT dev_scanner FROM ships s JOIN players p ON p.ship_id = s.id WHERE p.id = ?', [(int) $player['id']])['dev_scanner'] ?? 'none');
+
+        // navi occultate: invisibili se non hai uno scanner olografico
+        if (!\App\Game\Cloak::seesCloaked($scanner)) {
+            $playersHere = array_values(array_filter($playersHere, static fn ($o) => !$o['cloaked']));
+        }
         $seesMines = $scanner !== 'none';
         $forces = Deploy::forces($sectorId, (int) $player['id'], $seesMines);
 
@@ -197,15 +203,101 @@ final class Navigation
             throw $e;
         }
 
-        $handle = (string) $player['handle'];
         $player['turns'] = (int) $player['turns'] - $cost;
         $player['sector_id'] = $toSector;
         $player['total_warps'] = (int) $player['total_warps'] + 1;
 
+        return self::arrive($player, $ship, $from, $toSector, $cost, $warpNote);
+    }
+
+    /**
+     * Salto Transwarp: da un settore già esplorato a un altro, ignorando le
+     * rotte, a transwarp.turn_cost turni fissi. Prerequisito dev_transwarp o
+     * ship_types.can_transwarp. Smaschera un'eventuale nave occultata.
+     *
+     * @param array<string,mixed> $player @param array<string,mixed> $ship
+     * @return array{ok:bool, error?:string, cost?:int, entry_events?:list<string>, destroyed?:bool, sector?:array, player?:array, ship?:array}
+     */
+    public static function transwarp(array $player, array $ship, int $toSector): array
+    {
+        if (empty($ship['dev_transwarp']) && empty($ship['can_transwarp'])) {
+            return ['ok' => false, 'error' => 'Nessun drive Transwarp installato.'];
+        }
+        $player = TurnManager::sync($player);
+        $from = (int) $player['sector_id'];
+
+        if ($toSector === $from) {
+            return ['ok' => false, 'error' => 'Sei già in questo settore.'];
+        }
+        if (Universe::sector($toSector) === null) {
+            return ['ok' => false, 'error' => "Settore {$toSector} inesistente."];
+        }
+        $visited = Database::first(
+            'SELECT 1 AS x FROM player_visited_sectors WHERE player_id = ? AND sector_id = ?',
+            [(int) $player['id'], $toSector]
+        );
+        if ($visited === null) {
+            return ['ok' => false, 'error' => 'Il Transwarp raggiunge solo settori già esplorati.'];
+        }
+
+        $cost = max(0, GameConfig::int('transwarp.turn_cost', 5));
+        if ((int) $player['turns'] < $cost) {
+            return ['ok' => false, 'error' => "Turni insufficienti: servono {$cost}."];
+        }
+
+        $decloaked = Cloak::drop((int) $ship['id'], 'salto Transwarp');
+        if ($decloaked) {
+            $ship['cloaked'] = 0;
+        }
+
+        $pdo = Database::pdo();
+        $pdo->beginTransaction();
+        try {
+            Database::run(
+                'UPDATE players SET turns = turns - ?, sector_id = ?, total_warps = total_warps + 1, last_move_at = NOW()
+                 WHERE id = ? AND turns >= ?',
+                [$cost, $toSector, (int) $player['id'], $cost]
+            );
+            Database::run('UPDATE ships SET sector_id = ? WHERE id = ?', [$toSector, (int) $ship['id']]);
+            Database::run(
+                'INSERT INTO player_visited_sectors (player_id, sector_id) VALUES (?, ?)
+                 ON DUPLICATE KEY UPDATE last_seen = NOW(), visits = visits + 1',
+                [(int) $player['id'], $toSector]
+            );
+            Database::run(
+                'INSERT INTO move_log (player_id, from_sector, to_sector, turns_spent, mode) VALUES (?, ?, ?, ?, ?)',
+                [(int) $player['id'], $from, $toSector, $cost, 'transwarp']
+            );
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
+
+        $player['turns'] = (int) $player['turns'] - $cost;
+        $player['sector_id'] = $toSector;
+        $player['total_warps'] = (int) $player['total_warps'] + 1;
+
+        $note = 'Salto Transwarp' . ($decloaked ? ' — occultamento caduto.' : '.');
+        return self::arrive($player, $ship, $from, $toSector, $cost, $note);
+    }
+
+    /**
+     * Sequenza post-arrivo condivisa da move() e transwarp(): intercettazioni,
+     * strain EPS, incontri, notifiche live, giornale.
+     *
+     * @param array<string,mixed> $player @param array<string,mixed> $ship
+     * @return array{ok:bool, cost:int, turns_left:int, entry_events:list<string>, destroyed:bool, sector:array, player:array, ship:array}
+     */
+    private static function arrive(array $player, array $ship, int $from, int $toSector, int $cost, ?string $warpNote): array
+    {
+        $handle = (string) $player['handle'];
         Live::sector($from, 'move_out', null, "{$handle} ha lasciato il settore", ['handle' => $handle]);
         Live::sector($toSector, 'move_in', null, "{$handle} e' entrato nel settore", ['handle' => $handle, 'ship' => $ship['type_name'] ?? null]);
 
-        // intercettazioni: mine, caccia dispiegati
+        // intercettazioni: mine, caccia dispiegati (chi entra occultato le salta in parte)
         $enc = Combat::onEnterSector($player, $ship);
         $player = $enc['player'];
         $ship = $enc['ship'];
@@ -233,7 +325,7 @@ final class Navigation
             }
         }
 
-        if ($warpNote !== null) {
+        if ($warpNote !== null && $warpNote !== '') {
             array_unshift($enc['events'], $warpNote);
         }
 

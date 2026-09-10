@@ -706,6 +706,9 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 .module-row.broken { opacity: .72; }
 .module-row.broken strong { text-decoration: line-through; }
 
+/* --- occultamento (dispositivi-fantasma) --- */
+.statusbar .v.cloak-on { color: #b98cff; font-weight: 600; letter-spacing: .02em; }
+
 /* --------------------------------------------------------- Traguardi / meta --- */
 .ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: .6rem; }
 .ach {

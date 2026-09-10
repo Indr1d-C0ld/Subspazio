@@ -110,6 +110,12 @@ final class Combat
         }
 
         $tShip = PlayerService::ship((int) $target['ship_id']);
+        if (!empty($tShip['cloaked'])) {
+            return self::err('Bersaglio non rilevabile: e\' sotto occultamento.');
+        }
+        // aprire il fuoco smaschera un attaccante occultato
+        Cloak::drop((int) $atkShip['id'], 'apertura del fuoco');
+
         $aM = (float) ($atkShip['combat_rating'] ?? 1.0);
         $dM = (float) ($tShip['combat_rating'] ?? 1.0);
         if ($ab = Crew::consumePending((int) $atkPlayer['id'], 'attack_bonus_pct')) {
@@ -236,6 +242,7 @@ final class Combat
         if ((bool) $sector['is_fedspace']) {
             return self::err('Non in spazio Federazione.');
         }
+        Cloak::drop((int) $atkShip['id'], 'apertura del fuoco');
         $port = Economy::portAt($sectorId);
         if ($port === null) {
             return self::err('Nessun porto in questo settore.');
@@ -554,6 +561,7 @@ final class Combat
         if ((int) $npc['sector_id'] !== (int) $atkPlayer['sector_id']) {
             return self::err('Il bersaglio non e\' in questo settore.');
         }
+        Cloak::drop((int) $atkShip['id'], 'apertura del fuoco');
         $turnCost = GameConfig::int('combat.attack_turn_cost', 2);
         $atkPlayer = TurnManager::sync($atkPlayer);
         if ((int) $atkPlayer['turns'] < $turnCost) {
@@ -725,7 +733,7 @@ final class Combat
         $events = [];
         $sec = Universe::sector($sectorId);
 
-        // allo StarDock i tecnici staccano ogni mina Limpet dallo scafo
+        // allo StarDock i tecnici staccano ogni mina Limpet e disattivano l'occultamento
         if ((bool) ($sec['is_stardock'] ?? false)) {
             $scraped = Limpet::scrape((int) $ship['id']);
             if ($scraped > 0) {
@@ -733,13 +741,22 @@ final class Combat
                     ? 'Allo StarDock i tecnici rimuovono una mina Limpet dallo scafo.'
                     : "Allo StarDock i tecnici rimuovono {$scraped} mine Limpet dallo scafo.";
             }
+            if (Cloak::drop((int) $ship['id'], 'attracco allo StarDock')) {
+                $ship['cloaked'] = 0;
+                $events[] = 'Allo StarDock l\'occultamento viene disattivato.';
+            }
         }
 
         if ((bool) $sec['is_fedspace']) {
+            if (Cloak::drop((int) $ship['id'], 'spazio Federazione')) {
+                $ship['cloaked'] = 0;
+                $events[] = 'I sensori della Federazione annullano l\'occultamento.';
+            }
             return ['events' => $events, 'player' => $player, 'ship' => $ship, 'destroyed' => false];
         }
 
         $pid = (int) $player['id'];
+        $cloaked = !empty($ship['cloaked']);
         $mine = static fn (int $ownerId): bool => $ownerId === $pid || Corp::areMates($pid, $ownerId);
         $noEngage = Crew::consumePending($pid, 'no_engage') !== null;
 
@@ -806,13 +823,16 @@ final class Combat
             $events[] = $ev;
         }
 
-        // 2) caccia: pedaggio, offensivi, difensivi (se il visitatore e' malvagio)
-        $groups = $noEngage ? [] : Database::all(
+        // 2) caccia: pedaggio, offensivi, difensivi (se il visitatore e' malvagio).
+        //    Sotto occultamento scivoli oltre le forze schierate e gli NPC.
+        $groups = ($noEngage || $cloaked) ? [] : Database::all(
             'SELECT sf.*, p.handle FROM sector_fighters sf JOIN players p ON p.id = sf.owner_player_id WHERE sf.sector_id = ?',
             [$sectorId]
         );
         if ($noEngage) {
             $events[] = 'Negoziato: le forze schierate qui ti lasciano passare.';
+        } elseif ($cloaked && Database::first('SELECT 1 AS x FROM sector_fighters WHERE sector_id = ? LIMIT 1', [$sectorId]) !== null) {
+            $events[] = 'Sotto occultamento scivoli oltre le forze schierate nel settore.';
         }
         foreach ($groups as $g) {
             if ($mine((int) $g['owner_player_id']) || (int) $g['qty'] <= 0) {
@@ -877,7 +897,7 @@ final class Combat
         // 3) NPC ostili nel settore
         $ferrOk = Faction::tierAtLeast($pid, 'ferrengi', 'friendly');
         $pirOk  = Faction::tierAtLeast($pid, 'frontier', 'allied');
-        foreach (($noEngage ? [] : Database::all('SELECT * FROM npcs WHERE sector_id = ? AND aggression > 0', [$sectorId])) as $npc) {
+        foreach ((($noEngage || $cloaked) ? [] : Database::all('SELECT * FROM npcs WHERE sector_id = ? AND aggression > 0', [$sectorId])) as $npc) {
             if ($npc['kind'] === 'ferrengi' && (Ranks::isEvil((int) ($player['alignment'] ?? 0)) || $ferrOk)) {
                 continue;
             }

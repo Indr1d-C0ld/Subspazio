@@ -61,6 +61,8 @@ $router->post('/gioco/muovi', [GameController::class, 'move'], $game);
 $router->get('/gioco/rotta', [GameController::class, 'course'], $game);
 $router->post('/gioco/autopilot', [GameController::class, 'autopilot'], $game);
 $router->post('/gioco/faro', [GameController::class, 'beacon'], $game);
+$router->post('/gioco/occulta', [GameController::class, 'cloak'], $game);
+$router->post('/gioco/transwarp', [GameController::class, 'transwarp'], $game);
 
 // Porto ed economia (HTML)
 $router->get('/gioco/porto', [PortController::class, 'show'], $game);

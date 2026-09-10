@@ -156,6 +156,11 @@ final class ShipStats
             $ship['eps_nominal'] = PowerGrid::isNominal(PowerGrid::read($ship));
         }
 
+        // occultamento attivo: warp più lento
+        if (!empty($ship['cloaked']) && ($ship['type_key'] ?? '') !== 'escape_pod') {
+            $ship['turns_per_warp'] = (int) ($ship['turns_per_warp'] ?? 1) + Cloak::warpPenalty();
+        }
+
         return $ship;
     }
 

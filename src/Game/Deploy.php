@@ -64,6 +64,7 @@ final class Deploy
             return ['ok' => false, 'error' => 'In spazio Federazione puoi lasciare solo caccia difensivi.'];
         }
         $toll = $mode === 'toll' ? max(0, $toll) : 0;
+        Cloak::drop((int) $ship['id'], 'dispiegamento di caccia');
 
         Database::run('UPDATE ships SET fighters = fighters - ? WHERE id = ?', [$qty, $ship['id']]);
         Database::run(
@@ -131,6 +132,8 @@ final class Deploy
                 return ['ok' => false, 'error' => "Campo Limpet gia' al limite ({$cap}) per questo settore."];
             }
         }
+
+        Cloak::drop((int) $ship['id'], 'posa di mine');
 
         Database::run("UPDATE ships SET {$col} = {$col} - ? WHERE id = ?", [$qty, $ship['id']]);
         Database::run(

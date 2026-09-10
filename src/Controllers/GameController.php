@@ -115,4 +115,31 @@ final class GameController
         Session::flash('success', 'Faro aggiornato.');
         return redirect('/gioco');
     }
+
+    public function cloak(Request $request): Response
+    {
+        $on = $request->str('state') === 'on';
+        $res = \App\Game\Cloak::toggle(Ctx::$player, Ctx::$ship, $on);
+        if (!$res['ok']) {
+            Session::flash('error', $res['error'] ?? 'Occultamento non disponibile.');
+        } else {
+            Session::flash('success', $res['cloaked']
+                ? 'Occultamento attivato: sei fuori dai sensori.'
+                : 'Occultamento disattivato.');
+        }
+        return redirect('/gioco');
+    }
+
+    public function transwarp(Request $request): Response
+    {
+        $res = Navigation::transwarp(Ctx::$player, Ctx::$ship, $request->int('to'));
+        if (!$res['ok']) {
+            Session::flash('error', $res['error'] ?? 'Salto Transwarp non riuscito.');
+        } elseif (!empty($res['entry_events'])) {
+            Session::flash($res['destroyed'] ? 'error' : 'success', implode(' ', $res['entry_events']));
+        } else {
+            Session::flash('success', 'Salto Transwarp completato.');
+        }
+        return redirect('/gioco');
+    }
 }

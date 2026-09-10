@@ -44,6 +44,9 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
   <div><span class="k">Stive</span><span class="v"><?= $holdsUsed ?>/<?= (int) $ship['holds_total'] ?></span></div>
   <div><span class="k">Caccia</span><span class="v"><?= number_format((int) $ship['fighters'], 0, ',', '.') ?></span></div>
   <div><span class="k">Scudi</span><span class="v"><?= number_format((int) $ship['shields'], 0, ',', '.') ?></span></div>
+  <?php if (!empty($ship['cloaked'])): ?>
+  <div><span class="k">Occultamento</span><span class="v cloak-on">🌫 Occultato</span></div>
+  <?php endif; ?>
   <div><span class="k">Allineamento</span><span class="v"><?= e($align) ?></span></div>
   <div><span class="k">Settore</span><span class="v" data-bind="sector"><?= (int) $look['id'] ?></span></div>
 </section>
@@ -471,6 +474,19 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
       <p class="hint">Armid: danno alla nave che entra, poi si consuma. Limpet: si aggancia
          allo scafo di chi passa (nessun danno) e te ne fa seguire la posizione dalla plancia
          finché non raggiunge lo StarDock.</p>
+
+      <?php if (\App\Game\Cloak::has($ship)): ?>
+      <form method="post" action="<?= e(url('/gioco/occulta')) ?>" class="row">
+        <?= csrf_field() ?>
+        <input type="hidden" name="state" value="<?= !empty($ship['cloaked']) ? 'off' : 'on' ?>">
+        <button class="btn xs<?= !empty($ship['cloaked']) ? ' danger' : '' ?>" type="submit">
+          <?= !empty($ship['cloaked']) ? '🌫 Disattiva occultamento' : '🌫 Attiva occultamento' ?>
+        </button>
+      </form>
+      <p class="hint">Occultamento: sparisci dai sensori (ti vede solo chi ha uno scanner
+         olografico nel tuo settore). +<?= \App\Game\Cloak::warpPenalty() ?> turno per warp,
+         niente Fedspace, non ferma mine né Quasar, cade se apri il fuoco, attracchi o salti in Transwarp.</p>
+      <?php endif; ?>
     </details>
     <?php endif; ?>
 
@@ -535,6 +551,18 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
         </label>
         <button class="btn xs ghost" type="submit">Imposta</button>
       </form>
+      <?php if (!empty($ship['dev_transwarp']) || !empty($ship['can_transwarp'])): ?>
+      <form method="post" action="<?= e(url('/gioco/transwarp')) ?>" class="row">
+        <?= csrf_field() ?>
+        <label>Salto Transwarp verso settore
+          <input type="number" name="to" min="1" required>
+        </label>
+        <button class="btn xs" type="submit">Salta</button>
+      </form>
+      <p class="hint">Transwarp: raggiungi in un colpo qualunque settore <em>già esplorato</em>,
+         ignorando le rotte, a <?= \App\Game\GameConfig::int('transwarp.turn_cost', 5) ?> turni fissi.
+         Fa cadere l'occultamento.</p>
+      <?php endif; ?>
     </details>
 
     <details class="tools">

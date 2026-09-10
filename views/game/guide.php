@@ -43,6 +43,14 @@ $sec = static function (string $title, string $body): string {
     . 'sonde, mine, scanner, transwarp, occultamento, <strong>laser minerario</strong>, capsula. '
     . '<a href="' . e(url('/gioco/cantiere')) . '">Cantiere</a></p>') ?>
 
+  <?= $sec('Occultamento & Transwarp',
+      '<p>L\'<strong>occultamento</strong> (hardware Cantiere) ti toglie dai sensori: ti vede solo chi ha uno '
+    . 'scanner olografico nel tuo settore, e superi caccia e NPC senza ingaggio. In cambio: +1 turno per warp, '
+    . 'vietato in spazio Federazione, non ferma mine né Quasar, e <strong>cade</strong> se apri il fuoco, attracchi '
+    . 'allo StarDock o salti in Transwarp. Attivalo dalla plancia, sezione «Armi e dispiegamento».</p>'
+    . '<p>Il <strong>drive Transwarp</strong> salta in un colpo verso qualunque settore <em>già esplorato</em>, '
+    . 'ignorando le rotte, a costo fisso in turni. Comando in plancia, «Computer di bordo».</p>') ?>
+
   <?= $sec('Moduli & Officina',
       '<p>Combattimenti e relitti lasciano <strong>moduli</strong> di 5 fasce (Civile→Precursore) che si installano negli '
     . '<strong>slot</strong> dello scafo e ne cambiano le statistiche. In officina li smonti (→ Leghe di recupero), li potenzi '
