@@ -42,7 +42,7 @@ sé.
 | Voce | Dim. | Aggancio |
 |---|---|---|
 | **Tabella incontri** ✅ fatto — 2026-09-10 (C1) — `encounters` data-driven, tiro a ogni warp, 2–3 scelte con esiti pesati + skill-check; 10 incontri di lancio | M motore + S/incontro | `Navigation::move`, plancia, giornale |
-| **Canale FedNews / Frontier Broadcast** — un NPC radio che ogni giorno racconta lo stato della galassia | S–M | radio, `Events`, threat clock |
+| **Canale FedNews / Frontier Broadcast** ✅ fatto — 2026-09-10 (C3) — bollettino quotidiano nella Radio da stato reale, conduttore NPC che ruota | S–M | radio, `Events`, threat clock |
 | **NPC nominati ricorrenti** — capitani con stato, taglia, dialogo; scalano a stagione | M | `Npc`, `Contracts` |
 | **Operazioni a tempo** — obiettivi settimanali seminabili dall'admin, barra condivisa, ricompense | M | tick, plancia, `/admin/gioco` |
 | **Anomalia della stagione** — una feature con meccanica unica che ruota ogni stagione | M | `SectorFeatures`, `Season` |
@@ -103,7 +103,8 @@ dopo ogni cluster.
 | **B2 — Griglia di potenza (EPS)** (8 tacche su 4 canali Scudi/Armi/Motori/Sensori, ±25%, ri-taratura = 1 turno) | fatto — 2026-09-10 |
 | **B3 — Guasti ai sottosistemi** (un colpo mette offline un modulo; StarDock / Ingegnere / auto-riparazione; sovraccarico EPS come 2ª fonte) | fatto — 2026-09-10 |
 | **C1 — Tabella incontri** (`encounters` data-driven, tiro a ogni warp, 2–3 scelte + skill-check, 10 incontri di lancio) | fatto — 2026-09-10 |
-| **C3 — FedNews / Frontier Broadcast** (bollettino quotidiano nella Radio da stato reale) | prossimo |
+| **C3 — FedNews / Frontier Broadcast** (bollettino quotidiano nella Radio da stato reale) | fatto — 2026-09-10 |
+| **C — resta** | NPC nominati ricorrenti · operazioni a tempo · anomalia della stagione |
 | **#2 — Combattimento B1: tipi d'arma con profilo** | ~~scartato~~ — non si fa: snatura il combattimento (nessuna agency nel momento, morra cinese a info nascosta con pochi giocatori, superficie di bilanciamento enorme). In alternativa, se in futuro si vuole texture d'arma: un solo asse «penetrazione scudi» (S). I tipi d'arma veri hanno senso solo con le classi di nave (tema D). |
 
 ### Tema B — completo
@@ -160,6 +161,23 @@ aspettare le classi di nave del tema D.
 - e2e `scratchpad/test_encounters.php` (12 check) + smoke HTTP (pannello +
   resolve «spoglia» → +40 leghe, giornale).
 - **Aggiungere incontri = righe SQL in `encounters`** (o un form admin, da fare).
+
+### C3 — dettaglio di quanto consegnato
+
+- Migrazione `0031_fednews` — tabella `fednews` (archivio: `anchor`,
+  `headlines` JSON, `body`, `created_at`); config `fednews.enabled` 1,
+  `fednews.interval_hours` 24.
+- `src/Game/FedNews.php` — `tick()` (se è passato l'intervallo dall'ultimo,
+  compone e pubblica); `compose()` pesca da stato reale: evento di mercato
+  attivo (`events`), kill PvP recente (`combat_log`), nuova colonia
+  (`planets.created_at`), vertice classifica, nuove registrazioni, + una riga
+  di servizio fissa; se è tutto tranquillo, una riga «rotte sgombre».
+  `latest()` per il teaser (null se più vecchio di 2× l'intervallo).
+- Il bollettino esce come messaggio Radio sul canale `fedcomm`
+  (`from_name` = conduttore che ruota fra 3), quindi compare nella Radio
+  con badge. Teaser `.fednews-card` in cima alla plancia (fino a 4 titoli +
+  link alla Radio). Task `fednews` in `bin/tick.php`. `sw.js` → v34.
+- e2e `scratchpad/test_fednews.php` (9 check).
 
 ### B2 — dettaglio di quanto consegnato
 

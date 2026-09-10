@@ -4,6 +4,31 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-10 — FedNews / Frontier Broadcast (roadmap C3)
+
+Il tick, se è passato `fednews.interval_hours` (24 h) dall'ultimo,
+**compone un bollettino dallo stato reale del gioco** e lo pubblica sul
+canale Radio `fedcomm`, firmato da un conduttore NPC che ruota fra tre.
+
+- **[db/migrations/0031_fednews.sql](db/migrations/0031_fednews.sql)** —
+  tabella `fednews` (archivio: `anchor`, `headlines` JSON, `body`,
+  `created_at`); config `fednews.enabled` (1),
+  `fednews.interval_hours` (24).
+- **[src/Game/FedNews.php](src/Game/FedNews.php)** — `tick()` con guardia
+  sull'intervallo; `compose()` pesca da: evento di mercato attivo
+  (`events`), kill PvP recente (`combat_log`), nuova colonia
+  (`planets.created_at`), comandante in vetta alla classifica, nuove
+  registrazioni, più una riga di servizio fissa — con fallback «rotte
+  sgombre, mercati stabili» quando è tutto tranquillo. `latest()` per il
+  teaser (nascosto se più vecchio di 2× l'intervallo).
+- **[bin/tick.php](bin/tick.php)** — nuovo task `fednews`.
+- **[src/Controllers/GameController.php](src/Controllers/GameController.php)**
+  / **[views/game/index.php](views/game/index.php)** — teaser
+  `.fednews-card` in cima alla plancia (fino a 4 titoli + link alla
+  Radio, dove compare il bollettino completo con badge).
+- **[assets/css/app.css](assets/css/app.css)** — stili `.fednews-*`.
+- **[sw.js](sw.js)** — cache `subspazio-v34`.
+
 ## 2026-09-10 — Plancia: colonne allineate, riquadro laterale riordinato, legenda mappa
 
 - **[assets/css/app.css](assets/css/app.css)** — `.game-grid > .panel { margin: 0 }`: la scheda settore (colonna sinistra) e il riquadro laterale (destra) ora partono alla **stessa altezza** — prima il margine superiore del `.panel` di sinistra le disallineava.
