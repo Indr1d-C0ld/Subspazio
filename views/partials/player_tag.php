@@ -22,7 +22,7 @@ $pid = (int) ($p['id'] ?? 0);
   <span class="wc-name" style="color:<?= e($color) ?>"><?= e($p['handle'] ?? '') ?></span>
   <?php if (($ship ?? true) && !empty($p['ship_type'])): ?><small>(<?= e($p['ship_type']) ?>)</small><?php endif; ?>
   <?php if (!empty($p['has_logo']) && $pid > 0): ?>
-    <?= partial('media_hover', ['id' => $pid, 'kind' => 'logo', 'size' => 20, 'alt' => 'logo di ' . ($p['handle'] ?? '')]) ?>
+    <?= partial('media_hover', ['id' => $pid, 'kind' => 'logo', 'size' => $sz, 'alt' => 'logo di ' . ($p['handle'] ?? '')]) ?>
   <?php endif; ?>
   <?php if (!empty($p['protected'])): ?><span title="protezione novizio">🛡</span><?php endif; ?>
 </span>

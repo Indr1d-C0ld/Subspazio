@@ -19,13 +19,13 @@
         <td><?= $i + 1 ?></td>
         <td class="ld-cmd">
           <?php if (!empty($r['has_avatar'])): ?>
-            <?= partial('media_hover', ['id' => (int) $r['pid'], 'kind' => 'avatar', 'size' => 30, 'frame' => $r['color'] ?? null, 'alt' => $r['handle']]) ?>
+            <?= partial('media_hover', ['id' => (int) $r['pid'], 'kind' => 'avatar', 'size' => 28, 'frame' => $r['color'] ?? null, 'alt' => $r['handle']]) ?>
           <?php else: ?>
             <?= partial('crest', ['crest' => $r['crest'] ?? null, 'color' => $r['color'] ?? null, 'size' => 22]) ?>
           <?php endif; ?>
           <strong style="color:<?= e($r['color'] ?? '') ?>"><?= e($r['handle']) ?></strong>
           <?php if (!empty($r['has_logo'])): ?>
-            <?= partial('media_hover', ['id' => (int) $r['pid'], 'kind' => 'logo', 'size' => 20, 'alt' => 'logo di ' . $r['handle']]) ?>
+            <?= partial('media_hover', ['id' => (int) $r['pid'], 'kind' => 'logo', 'size' => 28, 'alt' => 'logo di ' . $r['handle']]) ?>
           <?php endif; ?>
         </td>
         <td><?= $r['corp'] ? e($r['corp']) : '—' ?></td>

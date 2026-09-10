@@ -30,7 +30,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
   <?php if ($hasLogo): ?>
   <div class="sb-logo">
     <span class="k">Flotta</span>
-    <span class="v"><?= partial('media_hover', ['id' => $pid, 'kind' => 'logo', 'size' => 38, 'alt' => 'Logo di flotta']) ?></span>
+    <span class="v"><?= partial('media_hover', ['id' => $pid, 'kind' => 'logo', 'size' => 30, 'alt' => 'Logo di flotta']) ?></span>
   </div>
   <?php endif; ?>
   <div><span class="k">Grado</span><span class="v"><?= e($rank) ?></span></div>
@@ -221,11 +221,14 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
     <?php endif; ?>
 
     <?php if (!empty($look['players_here'])): ?>
-      <p class="ships-here">Altre navi qui:
-        <?php foreach ($look['players_here'] as $ph): ?>
-          <?= partial('player_tag', ['p' => $ph]) ?>
-        <?php endforeach; ?>
-      </p>
+      <div class="ships-here">
+        <span class="lbl">Altre navi qui:</span>
+        <div class="chips">
+          <?php foreach ($look['players_here'] as $ph): ?>
+            <?= partial('player_tag', ['p' => $ph]) ?>
+          <?php endforeach; ?>
+        </div>
+      </div>
     <?php endif; ?>
 
     <h2>Warp</h2>

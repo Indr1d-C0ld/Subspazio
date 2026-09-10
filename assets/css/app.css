@@ -393,7 +393,9 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 .sector-meta div { display: flex; gap: .4rem; }
 .sector-meta dt { color: var(--accent); font-size: .8rem; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .06em; }
 .sector-meta dd { margin: 0; font-size: .88rem; }
-.ships-here { font-size: .9rem; color: var(--ink-soft); }
+.ships-here { font-size: .9rem; color: var(--ink-soft); margin: .6rem 0; }
+.ships-here .lbl { display: block; margin-bottom: .35rem; }
+.ships-here .chips { display: flex; flex-wrap: wrap; gap: .35rem .5rem; }
 
 .warps { display: flex; flex-wrap: wrap; gap: .5rem; margin: .6rem 0 1rem; }
 .btn.warp {
@@ -804,7 +806,7 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
   display: block; height: 2rem; width: auto; max-width: 8.5rem; object-fit: contain;
   vertical-align: middle; opacity: .92; border-radius: 3px;
 }
-.statusbar .sb-logo .v { display: flex; align-items: center; min-height: 2.4rem; }
+.statusbar .sb-logo .v { display: flex; align-items: center; min-height: 2rem; }
 .ld-cmd .media-hover + strong { margin-right: .35rem; }
 
 /* anteprima ingrandita di avatar / logo al passaggio del mouse o al focus */
