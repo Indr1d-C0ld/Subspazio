@@ -347,6 +347,7 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 
 /* -------------------------------------------------------- Gioco: layout --- */
 .game-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 1.25rem; align-items: start; }
+.game-grid > .panel { margin: 0; }   /* le colonne partono allineate: la spaziatura la dà il gap */
 /* i pannelli devono poter rimpicciolirsi sotto il min-content del contenuto,
    altrimenti una tabella larga sfora e si sovrappone alla colonna accanto */
 .game-grid > * { min-width: 0; }
@@ -453,7 +454,18 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 .legend .vis  { background: #5a7fc8; }
 .legend .unk  { border: 1px dashed var(--ink-soft); }
 .legend .dock { background: var(--accent-2); }
+.legend .adj  { background: transparent; border: 2px solid rgba(107, 226, 255, .55); width: .8rem; height: .8rem; }
 .legend .limpet { background: transparent; border: 2px dashed #ffcf6b; width: .8rem; height: .8rem; }
+
+/* riquadro laterale: statistiche "etichetta: valore" ordinate, coerenti a monitor e mobile */
+.side-stats { margin: .9rem 0 0; display: flex; flex-direction: column; gap: .45rem; font-size: .85rem; }
+.side-stats > div { display: flex; gap: .5rem .7rem; align-items: baseline; flex-wrap: wrap; }
+.side-stats dt {
+  flex: 0 0 5.6rem; color: var(--ink-soft); font-family: var(--font-mono);
+  font-size: .64rem; text-transform: uppercase; letter-spacing: .08em; padding-top: .1rem;
+}
+.side-stats dd { margin: 0; flex: 1 1 8rem; min-width: 0; color: var(--ink); }
+.side-stats dd.eps-strip { display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
 
 /* --------------------------------------------------------- Porto / econ. --- */
 .port-teaser { margin: 1rem 0; padding: .85rem; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); }

@@ -477,31 +477,32 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
           <span class="hint">Nessun servizio in questo settore. La barra qui sopra porta a tutte le sezioni.</span>
         <?php endif; ?>
       </div>
-      <p class="hint mod-summary">
-        Scafo: <strong><?= e($ship['type_name']) ?></strong> ·
-        Moduli <?= (int) ($ship['mod_count'] ?? 0) ?>/<?= array_sum(\App\Game\ShipStats::slots((string) $ship['type_key'])) ?> ·
-        Equipaggio <?= (int) ($ship['crew_count'] ?? 0) ?>/<?= \App\Game\Crew::slots((string) $ship['type_key']) ?> ·
-        Leghe <?= number_format((int) ($player['salvage'] ?? 0), 0, ',', '.') ?> ·
-        Cristalli <?= number_format((int) ($player['crystals'] ?? 0), 0, ',', '.') ?> ·
-        Componenti <?= number_format((int) ($player['components'] ?? 0), 0, ',', '.') ?>
-      </p>
-      <?php if (!empty($ship['eps']) && ($ship['type_key'] ?? '') !== 'escape_pod'): ?>
-      <p class="hint mod-summary eps-strip" style="margin-top:.3rem;border-top:0;padding-top:0;">
-        Griglia:
-        <?php foreach ($ship['eps'] as $ch): ?>
-          <span class="eps-tag<?= $ch['pct'] > 0 ? ' up' : ($ch['pct'] < 0 ? ' down' : '') ?>"
-                title="<?= e($ch['label'] . ': ' . $ch['effect']) ?>"><?= $ch['icon'] ?> <?= (int) $ch['pips'] ?></span>
-        <?php endforeach; ?>
-        <a class="btn xs ghost" href="<?= e(url('/gioco/eps')) ?>">Rialloca</a>
-      </p>
-      <?php endif; ?>
-      <?php $rep = \App\Game\Faction::all((int) $player['id']); ?>
-      <p class="hint mod-summary" style="margin-top:.3rem;border-top:0;padding-top:0;">
-        Rep: Fed <?= $rep['fed'] > 0 ? '+' : '' ?><?= $rep['fed'] ?> ·
-        Ferr <?= $rep['ferrengi'] > 0 ? '+' : '' ?><?= $rep['ferrengi'] ?> ·
-        Egem <?= $rep['hegemony'] > 0 ? '+' : '' ?><?= $rep['hegemony'] ?> ·
-        Front <?= $rep['frontier'] > 0 ? '+' : '' ?><?= $rep['frontier'] ?>
-      </p>
+      <?php
+        $rep = \App\Game\Faction::all((int) $player['id']);
+        $repFmt = static fn (int $v): string => ($v > 0 ? '+' : '') . $v;
+        $slotTot = array_sum(\App\Game\ShipStats::slots((string) $ship['type_key']));
+        $crewTot = \App\Game\Crew::slots((string) $ship['type_key']);
+      ?>
+      <dl class="side-stats">
+        <div><dt>Scafo</dt><dd><strong><?= e($ship['type_name']) ?></strong></dd></div>
+        <div><dt>Moduli</dt><dd><?= (int) ($ship['mod_count'] ?? 0) ?>/<?= (int) $slotTot ?>
+          <?php if (!empty($ship['mod_broken'])): ?><span class="pill err"><?= (int) $ship['mod_broken'] ?> fuori uso</span><?php endif; ?></dd></div>
+        <div><dt>Equipaggio</dt><dd><?= (int) ($ship['crew_count'] ?? 0) ?>/<?= (int) $crewTot ?></dd></div>
+        <div><dt>Risorse</dt><dd>Leghe <?= number_format((int) ($player['salvage'] ?? 0), 0, ',', '.') ?> ·
+          Cristalli <?= number_format((int) ($player['crystals'] ?? 0), 0, ',', '.') ?> ·
+          Componenti <?= number_format((int) ($player['components'] ?? 0), 0, ',', '.') ?></dd></div>
+        <?php if (!empty($ship['eps']) && ($ship['type_key'] ?? '') !== 'escape_pod'): ?>
+        <div><dt>Griglia EPS</dt><dd class="eps-strip">
+          <?php foreach ($ship['eps'] as $ch): ?>
+            <span class="eps-tag<?= $ch['pct'] > 0 ? ' up' : ($ch['pct'] < 0 ? ' down' : '') ?>"
+                  title="<?= e($ch['label'] . ': ' . $ch['effect']) ?>"><?= $ch['icon'] ?> <?= (int) $ch['pips'] ?></span>
+          <?php endforeach; ?>
+          <a class="btn xs ghost" href="<?= e(url('/gioco/eps')) ?>">Rialloca</a>
+        </dd></div>
+        <?php endif; ?>
+        <div><dt>Reputazione</dt><dd>Fed <?= $repFmt($rep['fed']) ?> · Ferr <?= $repFmt($rep['ferrengi']) ?> ·
+          Egem <?= $repFmt($rep['hegemony']) ?> · Front <?= $repFmt($rep['frontier']) ?></dd></div>
+      </dl>
     </section>
 
     <details class="tools">
@@ -566,10 +567,11 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
     </div>
     <p class="legend">
       <span class="dot cur"></span> qui
+      <span class="dot adj"></span> adiacente
       <span class="dot vis"></span> esplorato
       <span class="dot unk"></span> noto
       <span class="dot dock"></span> StarDock
-      <?php if (!empty($limpet_tracked)): ?><span class="dot limpet"></span> preda Limpet<?php endif; ?>
+      <span class="dot limpet"></span> preda Limpet
     </p>
     <p class="hint map-help">Trascina per ruotare · rotella per lo zoom · Shift+trascina (o due dita) per spostare · clic su un settore adiacente per muoverti · doppio clic per centrarlo.</p>
   </section>
