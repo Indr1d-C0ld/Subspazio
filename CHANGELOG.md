@@ -4,6 +4,13 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-10 — Plancia: colonne allineate, riquadro laterale riordinato, legenda mappa
+
+- **[assets/css/app.css](assets/css/app.css)** — `.game-grid > .panel { margin: 0 }`: la scheda settore (colonna sinistra) e il riquadro laterale (destra) ora partono alla **stessa altezza** — prima il margine superiore del `.panel` di sinistra le disallineava.
+- **[views/game/index.php](views/game/index.php)** — «Servizi del settore»: i tre paragrafi *run-on* diventano una `<dl class="side-stats">` con righe **«ETICHETTA: valore»** (Scafo, Moduli, Equipaggio, Risorse, Griglia EPS, Reputazione), ordinate e leggibili anche su mobile (`dt` a larghezza fissa, valori che vanno a capo).
+- **[views/game/index.php](views/game/index.php)** — legenda della mappa stellare: aggiunti **«adiacente»** (anello ciano attorno ai settori raggiungibili) e **«preda Limpet»** (anello ambra) ora sempre presente come riferimento.
+- **[sw.js](sw.js)** — cache `subspazio-v33`.
+
 ## 2026-09-10 — Tabella incontri (roadmap C1)
 
 A ogni warp, con probabilità `encounter.chance` e rispettando un cooldown,
