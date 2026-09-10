@@ -4,6 +4,48 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-10 — Occultamento + Transwarp (i due dispositivi-fantasma)
+
+Due hardware già in vendita al Cantiere (`dev_cloak` 35k, `dev_transwarp`
+28k) ma finora **inerti** ricevono una meccanica reale.
+
+- **[db/migrations/0032_devices.sql](db/migrations/0032_devices.sql)** —
+  `ships.cloaked TINYINT` (stato ON/OFF); config
+  `cloak.warp_turn_penalty` (1), `cloak.fedspace_forbidden` (1),
+  `transwarp.turn_cost` (5).
+- **[src/Game/Cloak.php](src/Game/Cloak.php)** — nuovo motore:
+  `has()`, `isActive()`, `seesCloaked($scanner)` (solo scanner
+  olografico), `toggle($player,$ship,$on)` (rifiuta in Fedspace,
+  ShipLog), `drop($shipId,$reason)` (decloak forzato).
+- **[src/Game/ShipStats.php](src/Game/ShipStats.php)** — `effective()`
+  aggiunge `cloak.warp_turn_penalty` a `turns_per_warp` quando la nave
+  è occultata.
+- **[src/Game/Navigation.php](src/Game/Navigation.php)** — `look()`
+  seleziona `s.cloaked` per mappa e `players_here` e **filtra i
+  cloaked** se il viewer non ha scanner olografico. Estratta
+  `arrive()` (sequenza post-arrivo) condivisa da `move()` e dal nuovo
+  **`transwarp($player,$ship,$toSector)`**: salto diretto a un settore
+  già presente in `player_visited_sectors`, ignora le rotte, costo
+  fisso `transwarp.turn_cost` turni, `move_log.mode='transwarp'`,
+  smaschera un'eventuale nave occultata.
+- **[src/Game/Combat.php](src/Game/Combat.php)** — `onEnterSector`: da
+  occultato scivoli oltre caccia schierati e NPC senza ingaggio; lo
+  StarDock e l'ingresso in Fedspace fanno cadere l'occultamento.
+  `attackShip` rifiuta un bersaglio occultato; aprire il fuoco
+  (nave/porto/NPC) smaschera l'attaccante.
+- **[src/Game/Deploy.php](src/Game/Deploy.php)** — dispiegare caccia o
+  mine fa cadere l'occultamento.
+- **[src/Controllers/GameController.php](src/Controllers/GameController.php)**
+  / **[src/routes.php](src/routes.php)** — `POST /gioco/occulta`
+  (`cloak`), `POST /gioco/transwarp` (`transwarp`).
+- **[views/game/index.php](views/game/index.php)** — toggle occultamento
+  in «Armi e dispiegamento», form Transwarp in «Computer di bordo»,
+  badge «🌫 Occultato» nella barra di stato, entrambi con nota d'aiuto.
+- **[views/game/guide.php](views/game/guide.php)** — nuova sezione
+  «Occultamento & Transwarp».
+- **[assets/css/app.css](assets/css/app.css)** — stile `.cloak-on`.
+- **[sw.js](sw.js)** — cache `subspazio-v35`.
+
 ## 2026-09-10 — FedNews / Frontier Broadcast (roadmap C3)
 
 Il tick, se è passato `fednews.interval_hours` (24 h) dall'ultimo,
