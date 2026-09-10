@@ -663,6 +663,14 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 .encounter-choices .btn { text-align: left; white-space: normal; }
 .encounter-choices .btn .mut { font-weight: 400; }
 
+/* --- FedNews (C3) --- */
+.fednews-card { border-left: 3px solid var(--accent); }
+.fednews-head { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem; flex-wrap: wrap; }
+.fednews-head h2 { margin: 0; }
+.fednews-head .mut { font-size: .78rem; }
+.fednews-list { margin: .6rem 0 .8rem; padding-left: 1.1rem; display: flex; flex-direction: column; gap: .3rem; font-size: .9rem; }
+.fednews-list li { color: var(--ink); }
+
 /* --- griglia di potenza (EPS) --- */
 .eps-strip .eps-tag {
   display: inline-flex; align-items: center; gap: .2rem; margin-right: .4rem;

@@ -73,6 +73,7 @@ try {
 
     // 5b) Notifica e-mail all'admin per le richieste di iscrizione.
     $tasks['notify'] = \App\Game\Notifier::tick();
+    $tasks['fednews'] = \App\Game\FedNews::tick();
 
     // 6) Ricalcolo classifiche (throttlato).
     $ratingEvery = GameConfig::int('rating.interval_min', 15);

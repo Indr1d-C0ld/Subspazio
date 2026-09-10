@@ -84,6 +84,21 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
 </section>
 <?php endif; ?>
 
+<?php if (!empty($fednews)): ?>
+<section class="panel fednews-card">
+  <div class="fednews-head">
+    <h2>📰 Notiziario della Federazione</h2>
+    <span class="mut"><?= e(fmt_dt($fednews['created_at'])) ?> · <?= e($fednews['anchor']) ?></span>
+  </div>
+  <ul class="fednews-list">
+    <?php foreach (array_slice($fednews['headlines'], 0, 4) as $hl): ?>
+      <li><?= e($hl) ?></li>
+    <?php endforeach; ?>
+  </ul>
+  <a class="btn xs ghost" href="<?= e(url('/gioco/radio')) ?>">Bollettino completo in Radio</a>
+</section>
+<?php endif; ?>
+
 <?php if (!empty($digest)): ?>
 <section class="panel digest-card">
   <h2>Rapporto di rientro <span class="mut">assente per <?= e($digest['away']) ?></span></h2>
