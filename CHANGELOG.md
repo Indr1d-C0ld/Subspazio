@@ -4,6 +4,31 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-10 — Tooltip su avatar/logo + logo visibile ovunque
+
+- **[views/partials/media_hover.php](views/partials/media_hover.php)** —
+  nuovo partial: avatar o logo con **anteprima ingrandita al passaggio del
+  mouse o al focus** (CSS puro, `.media-hover::after` con la variabile
+  `--pop`; stessa immagine, nessuna richiesta in più). `tabindex=0` per
+  tastiera e tap.
+- Il **logo di flotta** ora compare anche in **classifica**, in **«Altre
+  navi qui»** e nel `player_tag` (piccolo, con hover).
+  **[src/Game/Navigation.php](src/Game/Navigation.php)** e
+  **[src/Game/Leaderboard.php](src/Game/Leaderboard.php)** espongono
+  `has_logo` (LEFT JOIN su `media_assets` `kind='logo'` +
+  `fileExists`).
+- **[views/game/index.php](views/game/index.php)** — rimossa la lista
+  «Navi:» **duplicata** dentro «Forze nel settore»: quel riquadro ora
+  elenca solo caccia / mine / NPC; le presenze stanno in «Altre navi qui»
+  in cima alla scheda settore.
+- **[assets/css/app.css](assets/css/app.css)** — avatar 22→28 px («navi
+  qui»), 24→30 px (status bar), 26→30 px (classifica); logo 1,9→2 rem
+  (max 8,5 rem), cella «Flotta» 2,4 rem. Stili `.media-hover`.
+- **[views/partials/player_tag.php](views/partials/player_tag.php)**,
+  **[views/game/leaderboard.php](views/game/leaderboard.php)** — usano il
+  nuovo partial.
+- **[sw.js](sw.js)** — cache `subspazio-v30`.
+
 ## 2026-09-10 — Avatar e logo più grandi
 
 - **[assets/css/app.css](assets/css/app.css)**, **[views/partials/player_tag.php](views/partials/player_tag.php)**, **[views/game/index.php](views/game/index.php)** — l'avatar passa da 15→22 px nella lista «navi qui» / forze, 20→26 px in classifica, 18→24 px nella status bar di plancia; il logo di flotta da 1,4→1,9 rem (max 7 rem). **[sw.js](sw.js)** → v29.
