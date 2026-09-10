@@ -106,6 +106,9 @@ dopo ogni cluster.
 | **C3 — FedNews / Frontier Broadcast** (bollettino quotidiano nella Radio da stato reale) | fatto — 2026-09-10 |
 | **Dispositivi-fantasma — Occultamento + Transwarp** (meccanica reale a due hardware finora inerti) | fatto — 2026-09-10 |
 | **Rifiniture identità/UI** — iconcine sui beni · marca di flotta più varia (6 stemmi + 13 sagome di nave) | fatto — 2026-09-10 |
+| **Illustrazioni dei modelli di nave** — `ship_art()` in plancia/classifica/navi qui/Cantiere; fallback alla sagoma SVG finché mancano i PNG | fatto — 2026-09-11 |
+| **Aiuto contestuale «?»** — `Help` + partial in CSS puro su ~55 intestazioni di sezione | fatto — 2026-09-11 |
+| **fix FedNews** — doppio bollettino ravvicinato (e2e distruttivo vs cron) | fatto — 2026-09-11 |
 | **C — resta** | NPC nominati ricorrenti · operazioni a tempo · anomalia della stagione |
 | **#2 — Combattimento B1: tipi d'arma con profilo** | ~~scartato~~ — non si fa: snatura il combattimento (nessuna agency nel momento, morra cinese a info nascosta con pochi giocatori, superficie di bilanciamento enorme). In alternativa, se in futuro si vuole texture d'arma: un solo asse «penetrazione scudi» (S). I tipi d'arma veri hanno senso solo con le classi di nave (tema D). |
 
@@ -180,6 +183,42 @@ aspettare le classi di nave del tema D.
   con badge. Teaser `.fednews-card` in cima alla plancia (fino a 4 titoli +
   link alla Radio). Task `fednews` in `bin/tick.php`. `sw.js` → v34.
 - e2e `scratchpad/test_fednews.php` (9 check).
+
+### Aiuto contestuale «?» — dettaglio di quanto consegnato
+
+- `src/Game/Help.php` — registro `TEXT` (chiave `<schermata>.<slug>` → una riga).
+- `views/partials/help.php` — marcatore «?» con tendina in **CSS puro**
+  (hover/focus, niente JS → CSP-safe); non rende nulla se la chiave manca.
+- CSS `.help`/`.help-q`/`.help-pop` (theme-aware, si ribalta a destra < 640 px).
+- Applicato a ~55 intestazioni di sezione in tutte le schermate di gioco
+  (plancia, porto, banca, EPS, Cantiere, moduli, equipaggio, missioni,
+  contratti, pianeti, corp, radio, classifica, fazioni, codex, registri,
+  traguardi, albo, mercato nero, profilo). I tasti ereditano il contesto
+  dalla «?» della loro sezione. `sw.js` → v38.
+
+### Illustrazioni dei modelli di nave — dettaglio di quanto consegnato
+
+- Helper `ship_art($typeKey)` in `helpers.php`: URL di
+  `assets/ships/<ckey>.png` se il file esiste (chiave sanificata, `is_file`
+  in cache per-richiesta), altrimenti `null`. `assets/ships/README.md`
+  elenca i 13 nomi attesi.
+- `views/partials/ship_art.php`: `<img.ship-art>` se il PNG c'è, altrimenti
+  `partial('crest', ['crest' => 'nave:<type>'])` (sagoma vettoriale).
+- `Navigation::look` players_here → `ship_key`; `Leaderboard::topPlayers`
+  JOIN ships/ship_types → `ship_key`, `ship_type`.
+- Usato in `player_tag.php` (navi qui/forze), `leaderboard.php`,
+  `index.php` (riga «Scafo» pannello laterale), `shipyard.php` (catalogo).
+- CSS `.ship-art`, `.hull-line`. **In attesa dei 13 PNG dall'utente**
+  (trasparenti, quadrati, in `assets/ships/`).
+
+### fix FedNews — doppio bollettino
+
+- Causa: `test_fednews.php` azzerava `fednews` e girava insieme al cron; la
+  guardia di `FedNews::tick()` guardava solo l'ultima riga d'archivio.
+- Fix: seconda guardia sull'ultimo messaggio `fedcomm` con corpo
+  `NOTIZIARIO DELLA FEDERAZIONE%` (sopravvive al troncamento di `fednews`).
+  Test e2e riscritto: prende `storage/tick.lock`, non distruttivo. Duplicato
+  sul live ripulito a mano.
 
 ### Rifiniture identità/UI — dettaglio di quanto consegnato
 

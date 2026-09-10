@@ -4,6 +4,66 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-11 — Aiuto contestuale «?» su ogni sezione
+
+- **[src/Game/Help.php](src/Game/Help.php)** — registro centrale dei testi
+  d'aiuto (chiave `<schermata>.<slug>`), una riga per voce.
+- **[views/partials/help.php](views/partials/help.php)** — marcatore «?»
+  con tendina in **CSS puro** (hover/focus, nessun JS → compatibile con
+  la CSP). Non rende nulla se la chiave non esiste.
+- **[assets/css/app.css](assets/css/app.css)** — `.help`/`.help-q`/
+  `.help-pop`; la tendina è theme-aware e si ribalta a destra sotto i
+  640 px.
+- Marcatori applicati a ~55 intestazioni di sezione: plancia (settore,
+  warp, forze, servizi, mappa, giornale, rapporto di rientro, prede,
+  primi passi, incontro, notiziario, sonda, armi, occultamento, computer
+  di bordo, nota), porto, banca, EPS, Cantiere
+  (riparazioni/potenziamenti/hardware/navi), moduli
+  (slot/inventario/officina/raffineria/lavori), equipaggio, missioni,
+  contratti, pianeti e pianeta (produzione/citadel/assalto), corp,
+  radio, classifica, fazioni, codex, registri, traguardi, albo, mercato
+  nero, profilo.
+
+## 2026-09-11 — Illustrazione del modello di nave posseduto
+
+Predispone il rendering delle illustrazioni di nave (una per modello) in
+plancia, classifica, «navi qui» e catalogo del Cantiere. Finché i PNG
+non ci sono, l'interfaccia ripiega automaticamente sulla sagoma SVG.
+
+- **[src/Support/helpers.php](src/Support/helpers.php)** — helper
+  `ship_art($typeKey)`: URL di `assets/ships/<ckey>.png` se il file
+  esiste (chiave sanificata, `is_file` in cache per-richiesta), altrimenti
+  `null`.
+- **[views/partials/ship_art.php](views/partials/ship_art.php)** — `<img>`
+  se il PNG c'è, altrimenti `partial('crest', ['crest' => 'nave:<type>'])`
+  (sagoma vettoriale).
+- **[assets/ships/README.md](assets/ships/README.md)** — i 13 nomi file
+  attesi (= `ship_types.ckey`).
+- **[src/Game/Navigation.php](src/Game/Navigation.php)** — `look()`
+  players_here porta `ship_key`.
+- **[src/Game/Leaderboard.php](src/Game/Leaderboard.php)** —
+  `topPlayers()` JOIN ships/ship_types → `ship_key`, `ship_type`.
+- **[views/partials/player_tag.php](views/partials/player_tag.php)**,
+  **[views/game/leaderboard.php](views/game/leaderboard.php)**,
+  **[views/game/index.php](views/game/index.php)** (riga «Scafo»),
+  **[views/game/shipyard.php](views/game/shipyard.php)** — usano il
+  partial.
+- **[assets/css/app.css](assets/css/app.css)** — `.ship-art`,
+  `.hull-line`.
+
+## 2026-09-11 — FedNews: niente doppio bollettino
+
+Il notiziario era uscito due volte a un minuto di distanza: un e2e che
+azzera la tabella `fednews` girava insieme al cron e la guardia di
+`FedNews::tick()` controllava solo l'ultima riga d'archivio (sparita).
+
+- **[src/Game/FedNews.php](src/Game/FedNews.php)** — seconda guardia
+  sull'ultimo messaggio `fedcomm` con corpo
+  `NOTIZIARIO DELLA FEDERAZIONE%`: sopravvive a un troncamento di
+  `fednews` e blocca comunque il reinvio entro l'intervallo. (Il test
+  e2e ora prende `storage/tick.lock` e non è più distruttivo; il
+  messaggio Radio duplicato è stato ripulito a mano sul live.)
+
 ## 2026-09-10 — Marca di flotta più varia: nuovi stemmi + sagome di nave
 
 La scelta della marca (che compare al posto dell'avatar quando non se ne
