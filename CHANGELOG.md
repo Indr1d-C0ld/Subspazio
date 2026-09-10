@@ -4,6 +4,10 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-10 — Avatar e logo più grandi
+
+- **[assets/css/app.css](assets/css/app.css)**, **[views/partials/player_tag.php](views/partials/player_tag.php)**, **[views/game/index.php](views/game/index.php)** — l'avatar passa da 15→22 px nella lista «navi qui» / forze, 20→26 px in classifica, 18→24 px nella status bar di plancia; il logo di flotta da 1,4→1,9 rem (max 7 rem). **[sw.js](sw.js)** → v29.
+
 ## 2026-09-10 — Guasti ai sottosistemi — roadmap B3
 
 Un colpo incassato in combattimento — o il **sovraccarico della griglia
