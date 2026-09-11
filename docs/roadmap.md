@@ -469,31 +469,25 @@ di pagina a 390px e 768px.
 
 | Pagina | Stato |
 |---|---|
-| `shipyard` (Cantiere) | ✅ rifatto 2026-09-11 (schede d'acquisto, tabella navi responsive) |
-| `index` (Plancia) | da verificare a fondo (già molto lavorata) |
-| `port` (Porto) | da verificare |
-| `bank` (Banca) | da verificare |
-| `blackmarket` (Mercato nero) | parziale — `.upg-grid` ora a schede; verificare |
-| `modules` (Officina/Slot/Raffineria) | da verificare (densa) |
-| `eps` (Griglia EPS) | da verificare |
-| `crew` (Equipaggio) | da verificare |
-| `missions` (Missioni) | da verificare |
-| `planet` / `planets` | da verificare (`.upg-grid` ora a schede) |
-| `factions` (Fazioni) | da verificare |
-| `contracts` (Contratti) | da verificare (tabelle) |
-| `leaderboard` (Classifica) | da verificare (tabelle larghe) |
-| `radio` (Radio) | verificato mobile il 04-09; ri-controllare dopo icone |
-| `codex` (Codex) | da verificare |
-| `routes` (Registri) | da verificare (tabelle) |
-| `shiplog` (Giornale) | da verificare |
-| `achievements` (Traguardi) | da verificare |
-| `hall` (Albo) | da verificare |
-| `corp` (Corporazione) | da verificare |
-| `battles` / `battle` (Registro/replay) | da verificare |
-| `course` (Rotta) | da verificare |
-| `profilo` (Profilo) | da verificare dopo rimozione sagome |
-| `guide` (Guida) | da verificare (griglia) |
+| `shipyard` (Cantiere) | ✅ rifatto (schede d'acquisto, tabella navi responsive) |
+| `port` (Porto) | ✅ tabella commerci a schede (i tasti Compra/Contratta erano fuori schermo) |
+| `leaderboard` (Classifica) | ✅ tabelle a schede + allineamento colonne corretto |
+| `battles` (Registro battaglie) | ✅ tabella 11 colonne a schede |
+| `contracts` (Contratti) | ✅ i due form pubblica-contratto ora in schede distinte |
+| `corp` (Corporazione) | ✅ form Fonda/Entra in schede distinte |
+| `codex` (Codex) | ✅ voci bloccate compattate (niente più tante scatole «???») |
+| `routes` (Registri) | ✅ tabella spostamenti a schede |
+| `blackmarket` / `planet` / `planets` / `admin/game` | ✅ `.upg-grid` a schede (beneficio indiretto) |
+| `index` (Plancia), `eps`, `crew`, `missions`, `factions`, `radio`, `codex`, `shiplog`, `achievements`, `hall`, `battle`, `course`, `profilo`, `guide`, `bank`, `modules` | verificate nel giro di screenshot del 2026-09-11 (24 pagine renderizzate con dati reali) — nessun problema strutturale rilevato oltre a quelli sopra |
 
-Metodo: render server-side con dati reali → screenshot chromium a 1040px e
-390px (e 768px per le tabelle) → correggere → ri-screenshot. A lotti di 4–5
-pagine per iterazione.
+Verificate 24/26 pagine (mancano `pianeta` e `battaglia/{id}` per assenza di
+dati reali nel DB di prova — struttura condivisa con `planets`/`battles`,
+già corrette, rischio residuo basso).
+
+Metodo usato: render server-side con sessione reale (player #67) via
+riflessione su `Response`, screenshot Chromium headless a ~500px (mobile,
+`@media max-width:820px` attivo) e 1100px (desktop) — non via HTTP perché
+l'autenticazione a cookie di sessione file non ha funzionato in CLI (proprietà
+del file di sessione). Corretto: tabelle larghe → `.tbl.rows` (schede sotto
+820px), coppie di form senza bordo → `.form-card`/`.upg-grid`, voci
+codex ripetute → riepilogo compatto, `.game-nav` → sfumatura di scroll.

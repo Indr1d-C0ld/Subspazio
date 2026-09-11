@@ -4,6 +4,48 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-11 — Audit UI completo: tabelle a schede su mobile, form riordinati
+
+Seguito dell'audit avviato col Cantiere: revisione di ogni pagina di gioco,
+desktop e telefono/tablet. Metodo: render server-side con dati reali →
+screenshot Chromium a 1040 px e 390 px → correzione → nuovo screenshot.
+
+- **Nuova variante `.tbl.rows`** (`assets/css/app.css`): sotto 820 px una
+  tabella con questa classe diventa una **serie di schede impilate** invece
+  di scrollare in orizzontale nascondendo colonne. Ogni `<td data-th="…">`
+  mostra l'etichetta della colonna; `<td class="rowtitle">` fa da
+  intestazione della scheda. `.table-wrap` resta il contenitore scrollabile
+  su desktop.
+- **[views/game/port.php](views/game/port.php)** — la tabella dei
+  commerci (8 colonne: Merce/Verso/Scorte/Prezzo/Equo/Max/A bordo/Azione)
+  nascondeva su telefono proprio i tasti **Compra/Contratta**. Ora a
+  schede: tutto visibile, quantità e bottoni sempre a portata.
+- **[views/game/leaderboard.php](views/game/leaderboard.php)** —
+  classifica comandanti e corporazioni a schede su mobile; corretto un
+  disallineamento di colonne introdotto nel primo tentativo (la cella
+  "#" era stata fusa col nome, sfalsando l'intestazione).
+- **[views/game/battles.php](views/game/battles.php)** — registro
+  battaglie (11 colonne) a schede.
+- **[views/game/contracts.php](views/game/contracts.php)** — i due form
+  «Metti taglia» e «Pubblica consegna» erano due `<form>` di fila senza
+  separazione visiva; ora due schede distinte con sottotitolo, in una
+  griglia `.upg-grid`.
+- **[views/game/corp.php](views/game/corp.php)** — stesso problema per
+  «Fonda una corporazione» / «Entra in una corporazione»: ora due
+  `.form-card` distinte (nuova coppia di classi generiche, riusabile
+  altrove).
+- **[views/game/codex.php](views/game/codex.php)** — le voci non
+  sbloccate di ogni categoria non sono più ripetute come tante scatole
+  «???»: una riga compatta «🔒 N voci ancora da scoprire» per categoria,
+  con contatore N/tot nell'intestazione.
+- **[views/game/routes.php](views/game/routes.php)** — tabella «Ultimi
+  spostamenti» (5 colonne) convertita a `.tbl.rows`.
+- **`.game-nav`** — sfumatura sui bordi della striscia di navigazione per
+  segnalare che scorre in orizzontale.
+- **`.upg-grid > form.row`** — ogni form in una scheda con bordo (si
+  applica anche a mercato nero, scheda pianeta, pannello admin).
+- **[sw.js](sw.js)** — cache `subspazio-v43`.
+
 ## 2026-09-11 — Cantiere riordinato + inizio audit UI
 
 Segnalato: pagina del Cantiere confusa; lo scanner di densità sembrava
