@@ -4,6 +4,35 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-11 — Pass di coerenza: icone di sezione, tooltip non tagliati, stemmi
+
+- **Profilo** — rimossa la sotto-griglia «Sagome di nave». La marca di
+  flotta torna a essere **solo uno stemma astratto**; i valori
+  `nave:<ckey>` restano validi lato codice (`Identity::validCrest` /
+  `symbolId`) perché `ship_art` li riusa internamente.
+  **[src/Game/Identity.php](src/Game/Identity.php)** — `CRESTS` +10
+  (`scudo`, `spada`, `ala`, `bussola`, `ingranaggio`, `serpente`,
+  `atomo`, `diamante`, `luna`, `sole`) → **28 stemmi**; relativi
+  `<symbol>` in **[views/partials/crest_sprite.php](views/partials/crest_sprite.php)**,
+  etichette in `CREST_LABELS`.
+- **Aiuto «?» — dimensione fissa** ovunque: rimossi gli override
+  `font-size` per `h1`/`h2`/`summary`; l'icona è ora `1.15 rem` in
+  qualunque contesto (**[assets/css/app.css](assets/css/app.css)**).
+- **Aiuto «?» — mai tagliato**:
+  **[assets/js/help.js](assets/js/help.js)** (nuovo) al hover/focus
+  riposiziona la tendina come `position: fixed`, la clampa al viewport
+  (margine 12 px) e la ribalta sopra se sotto non c'è spazio → non viene
+  più troncata da `overflow`/bordi di sezione. Senza JS resta il
+  fallback CSS in-flow. `html.js-help` attiva la modalità; chiude su
+  scroll/resize/Esc. Caricato in **[views/layout.php](views/layout.php)**,
+  in `SHELL` nel **[sw.js](sw.js)**.
+- **Icona su ogni intestazione** — ogni `<h1>`/`<h2>`/`<summary>` delle
+  schermate di gioco ha ora `<span class="sec-ic">…</span>` col suo
+  emoji davanti al titolo (~85 punti, incl. le 12 voci della guida via
+  helper `$sec`). Vocabolario coerente (📰 🚀 ⚔️ 🏦 🪐 🛠️ 📖 …).
+  CSS `.sec-ic` per allineamento e dimensione uniformi.
+- **[sw.js](sw.js)** — cache `subspazio-v40`.
+
 ## 2026-09-11 — Le 13 illustrazioni di nave sono arrivate
 
 - **[assets/ships/](assets/ships/)** — i 13 PNG (512×512, trasparenti), uno

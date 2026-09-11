@@ -107,7 +107,8 @@ dopo ogni cluster.
 | **Dispositivi-fantasma — Occultamento + Transwarp** (meccanica reale a due hardware finora inerti) | fatto — 2026-09-10 |
 | **Rifiniture identità/UI** — iconcine sui beni · marca di flotta più varia (6 stemmi + 13 sagome di nave) | fatto — 2026-09-10 |
 | **Illustrazioni dei modelli di nave** — `ship_art()` in plancia/classifica/navi qui/Cantiere; i 13 PNG 512px caricati il 2026-09-11 (fallback SVG se un file manca) | fatto — 2026-09-11 |
-| **Aiuto contestuale «?»** — `Help` + partial in CSS puro su ~55 intestazioni di sezione | fatto — 2026-09-11 |
+| **Aiuto contestuale «?»** — `Help` + partial su ~55 intestazioni; v2: `help.js` (tendina `position:fixed` mai tagliata) + icona «?» a dimensione fissa | fatto — 2026-09-11 |
+| **Pass di coerenza UI** — icona `.sec-ic` su ogni `<h1>/<h2>/<summary>` di gioco (~85); profilo senza sagome di nave; stemmi 18→28 | fatto — 2026-09-11 |
 | **fix FedNews** — doppio bollettino ravvicinato (e2e distruttivo vs cron) | fatto — 2026-09-11 |
 | **C — resta** | NPC nominati ricorrenti · operazioni a tempo · anomalia della stagione |
 | **Coerenza distanze/tempi** — discussa 2026-09-11 (analisi sotto). **Accantonata su decisione dell'utente**: nessuna delle leve A/B/C/E viene perseguita. |
@@ -196,6 +197,27 @@ aspettare le classi di nave del tema D.
   contratti, pianeti, corp, radio, classifica, fazioni, codex, registri,
   traguardi, albo, mercato nero, profilo). I tasti ereditano il contesto
   dalla «?» della loro sezione. `sw.js` → v38.
+- **v2 (2026-09-11)**: icona «?» a **dimensione fissa** (`1.15rem`, in
+  `rem` non `em`) in ogni contesto. Nuovo `assets/js/help.js`: al
+  hover/focus riposiziona `.help-pop` come `position:fixed`, clampata al
+  viewport e ribaltata sopra se serve → **mai tagliata** da un
+  `overflow`/bordo di sezione (il fallback CSS in-flow resta per no-JS).
+  `html.js-help` attiva la modalità; chiude su scroll/resize/Esc.
+  Caricato dal layout; in `SHELL` del `sw.js` → v40.
+
+### Pass di coerenza UI (2026-09-11)
+
+- **Icona di sezione**: ogni `<h1>`/`<h2>`/`<summary>` delle schermate di
+  gioco ha un `<span class="sec-ic">EMOJI</span>` davanti al titolo
+  (~85 punti, incl. le 12 voci della guida via helper `$sec($icon,$title,
+  $body)` e l'h1 della guida). Vocabolario coerente
+  (📰 🚀 ⚔️ 🏦 🪐 🛠️ 📖 🔩 🎒 🧰 🗺️ 📻 🏆 🚩 …). CSS `.sec-ic`
+  (`vertical-align`, dimensione uniforme, `h1 .sec-ic` un filo più piccola).
+- **Profilo**: rimossa la sotto-griglia «Sagome di nave». Marca di flotta
+  = solo stemma astratto. `Identity::CRESTS` 18 → **28** (+scudo, spada,
+  ala, bussola, ingranaggio, serpente, atomo, diamante, luna, sole) con
+  `<symbol>` e `CREST_LABELS`. I valori `nave:<ckey>` restano validi lato
+  codice (li usa `ship_art`).
 
 ### Illustrazioni dei modelli di nave — dettaglio di quanto consegnato
 
