@@ -4,7 +4,7 @@
 /** @var float $rate */
 ?>
 <section class="panel narrow">
-  <h1>Banca Intergalattica<?= partial('help', ['key' => 'banca.conto']) ?></h1>
+  <h1><span class="sec-ic">🏦</span> Banca Intergalattica<?= partial('help', ['key' => 'banca.conto']) ?></h1>
   <p class="hint">Interesse composto <?= number_format($rate, 2, ',', '.') ?>% al giorno. Operativa solo allo StarDock.</p>
 
   <div class="grid tight">

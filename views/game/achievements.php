@@ -13,7 +13,7 @@
 </section>
 
 <section class="panel">
-  <h1>Traguardi<?= partial('help', ['key' => 'traguardi.home']) ?></h1>
+  <h1><span class="sec-ic">🏅</span> Traguardi<?= partial('help', ['key' => 'traguardi.home']) ?></h1>
   <div class="ach-grid">
     <?php foreach ($all as $a): $got = isset($earned[$a['ckey']]); ?>
       <div class="ach<?= $got ? ' got' : '' ?>">

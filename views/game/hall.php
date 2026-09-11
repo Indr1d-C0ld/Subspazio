@@ -10,7 +10,7 @@
 </section>
 
 <section class="panel">
-  <h1>Albo d'oro<?= partial('help', ['key' => 'albo.home']) ?></h1>
+  <h1><span class="sec-ic">⭐</span> Albo d'oro<?= partial('help', ['key' => 'albo.home']) ?></h1>
   <?php if ($hall === []): ?>
     <p class="hint">Nessuna stagione conclusa. La Stagione <?= (int) $current['number'] ?> e' la prima.</p>
   <?php else: ?>

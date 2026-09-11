@@ -35,6 +35,8 @@ final class Identity
         'delta', 'orbita', 'stella', 'corona', 'mirino', 'cometa',
         'sciabole', 'esagono', 'tridente', 'occhio', 'alloro', 'rotta',
         'teschio', 'fenice', 'ancora', 'fulmine', 'nova', 'chiave',
+        'scudo', 'spada', 'ala', 'bussola', 'ingranaggio', 'serpente',
+        'atomo', 'diamante', 'luna', 'sole',
     ];
     public const DEFAULT_CREST = 'delta';
 
@@ -45,6 +47,9 @@ final class Identity
         'tridente' => 'Tridente', 'occhio' => 'Occhio', 'alloro' => 'Alloro', 'rotta' => 'Rotta',
         'teschio' => 'Teschio', 'fenice' => 'Fenice', 'ancora' => 'Ancora', 'fulmine' => 'Fulmine',
         'nova' => 'Nova', 'chiave' => 'Chiave',
+        'scudo' => 'Scudo', 'spada' => 'Spada', 'ala' => 'Ala', 'bussola' => 'Bussola',
+        'ingranaggio' => 'Ingranaggio', 'serpente' => 'Serpente', 'atomo' => 'Atomo',
+        'diamante' => 'Diamante', 'luna' => 'Luna', 'sole' => 'Sole',
     ];
 
     /**

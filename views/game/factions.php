@@ -39,13 +39,13 @@ $max = \App\Game\GameConfig::int('faction.max', 100);
   $tier = Faction::tier($v);
   $pct = ($v - $min) / max(1, $max - $min) * 100; ?>
 <section class="panel faction-panel" style="--fac: <?= e($f['color']) ?>">
-  <h1><?= e($f['name']) ?> <span class="pill mut"><?= e(Faction::TIER_LABEL[$tier]) ?></span></h1>
+  <h1><span class="sec-ic">🚩</span> <?= e($f['name']) ?> <span class="pill mut"><?= e(Faction::TIER_LABEL[$tier]) ?></span></h1>
   <p class="hint"><?= e($f['blurb']) ?></p>
   <div class="rep-bar"><span style="width: <?= (int) round($pct) ?>%"></span><b style="left: <?= (int) round((0 - $min) / max(1, $max - $min) * 100) ?>%"></b></div>
   <p class="mut"><?= $v > 0 ? '+' : '' ?><?= $v ?> / <?= $max ?></p>
 
   <?php $fo = $offersByF[$f['ckey']] ?? []; if ($fo !== []): ?>
-    <h2>Emporio<?= partial('help', ['key' => 'fazioni.emporio']) ?></h2>
+    <h2><span class="sec-ic">🛒</span> Emporio<?= partial('help', ['key' => 'fazioni.emporio']) ?></h2>
     <ul class="mod-list">
       <?php foreach ($fo as $o): ?>
         <li class="fac-offer">
@@ -68,7 +68,7 @@ $max = \App\Game\GameConfig::int('faction.max', 100);
 
 <?php if ($log !== []): ?>
 <section class="panel">
-  <h2>Movimenti di reputazione<?= partial('help', ['key' => 'fazioni.reputazione']) ?></h2>
+  <h2><span class="sec-ic">📈</span> Movimenti di reputazione<?= partial('help', ['key' => 'fazioni.reputazione']) ?></h2>
   <table class="tbl compact">
     <thead><tr><th>Quando</th><th>Fazione</th><th class="ta-r">Δ</th><th>Motivo</th></tr></thead>
     <tbody>

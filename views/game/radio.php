@@ -12,7 +12,7 @@ $chLabel = ['radio' => 'RADIO', 'fedcomm' => 'FED', 'corp' => 'CORP', 'private' 
 </section>
 
 <section class="panel">
-  <h1>Radio subspaziale<?= partial('help', ['key' => 'radio.canali']) ?></h1>
+  <h1><span class="sec-ic">📻</span> Radio subspaziale<?= partial('help', ['key' => 'radio.canali']) ?></h1>
 
   <form method="post" action="<?= e(url('/gioco/radio/invia')) ?>" class="radio-compose">
     <?= csrf_field() ?>

@@ -9,7 +9,7 @@
 </section>
 
 <section class="panel">
-  <h1><?= e($b['attacker']) ?> <span class="vs">vs</span> <?= e($b['defender']) ?></h1>
+  <h1><span class="sec-ic">⚔️</span> <?= e($b['attacker']) ?> <span class="vs">vs</span> <?= e($b['defender']) ?></h1>
   <p class="hint"><?= e(fmt_dt($b['at'])) ?> · tipo <?= e($b['kind']) ?> · <?= (int) $b['rounds'] ?> round · esito <strong><?= e($b['outcome']) ?></strong><?= $b['loot'] ? ' · bottino ' . number_format($b['loot'], 0, ',', '.') . ' cr' : '' ?></p>
   <?php $dr = $b['drops'] ?? ['items' => [], 'salvage' => 0]; if (!empty($dr['salvage']) || !empty($dr['items'])): ?>
     <p class="hint">Recuperato:

@@ -9,7 +9,7 @@
 </section>
 
 <section class="panel">
-  <h1>Registro battaglie</h1>
+  <h1><span class="sec-ic">⚔️</span> Registro battaglie</h1>
   <?php if ($rows === []): ?>
     <p class="hint">Nessuno scontro registrato.</p>
   <?php else: ?>

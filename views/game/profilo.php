@@ -18,7 +18,7 @@ $isPod    = ($ship['type_key'] ?? '') === 'escape_pod';
 </section>
 
 <section class="panel" id="profile-panel">
-  <h1>Identità del comandante<?= partial('help', ['key' => 'profilo.identita']) ?></h1>
+  <h1><span class="sec-ic">🪪</span> Identità del comandante<?= partial('help', ['key' => 'profilo.identita']) ?></h1>
   <p class="hint">Colore d'accento, stemma di flotta, motto e registro della nave. Compaiono
      nelle classifiche, sulla plancia e — presto — sulla mappa stellare e nella radio.
      Il <strong>titolo</strong> non si sceglie: lo derivano il tuo grado e i tuoi rapporti con le fazioni.</p>
@@ -44,25 +44,15 @@ $isPod    = ($ship['type_key'] ?? '') === 'escape_pod';
     </fieldset>
 
     <fieldset class="id-field">
-      <legend>Marca di flotta</legend>
-      <p class="hint">Uno stemma astratto oppure la <strong>sagoma di una nave</strong>. Compare
-         al posto dell'avatar quando non ne hai caricato uno.</p>
+      <legend>Stemma di flotta</legend>
+      <p class="hint">Compare al posto dell'avatar quando non ne hai caricato uno &mdash;
+         in plancia, classifica e liste. Prende il tuo colore d'accento.</p>
       <div class="crest-grid" data-crest-group>
         <?php foreach ($crests as $key): ?>
           <label class="crest-opt" title="<?= e(Identity::crestLabel($key)) ?>">
             <input type="radio" name="crest" value="<?= e($key) ?>" <?= $key === $curCrest ? 'checked' : '' ?>>
             <?= partial('crest', ['crest' => $key, 'color' => $curColor, 'size' => 30]) ?>
             <span class="crest-label"><?= e(Identity::crestLabel($key)) ?></span>
-          </label>
-        <?php endforeach; ?>
-      </div>
-      <p class="crest-subhead">Sagome di nave</p>
-      <div class="crest-grid" data-crest-group>
-        <?php foreach (Identity::SHIP_MARKS as $sk): $key = 'nave:' . $sk; ?>
-          <label class="crest-opt" title="<?= e(Identity::crestLabel($key)) ?>">
-            <input type="radio" name="crest" value="<?= e($key) ?>" <?= $key === $curCrest ? 'checked' : '' ?>>
-            <?= partial('crest', ['crest' => $key, 'color' => $curColor, 'size' => 30]) ?>
-            <span class="crest-label"><?= e(Identity::SHIP_MARK_LABELS[$sk] ?? $sk) ?></span>
           </label>
         <?php endforeach; ?>
       </div>
@@ -99,7 +89,7 @@ $isPod    = ($ship['type_key'] ?? '') === 'escape_pod';
 </section>
 
 <section class="panel">
-  <h2>Immagini caricate<?= partial('help', ['key' => 'profilo.immagini']) ?></h2>
+  <h2><span class="sec-ic">🖼️</span> Immagini caricate<?= partial('help', ['key' => 'profilo.immagini']) ?></h2>
   <p class="hint">Avatar personale e logo di flotta. Ogni immagine passa da un
      <strong>controllo dell'amministratore</strong> prima di diventare visibile agli
      altri comandanti (stessa coda delle iscrizioni). PNG, JPEG, WebP o GIF, max

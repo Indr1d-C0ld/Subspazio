@@ -84,7 +84,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
 
 <?php if (!empty($encounter)): ?>
 <section class="panel encounter-card">
-  <h2>⚠ <?= e($encounter['title']) ?><?= partial('help', ['key' => 'plancia.incontro']) ?></h2>
+  <h2><span class="sec-ic">📡</span> <?= e($encounter['title']) ?><?= partial('help', ['key' => 'plancia.incontro']) ?></h2>
   <p class="encounter-body"><?= nl2br(e($encounter['body'])) ?></p>
   <div class="encounter-choices">
     <?php foreach ($encounter['choices'] as $c): ?>
@@ -103,7 +103,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
 <?php if (!empty($fednews)): ?>
 <section class="panel fednews-card">
   <div class="fednews-head">
-    <h2>📰 Notiziario della Federazione<?= partial('help', ['key' => 'plancia.notiziario']) ?></h2>
+    <h2><span class="sec-ic">📰</span> Notiziario della Federazione<?= partial('help', ['key' => 'plancia.notiziario']) ?></h2>
     <span class="mut"><?= e(fmt_dt($fednews['created_at'])) ?> · <?= e($fednews['anchor']) ?></span>
   </div>
   <ul class="fednews-list">
@@ -117,7 +117,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
 
 <?php if (!empty($digest)): ?>
 <section class="panel digest-card">
-  <h2>Rapporto di rientro <span class="mut">assente per <?= e($digest['away']) ?></span><?= partial('help', ['key' => 'plancia.rientro']) ?></h2>
+  <h2><span class="sec-ic">📋</span> Rapporto di rientro <span class="mut">assente per <?= e($digest['away']) ?></span><?= partial('help', ['key' => 'plancia.rientro']) ?></h2>
   <ul class="digest-list">
     <?php foreach ($digest['lines'] as $dl): ?>
       <li>
@@ -144,7 +144,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
 
 <?php if (($ship['type_key'] ?? '') === 'escape_pod'): ?>
 <section class="panel pod-notice">
-  <h2>🛟 Capsula di salvataggio</h2>
+  <h2><span class="sec-ic">🛟</span> Capsula di salvataggio</h2>
   <p>La tua nave è stata distrutta e sei alla deriva in una capsula: niente armi né scudi,
      solo <strong><?= (int) $ship['holds_total'] ?> stive</strong>. Puoi comunque spostarti e commerciare in piccolo per rimetterti in sesto.</p>
   <p>
@@ -160,7 +160,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
 
 <?php if ($created): ?>
 <section class="panel briefing">
-  <h2>Briefing comandante</h2>
+  <h2><span class="sec-ic">🎖️</span> Briefing comandante</h2>
   <p>Benvenuto a bordo, <strong><?= e($player['handle']) ?></strong>. Sei attraccato allo
      <strong>StarDock</strong> nel settore <?= (int) $look['id'] ?> (<?= e($look['name']) ?>), a bordo di una
      <em><?= e($ship['type_name']) ?></em> con <?= (int) $ship['holds_total'] ?> stive e
@@ -175,7 +175,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
 <?php if (!empty($onboarding)): ?>
 <section class="panel onboarding">
   <div class="ob-head">
-    <h2>Primi passi <span class="mut"><?= (int) $onboarding['done'] ?>/<?= (int) $onboarding['total'] ?></span><?= partial('help', ['key' => 'plancia.primipassi']) ?></h2>
+    <h2><span class="sec-ic">🧭</span> Primi passi <span class="mut"><?= (int) $onboarding['done'] ?>/<?= (int) $onboarding['total'] ?></span><?= partial('help', ['key' => 'plancia.primipassi']) ?></h2>
     <form method="post" action="<?= e(url('/gioco/primi-passi/nascondi')) ?>" class="inline">
       <?= csrf_field() ?><button class="btn xs ghost" type="submit">Nascondi</button>
     </form>
@@ -199,7 +199,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
 ?>
 <section class="panel shiplog-card">
   <div class="shiplog-head">
-    <h2>Giornale di bordo<?php if ($slUnread > 0): ?> <span class="badge"><?= (int) $slUnread ?></span><?php endif; ?><?= partial('help', ['key' => 'plancia.giornale']) ?></h2>
+    <h2><span class="sec-ic">📖</span> Giornale di bordo<?php if ($slUnread > 0): ?> <span class="badge"><?= (int) $slUnread ?></span><?php endif; ?><?= partial('help', ['key' => 'plancia.giornale']) ?></h2>
     <a class="btn xs ghost" href="<?= e(url('/gioco/giornale')) ?>">Storico completo</a>
   </div>
   <ul class="shiplog-list">
@@ -223,7 +223,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
 <?php if (!empty($limpet_tracked)): ?>
 <section class="panel limpet-card">
   <div class="limpet-head">
-    <h2>Prede tracciate <span class="mut">Limpet ×<?= count($limpet_tracked) ?></span><?= partial('help', ['key' => 'plancia.prede']) ?></h2>
+    <h2><span class="sec-ic">🎯</span> Prede tracciate <span class="mut">Limpet ×<?= count($limpet_tracked) ?></span><?= partial('help', ['key' => 'plancia.prede']) ?></h2>
   </div>
   <ul class="limpet-list">
     <?php foreach ($limpet_tracked as $t):
@@ -245,7 +245,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
 <div class="game-grid plancia-grid">
   <section class="panel sector-card">
     <header class="sector-head">
-      <h1>Settore <?= (int) $look['id'] ?><?= partial('help', ['key' => 'plancia.settore']) ?></h1>
+      <h1><span class="sec-ic">📍</span> Settore <?= (int) $look['id'] ?><?= partial('help', ['key' => 'plancia.settore']) ?></h1>
       <span class="sector-name"><?= e($look['name']) ?></span>
       <?php if ($look['is_stardock']): ?><span class="tag dock">StarDock</span><?php endif; ?>
       <?php if ($look['is_fedspace']): ?><span class="tag fed">Federazione</span><?php endif; ?>
@@ -280,7 +280,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
       </div>
     <?php endif; ?>
 
-    <h2>Warp<?= partial('help', ['key' => 'plancia.warp']) ?></h2>
+    <h2><span class="sec-ic">🚀</span> Warp<?= partial('help', ['key' => 'plancia.warp']) ?></h2>
     <div class="warps">
       <?php foreach ($look['warps'] as $w): ?>
         <form method="post" action="<?= e(url('/gioco/muovi')) ?>" class="inline warp-form">
@@ -346,7 +346,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
     ?>
     <?php if ($hasForces || $npcs !== []): ?>
     <div class="forces-box">
-      <h2>Forze nel settore <span class="mut">caccia · mine · NPC</span><?= partial('help', ['key' => 'plancia.forze']) ?></h2>
+      <h2><span class="sec-ic">🛡️</span> Forze nel settore <span class="mut">caccia · mine · NPC</span><?= partial('help', ['key' => 'plancia.forze']) ?></h2>
       <?php foreach ($npcs as $n): ?>
         <p class="force-line">
           <span class="pill <?= $n['kind'] === 'ferrengi' ? 'err' : ($n['kind'] === 'pirate' ? 'warn' : 'mut') ?>"><?= e($n['kind']) ?></span>
@@ -419,7 +419,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
         </p>
       <?php endforeach; endif; ?>
       <details class="scan-probe">
-        <summary>Sonda un settore adiacente<?= partial('help', ['key' => 'plancia.sonda']) ?></summary>
+        <summary><span class="sec-ic">📡</span> Sonda un settore adiacente<?= partial('help', ['key' => 'plancia.sonda']) ?></summary>
         <form method="post" action="<?= e(url('/gioco/sonda')) ?>" class="row">
           <?= csrf_field() ?>
           <label>Settore <input type="number" name="to" min="1" required></label>
@@ -431,7 +431,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
 
     <?php if (!$look['is_fedspace']): ?>
     <details class="tools combat-tools">
-      <summary>Armi e dispiegamento<?= partial('help', ['key' => 'plancia.armi']) ?></summary>
+      <summary><span class="sec-ic">⚔️</span> Armi e dispiegamento<?= partial('help', ['key' => 'plancia.armi']) ?></summary>
 
       <?php if (!empty($look['can_attack'])): ?>
       <form method="post" action="<?= e(url('/gioco/attacca/nave')) ?>" class="row">
@@ -492,7 +492,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
 
     <?php if (\App\Game\Cloak::has($ship)): ?>
     <details class="tools"<?= !empty($ship['cloaked']) ? ' open' : '' ?>>
-      <summary>Occultamento <?= !empty($ship['cloaked']) ? '· 🌫 attivo' : '' ?><?= partial('help', ['key' => 'plancia.occultamento']) ?></summary>
+      <summary><span class="sec-ic">🌫️</span> Occultamento <?= !empty($ship['cloaked']) ? '· 🌫 attivo' : '' ?><?= partial('help', ['key' => 'plancia.occultamento']) ?></summary>
       <form method="post" action="<?= e(url('/gioco/occulta')) ?>" class="row">
         <?= csrf_field() ?>
         <input type="hidden" name="state" value="<?= !empty($ship['cloaked']) ? 'off' : 'on' ?>">
@@ -517,7 +517,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
 
   <aside class="game-side">
     <section class="panel side-panel">
-      <h2>Servizi del settore<?= partial('help', ['key' => 'plancia.servizi']) ?></h2>
+      <h2><span class="sec-ic">🧰</span> Servizi del settore<?= partial('help', ['key' => 'plancia.servizi']) ?></h2>
       <div class="side-links">
         <?php if ($look['is_stardock']): ?>
           <a class="btn xs" href="<?= e(url('/gioco/porto')) ?>">Porto</a>
@@ -562,7 +562,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
     </section>
 
     <details class="tools">
-      <summary>Computer di bordo<?= partial('help', ['key' => 'plancia.computer']) ?></summary>
+      <summary><span class="sec-ic">🖥️</span> Computer di bordo<?= partial('help', ['key' => 'plancia.computer']) ?></summary>
       <form method="get" action="<?= e(url('/gioco/rotta')) ?>" class="row">
         <label>Traccia rotta verso settore
           <input type="number" name="to" min="1" required>
@@ -591,7 +591,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
     </details>
 
     <details class="tools">
-      <summary>Nota / preferito su questo settore<?= partial('help', ['key' => 'plancia.nota']) ?></summary>
+      <summary><span class="sec-ic">📌</span> Nota / preferito su questo settore<?= partial('help', ['key' => 'plancia.nota']) ?></summary>
       <form method="post" action="<?= e(url('/gioco/settore/nota')) ?>" class="row">
         <?= csrf_field() ?>
         <input type="hidden" name="sector" value="<?= (int) $look['id'] ?>">
@@ -605,7 +605,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
   </aside>
 
   <section class="panel map-card map-3d">
-    <h2>Mappa stellare<?= partial('help', ['key' => 'plancia.mappa']) ?></h2>
+    <h2><span class="sec-ic">🗺️</span> Mappa stellare<?= partial('help', ['key' => 'plancia.mappa']) ?></h2>
     <div class="map-controls">
       <label>Etichette
         <select id="map-labels">

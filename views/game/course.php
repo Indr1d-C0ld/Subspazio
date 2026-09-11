@@ -6,7 +6,7 @@
 /** @var array{ok:bool,error?:string,path?:list<int>,hops?:int,turns?:int}|null $full */
 ?>
 <section class="panel narrow">
-  <h1>Rotta verso il settore <?= (int) $to ?></h1>
+  <h1><span class="sec-ic">🧭</span> Rotta verso il settore <?= (int) $to ?></h1>
 
   <?php if ($known['ok']): ?>
     <p class="course-path"><?= e(implode('  →  ', $known['path'])) ?></p>

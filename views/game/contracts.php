@@ -12,7 +12,7 @@ $U = e(url('/gioco/contratti'));
 
 <div class="game-grid">
   <section class="panel">
-    <h1>Bacheca contratti<?= partial('help', ['key' => 'contratti.bacheca']) ?></h1>
+    <h1><span class="sec-ic">📋</span> Bacheca contratti<?= partial('help', ['key' => 'contratti.bacheca']) ?></h1>
     <?php if ($board === []): ?><p class="hint">Nessun contratto aperto.</p><?php else: ?>
     <table class="tbl compact">
       <thead><tr><th>#</th><th>Tipo</th><th>Dettagli</th><th class="ta-r">Ricompensa</th><th></th></tr></thead>
@@ -43,7 +43,7 @@ $U = e(url('/gioco/contratti'));
     </table>
     <?php endif; ?>
 
-    <h2>Pubblica un contratto<?= partial('help', ['key' => 'contratti.pubblica']) ?></h2>
+    <h2><span class="sec-ic">✍️</span> Pubblica un contratto<?= partial('help', ['key' => 'contratti.pubblica']) ?></h2>
     <form method="post" action="<?= $U ?>" class="row">
       <?= csrf_field() ?><input type="hidden" name="op" value="bounty">
       <label>Taglia su <input type="text" name="target" placeholder="handle"></label>
@@ -61,7 +61,7 @@ $U = e(url('/gioco/contratti'));
   </section>
 
   <section class="panel">
-    <h1>I miei contratti</h1>
+    <h1><span class="sec-ic">📄</span> I miei contratti</h1>
     <?php if ($mine === []): ?><p class="hint">Nessuno.</p><?php else: ?>
     <table class="tbl compact">
       <thead><tr><th>#</th><th>Tipo</th><th>Stato</th><th class="ta-r">Ricompensa</th><th></th></tr></thead>

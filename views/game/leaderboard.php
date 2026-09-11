@@ -10,7 +10,7 @@
 </section>
 
 <section class="panel">
-  <h1>Classifica comandanti<?= partial('help', ['key' => 'classifica.comandanti']) ?></h1>
+  <h1><span class="sec-ic">🏆</span> Classifica comandanti<?= partial('help', ['key' => 'classifica.comandanti']) ?></h1>
   <table class="tbl">
     <thead><tr><th>#</th><th>Comandante</th><th>Corp</th><th>Grado</th><th class="ta-r">Rating</th><th class="ta-r">Exp</th><th class="ta-r">Kill</th><th class="ta-r">Morti</th><th class="ta-r">Pianeti</th><th>Allineamento</th></tr></thead>
     <tbody>
@@ -47,7 +47,7 @@
 </section>
 
 <section class="panel">
-  <h1>Classifica corporazioni<?= partial('help', ['key' => 'classifica.corp']) ?></h1>
+  <h1><span class="sec-ic">🏛️</span> Classifica corporazioni<?= partial('help', ['key' => 'classifica.corp']) ?></h1>
   <table class="tbl">
     <thead><tr><th>#</th><th>Corporazione</th><th class="ta-r">Membri</th><th class="ta-r">Rating</th><th class="ta-r">Cassa</th><th class="ta-r">Pianeti</th></tr></thead>
     <tbody>

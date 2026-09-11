@@ -19,7 +19,7 @@ $u = url('/gioco/pianeta/' . (int) $p['id']);
 
 <section class="panel">
   <header class="sector-head">
-    <h1><?= e($p['name']) ?></h1>
+    <h1><span class="sec-ic">🪐</span> <?= e($p['name']) ?></h1>
     <span class="tag">Tipo <?= e($p['type_key']) ?> · <?= e($p['type_name']) ?></span>
     <?php if ($own): ?><span class="tag fed">tuo</span><?php endif; ?>
   </header>
@@ -38,7 +38,7 @@ $u = url('/gioco/pianeta/' . (int) $p['id']);
     <p class="hint">Citadel liv. <?= (int) $p['citadel_upgrade_to'] ?> pronta il <?= e(fmt_dt($p['citadel_ready_at'])) ?>.</p>
   <?php endif; ?>
 
-  <h2>Coloni e produzione<?= partial('help', ['key' => 'pianeta.produzione']) ?></h2>
+  <h2><span class="sec-ic">👥</span> Coloni e produzione<?= partial('help', ['key' => 'pianeta.produzione']) ?></h2>
   <table class="tbl">
     <thead><tr><th>Categoria</th><th class="ta-r">Coloni</th><th class="ta-r">Magazzino</th><th>Produzione</th></tr></thead>
     <tbody>
@@ -106,7 +106,7 @@ $u = url('/gioco/pianeta/' . (int) $p['id']);
     </form>
   </div>
 
-  <h2>Citadel<?= partial('help', ['key' => 'pianeta.citadel']) ?></h2>
+  <h2><span class="sec-ic">🏰</span> Citadel<?= partial('help', ['key' => 'pianeta.citadel']) ?></h2>
   <?php if ($next === null): ?>
     <p class="hint">Citadel al massimo o non costruibile su questo tipo di pianeta.</p>
   <?php elseif ($p['citadel_upgrade_to']): ?>
@@ -126,7 +126,7 @@ $u = url('/gioco/pianeta/' . (int) $p['id']);
   <?php endif; ?>
 
   <?php elseif ($here && !$own): ?>
-  <h2>Assalto<?= partial('help', ['key' => 'pianeta.assalto']) ?></h2>
+  <h2><span class="sec-ic">💥</span> Assalto<?= partial('help', ['key' => 'pianeta.assalto']) ?></h2>
   <form method="post" action="<?= e($u . '/attacca') ?>" class="row"
         onsubmit="return confirm('Attaccare il pianeta? Colpo pesante all\'allineamento.')">
     <?= csrf_field() ?>

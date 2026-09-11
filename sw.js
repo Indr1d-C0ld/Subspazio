@@ -1,5 +1,5 @@
 /* SubSpazio — service worker: guscio offline + cache degli asset statici. */
-const VERSION = 'subspazio-v39';
+const VERSION = 'subspazio-v40';
 const BASE = '/subspazio';
 const SHELL = [
   BASE + '/',
@@ -10,6 +10,7 @@ const SHELL = [
   BASE + '/assets/js/live.js',
   BASE + '/assets/js/game.js',
   BASE + '/assets/js/pwa.js',
+  BASE + '/assets/js/help.js',
   BASE + '/assets/icons/icon-192.png',
 ];
 

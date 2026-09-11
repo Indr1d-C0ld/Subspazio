@@ -16,7 +16,7 @@
 
 <div class="game-grid">
   <section class="panel">
-    <h1>Ultimi spostamenti<?= partial('help', ['key' => 'registro.spostamenti']) ?></h1>
+    <h1><span class="sec-ic">🧭</span> Ultimi spostamenti<?= partial('help', ['key' => 'registro.spostamenti']) ?></h1>
     <table class="tbl compact">
       <thead><tr><th>Quando</th><th>Da → A</th><th>Modo</th><th class="ta-r">TL</th><th></th></tr></thead>
       <tbody>
@@ -35,7 +35,7 @@
   </section>
 
   <section class="panel">
-    <h1>Settori più frequentati</h1>
+    <h1><span class="sec-ic">📊</span> Settori più frequentati</h1>
     <table class="tbl compact">
       <thead><tr><th>Settore</th><th class="ta-r">Visite</th><th></th></tr></thead>
       <tbody>
@@ -49,7 +49,7 @@
       </tbody>
     </table>
 
-    <h2>Preferiti e note</h2>
+    <h2><span class="sec-ic">📌</span> Preferiti e note</h2>
     <?php if ($notes === []): ?>
       <p class="hint">Nessuna nota. Le aggiungi dalla scheda del settore in plancia.</p>
     <?php else: ?>

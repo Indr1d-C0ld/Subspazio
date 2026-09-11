@@ -713,35 +713,42 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 .cargo-mini { display: inline-flex; gap: .35rem; margin-left: .3rem; font-weight: 600; opacity: .85; }
 .cargo-mini > span { white-space: nowrap; }
 
-/* --- marcatore d'aiuto «?» (CSS puro, hover/focus) --- */
+/* --- icona di sezione affiancata a ogni intestazione --- */
+.sec-ic {
+  display: inline-block; margin-right: .45rem; font-style: normal; font-weight: 400;
+  line-height: 1; vertical-align: -0.06em; opacity: .95;
+  font-size: .95em; -webkit-font-smoothing: auto;
+}
+h1 .sec-ic { font-size: .82em; }
+
+/* --- marcatore d'aiuto «?» --- dimensione fissa ovunque (rem, non em) --- */
 .help {
   position: relative; display: inline-flex; align-items: center; justify-content: center;
-  width: 1.05em; height: 1.05em; margin-left: .4em; border-radius: 50%;
+  width: 1.15rem; height: 1.15rem; margin: 0 .1rem 0 .4rem; padding: 0; border-radius: 50%;
   border: 1px solid var(--line); background: var(--panel-2); color: var(--ink-soft);
-  font: 600 .72em/1 var(--font-mono); cursor: help; vertical-align: middle;
+  font: 600 .72rem/1 var(--font-mono); cursor: help; vertical-align: middle;
   flex: none; user-select: none; -webkit-user-select: none;
+  text-transform: none; letter-spacing: 0;
 }
-h1 .help, h2 .help, h3 .help, summary .help, legend .help { font-size: .62em; }
+h1 .help, h2 .help, h3 .help, summary .help, legend .help, .side-stats .help { font-size: .72rem; }
 .help:hover, .help:focus-visible { color: var(--accent); border-color: var(--accent); outline: none; }
 .help-pop {
-  position: absolute; z-index: 70; left: 50%; top: calc(100% + 8px); transform: translateX(-50%);
-  width: max-content; max-width: min(20rem, 78vw); padding: .5rem .65rem;
+  position: absolute; z-index: 200; left: 50%; top: calc(100% + 8px); transform: translateX(-50%);
+  width: max-content; max-width: min(22rem, 82vw); padding: .55rem .7rem;
   border: 1px solid var(--line); border-radius: 8px; background: var(--panel);
-  color: var(--ink); font: 400 .82rem/1.35 var(--font-sans); text-align: left; font-weight: 400;
-  letter-spacing: normal; text-transform: none; white-space: normal;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, .45);
+  color: var(--ink); font: 400 .82rem/1.4 var(--font-sans); font-weight: 400;
+  text-align: left; letter-spacing: normal; text-transform: none; white-space: normal;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
   opacity: 0; pointer-events: none; transition: opacity .12s;
 }
-.help-pop::before {
-  content: ""; position: absolute; left: 50%; top: -5px; transform: translateX(-50%) rotate(45deg);
-  width: 9px; height: 9px; background: var(--panel);
-  border-left: 1px solid var(--line); border-top: 1px solid var(--line);
-}
-.help:hover .help-pop, .help:focus .help-pop, .help:focus-within .help-pop { opacity: 1; }
-@media (max-width: 640px) {
-  .help-pop { left: auto; right: 0; transform: none; }
-  .help-pop::before { left: auto; right: 6px; }
-}
+/* senza JS: hover/focus in CSS puro (può essere tagliato dentro un overflow) */
+:root:not(.js-help) .help:hover .help-pop,
+:root:not(.js-help) .help:focus .help-pop,
+:root:not(.js-help) .help:focus-within .help-pop { opacity: 1; }
+/* con JS: la tendina è position:fixed, riposizionata da help.js, mai tagliata */
+.js-help .help-pop { position: fixed; left: 0; top: 0; transform: none;
+  max-width: min(24rem, calc(100vw - 24px)); }
+.js-help .help.is-open .help-pop { opacity: 1; }
 
 /* --------------------------------------------------------- Traguardi / meta --- */
 .ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: .6rem; }

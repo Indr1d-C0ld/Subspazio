@@ -88,7 +88,7 @@ $card = function (array $o) use ($SK, $now, $at_dock, $slots, $counts, $loyLvl) 
 
 <div class="game-grid plancia-grid">
   <section class="panel">
-    <h1>Plancia di comando <span class="mut"><?= count($assigned) ?>/<?= $slots ?></span><?= partial('help', ['key' => 'equipaggio.plancia']) ?></h1>
+    <h1><span class="sec-ic">🎖️</span> Plancia di comando <span class="mut"><?= count($assigned) ?>/<?= $slots ?></span><?= partial('help', ['key' => 'equipaggio.plancia']) ?></h1>
     <?php if ($slots <= 0): ?>
       <p class="hint">Questo scafo non ha posti equipaggio. Serve una nave vera (Cantiere).</p>
     <?php elseif ($assigned === []): ?>
@@ -99,7 +99,7 @@ $card = function (array $o) use ($SK, $now, $at_dock, $slots, $counts, $loyLvl) 
     </div>
 
     <?php if ($reserve !== []): ?>
-      <h2>Riserva<?= partial('help', ['key' => 'equipaggio.riserva']) ?></h2>
+      <h2><span class="sec-ic">👤</span> Riserva<?= partial('help', ['key' => 'equipaggio.riserva']) ?></h2>
       <div class="crew-grid">
         <?php foreach ($reserve as $o) $card($o); ?>
       </div>
@@ -107,7 +107,7 @@ $card = function (array $o) use ($SK, $now, $at_dock, $slots, $counts, $loyLvl) 
   </section>
 
   <section class="panel">
-    <h1>Reclutamento<?= partial('help', ['key' => 'equipaggio.reclutamento']) ?></h1>
+    <h1><span class="sec-ic">📋</span> Reclutamento<?= partial('help', ['key' => 'equipaggio.reclutamento']) ?></h1>
     <?php if (!$at_dock): ?>
       <p class="hint">Disponibile allo StarDock.</p>
     <?php elseif ($recruits === []): ?>

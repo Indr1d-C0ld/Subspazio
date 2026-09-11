@@ -112,6 +112,7 @@ $errors = is_array($errors) ? $errors : [];
 </footer>
 <script src="<?= e(asset('js/app.js')) ?>" defer></script>
 <script src="<?= e(asset('js/pwa.js')) ?>" defer></script>
+<script src="<?= e(asset('js/help.js')) ?>" defer></script>
 <?php if (($u['status'] ?? '') === 'active'): ?><script src="<?= e(asset('js/live.js')) ?>" defer></script><?php endif; ?>
 </body>
 </html>

@@ -18,7 +18,7 @@ $cr = (int) $player['credits'];
 </section>
 
 <section class="panel">
-  <h1>Cantiere StarDock</h1>
+  <h1><span class="sec-ic">🛠️</span> Cantiere StarDock</h1>
 
   <?php if (($ship['type_key'] ?? '') === 'escape_pod'):
     $cheapest = null;
@@ -38,7 +38,7 @@ $cr = (int) $player['credits'];
 
   <?php if (!empty($broken)): ?>
   <div class="repair-box">
-    <h2>Riparazioni <span class="pill err"><?= count($broken) ?> fuori uso</span><?= partial('help', ['key' => 'cantiere.riparazioni']) ?></h2>
+    <h2><span class="sec-ic">🔧</span> Riparazioni <span class="pill err"><?= count($broken) ?> fuori uso</span><?= partial('help', ['key' => 'cantiere.riparazioni']) ?></h2>
     <ul class="repair-list">
       <?php foreach ($broken as $b): ?>
         <li><strong><?= e($b['name']) ?></strong> <span class="mut">(slot <?= e($b['slot']) ?>) — fuori uso dal <?= e(fmt_dt($b['broken_at'])) ?></span></li>
@@ -52,7 +52,7 @@ $cr = (int) $player['credits'];
   </div>
   <?php endif; ?>
 
-  <h2>Potenziamenti<?= partial('help', ['key' => 'cantiere.potenziamenti']) ?></h2>
+  <h2><span class="sec-ic">⬆️</span> Potenziamenti<?= partial('help', ['key' => 'cantiere.potenziamenti']) ?></h2>
   <div class="upg-grid">
     <form method="post" action="<?= e(url('/gioco/cantiere/upgrade')) ?>" class="row">
       <?= csrf_field() ?><input type="hidden" name="kind" value="holds">
@@ -71,7 +71,7 @@ $cr = (int) $player['credits'];
     </form>
   </div>
 
-  <h2>Hardware<?= partial('help', ['key' => 'cantiere.hardware']) ?></h2>
+  <h2><span class="sec-ic">🔌</span> Hardware<?= partial('help', ['key' => 'cantiere.hardware']) ?></h2>
   <div class="upg-grid">
     <?php
     $hw = [
@@ -101,7 +101,7 @@ $cr = (int) $player['credits'];
     <?php endforeach; ?>
   </div>
 
-  <h2>Navi — permuta stimata: <?= number_format($trade_in, 0, ',', '.') ?> cr<?= partial('help', ['key' => 'cantiere.navi']) ?></h2>
+  <h2><span class="sec-ic">🚀</span> Navi — permuta stimata: <?= number_format($trade_in, 0, ',', '.') ?> cr<?= partial('help', ['key' => 'cantiere.navi']) ?></h2>
   <table class="tbl">
     <thead><tr><th>Modello</th><th class="ta-r">Stive</th><th class="ta-r">Caccia</th><th class="ta-r">Scudi</th><th class="ta-r">Combat</th><th class="ta-r">Warp</th><th class="ta-r">Prezzo netto</th><th></th></tr></thead>
     <tbody>

@@ -24,7 +24,7 @@ $SK = Crew::SKILL_LABEL;
 <?php endif; ?>
 
 <section class="panel">
-  <h1>Missioni disponibili<?= partial('help', ['key' => 'missioni.disponibili']) ?></h1>
+  <h1><span class="sec-ic">🗂️</span> Missioni disponibili<?= partial('help', ['key' => 'missioni.disponibili']) ?></h1>
   <?php if ($missions === []): ?>
     <p class="hint">Nessuna missione al momento. Se ne generano di nuove col tempo e cambiano con la regione in cui ti trovi.</p>
   <?php endif; ?>
@@ -68,14 +68,14 @@ $SK = Crew::SKILL_LABEL;
 
 <?php if ($busy !== []): ?>
 <section class="panel">
-  <h2>Impegnati / in ricarica</h2>
+  <h2><span class="sec-ic">⏳</span> Impegnati / in ricarica</h2>
   <p class="hint"><?= e(implode(' · ', array_map(fn ($o) => $o['name'] . ($o['status'] === 'injured' ? ' (ferito)' : ' (rientro ' . substr((string) $o['ready_at'], 11, 5) . ')'), $busy))) ?></p>
 </section>
 <?php endif; ?>
 
 <?php if ($log !== []): ?>
 <section class="panel">
-  <h2>Esiti recenti</h2>
+  <h2><span class="sec-ic">📜</span> Esiti recenti</h2>
   <table class="tbl compact">
     <thead><tr><th>Quando</th><th>Missione</th><th>Squadra</th><th>Esito</th><th>Ricompensa</th></tr></thead>
     <tbody>
