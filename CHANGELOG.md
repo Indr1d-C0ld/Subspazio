@@ -4,6 +4,36 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-11 — Confirm/prompt sui form: da `onsubmit` inline (morti) a delegati
+
+La CSP del sito (`script-src 'self'`) blocca ogni `onsubmit` inline: 13 form
+con `onsubmit="return confirm(...)"` partivano **senza chiedere nulla**, e
+il form di rifiuto immagine in amministrazione (che usava `onsubmit` per
+riempire il motivo via `prompt()`) non riempiva mai il campo.
+
+- **[assets/js/app.js](assets/js/app.js)** — il listener `submit` su
+  `document` (già usato per bloccare i doppi invii) ora legge due
+  data-attribute dichiarativi prima di lasciar passare l'invio:
+  `data-confirm="testo"` (chiama `window.confirm()`, blocca l'invio se
+  annulli) e `data-prompt-field="name"` + `data-prompt-message`
+  (chiama `window.prompt()` e scrive il risultato nel campo indicato).
+- Convertiti tutti i **14 form**: **[views/admin/dashboard.php](views/admin/dashboard.php)**
+  (rifiuta iscrizione, rifiuta immagine con motivo),
+  **[views/admin/game.php](views/admin/game.php)** (purga NPC, BIG BANG,
+  chiudi stagione, azzera comandante), **[views/game/corp.php](views/game/corp.php)**
+  (lascia corporazione), **[views/game/crew.php](views/game/crew.php)**
+  (congeda ufficiale), **[views/game/index.php](views/game/index.php)**
+  (assalta il porto), **[views/game/modules.php](views/game/modules.php)**
+  (smonta modulo, annulla lavoro), **[views/game/planet.php](views/game/planet.php)**
+  (attacca pianeta), **[views/game/planets.php](views/game/planets.php)**
+  (lancia siluro Genesi), **[views/game/profilo.php](views/game/profilo.php)**
+  (rimuovi immagine). Il testo passa da `e()` invece di `addslashes()` —
+  non serve più l'escaping da stringa JS, ora è un normale attributo HTML.
+- Verificato con test funzionali headless (`dispatchEvent` + `confirm`/
+  `prompt` sostituiti): il form si blocca se annulli, procede se
+  confermi, il prompt scrive nel campo giusto prima dell'invio.
+- **[sw.js](sw.js)** — cache `subspazio-v44`.
+
 ## 2026-09-11 — Audit UI completo: tabelle a schede su mobile, form riordinati
 
 Seguito dell'audit avviato col Cantiere: revisione di ogni pagina di gioco,

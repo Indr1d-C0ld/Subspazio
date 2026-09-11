@@ -243,6 +243,20 @@ aspettare le classi di nave del tema D.
   Test e2e riscritto: prende `storage/tick.lock`, non distruttivo. Duplicato
   sul live ripulito a mano.
 
+### fix — onsubmit inline morti per la CSP (2026-09-11)
+
+- Causa: `script-src 'self'` blocca ogni `onsubmit` inline. 13 form con
+  `onsubmit="return confirm(...)"` (rifiuta iscrizione, purga NPC, BIG BANG,
+  chiudi stagione, azzera comandante, lascia corp, congeda ufficiale,
+  assalta porto, smonta modulo, annulla lavoro, attacca pianeta, lancia
+  Genesi, rimuovi immagine) partivano **senza chiedere conferma**; il form
+  di rifiuto immagine (motivo via `prompt()`) non riempiva mai il campo.
+- Fix: `assets/js/app.js` — il listener `submit` delegato su `document`
+  legge `data-confirm="testo"` (→ `confirm()`, blocca se annulli) e
+  `data-prompt-field`/`data-prompt-message` (→ `prompt()`, scrive nel
+  campo). Tutti i 14 form convertiti; verificato con test funzionali
+  headless (`dispatchEvent` + mock di `confirm`/`prompt`). `sw.js` → v44.
+
 ### Rifiniture identità/UI — dettaglio di quanto consegnato
 
 - **Iconcine sui beni** (`Economy::ICONS`/`icon()`/`labelIcon()`): ⛏️ Minerale ·
