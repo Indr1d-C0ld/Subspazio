@@ -511,6 +511,37 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 .upg-grid .row { display: flex; align-items: end; gap: .5rem; flex-wrap: wrap; }
 .upg-grid label { display: flex; flex-direction: column; gap: .2rem; font-size: .8rem; color: var(--ink-soft); }
 .upg-grid input.qty { width: 6rem; padding: .35rem .45rem; border-radius: 6px; }
+
+/* --- griglia d'acquisto a schede (Cantiere) --- */
+.buy-subhead { margin: 1.1rem 0 .5rem; font-size: .82rem; font-weight: 600;
+  text-transform: none; letter-spacing: .01em; color: var(--ink); }
+.buy-subhead .mut { font-weight: 400; }
+.buy-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: .7rem; margin: 0 0 .6rem; }
+.buy-card { display: flex; flex-direction: column; gap: .5rem; padding: .75rem .85rem;
+  border: 1px solid var(--line); border-radius: 9px; background: var(--panel-2); }
+.buy-card.is-owned { opacity: .78; }
+.buy-head { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
+.buy-name { font-weight: 600; color: var(--ink); }
+.buy-price { font-family: var(--font-mono); font-size: .82rem; color: var(--accent); white-space: nowrap; }
+.buy-note { margin: 0; font-size: .8rem; color: var(--ink-soft); line-height: 1.35; }
+.buy-act { display: flex; gap: .5rem; align-items: center; margin-top: auto; }
+.buy-act .qty { width: 5rem; }
+.buy-act .btn { flex: none; }
+.buy-card > .pill { align-self: flex-start; }
+
+/* .upg-grid (mercato nero, pianeta, admin): ogni form in una scheda con bordo */
+.upg-grid > form.row {
+  border: 1px solid var(--line); border-radius: 9px; padding: .7rem .85rem;
+  background: var(--panel-2); align-items: end; gap: .55rem .7rem;
+}
+.upg-grid > form.row > .btn { align-self: end; }
+
+/* --- tabelle larghe: contenitore che scrolla senza far scrollare la pagina --- */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: .3rem 0 0; }
+.ships-tbl { min-width: 34rem; }
+.ships-tbl .ship-cell { display: flex; align-items: center; gap: .5rem; }
+.ships-tbl .ship-cell .ship-mark { margin: 0; }
 .row-current { background: rgba(107, 226, 255, .07); }
 
 /* ---------------------------------------------- Radio / eventi / classifica --- */
@@ -1060,6 +1091,30 @@ h1 .help, h2 .help, h3 .help, summary .help, legend .help, .side-stats .help { f
   .port-teaser-list .cl { min-width: 0; }
   .shiplog-card .shiplog-head { flex-wrap: wrap; }
   .sl-meta time { margin-left: 0; }
+
+  /* Cantiere: schede d'acquisto a colonna piena */
+  .buy-grid { grid-template-columns: 1fr; }
+  .buy-act { flex-direction: row; }
+  .buy-act .qty { flex: 1 1 auto; width: auto; }
+
+  /* tabella navi: da griglia a schede impilate (usa i data-th) */
+  .table-wrap { overflow: visible; }
+  .ships-tbl { min-width: 0; display: block; overflow: visible; white-space: normal; }
+  .ships-tbl thead { display: none; }
+  .ships-tbl tbody, .ships-tbl tr, .ships-tbl td { display: block; }
+  .ships-tbl tr { border: 1px solid var(--line); border-radius: 9px; padding: .55rem .75rem;
+    margin: 0 0 .55rem; background: var(--panel-2); }
+  .ships-tbl tr.row-current { background: rgba(107, 226, 255, .08); }
+  .ships-tbl td { display: flex; justify-content: space-between; align-items: center;
+    text-align: right; padding: .18rem 0; border: 0; }
+  .ships-tbl td::before { content: attr(data-th); color: var(--ink-soft);
+    font-size: .8rem; text-align: left; margin-right: 1rem; }
+  .ships-tbl td.ship-cell { justify-content: flex-start; text-align: left;
+    padding: .1rem 0 .4rem; border-bottom: 1px solid var(--line); margin-bottom: .3rem; }
+  .ships-tbl td.ship-cell::before { content: none; }
+  .ships-tbl td:last-child { justify-content: flex-end; padding-top: .4rem; }
+  .ships-tbl td:last-child::before { content: none; }
+  .ships-tbl td:last-child:empty { display: none; }
 }
 
 @media (max-width: 380px) {
