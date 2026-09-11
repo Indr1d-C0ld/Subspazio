@@ -4,6 +4,34 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-11 — Cantiere riordinato + inizio audit UI
+
+Segnalato: pagina del Cantiere confusa; lo scanner di densità sembrava
+avere **due** tasti «Compra» (in realtà due form adiacenti in una griglia
+senza confini visivi).
+
+- **[views/game/shipyard.php](views/game/shipyard.php)** riscritto:
+  ogni voce è una **scheda con bordo** (nome + prezzo in testa, nota
+  esplicativa, **una sola** azione). Helper `$buy()` unico per
+  potenziamenti e hardware. Hardware diviso in «Munizioni & sonde»
+  (a consumo, con quantità) e «Dispositivi di bordo» (permanenti, uno
+  per tipo). Un dispositivo già installato mostra la pill
+  «✓ installato» e **nessun bottone** (prima: bottone disabilitato di
+  fianco a «installato»); lo scanner di densità mostra «incluso
+  nell'olografico» se hai già l'olografico. Ogni gruppo in un proprio
+  `<section class="panel">`. Tabella «Navi» in un contenitore che
+  scrolla in orizzontale senza far scrollare la pagina e, sotto
+  820 px, **trasformata in schede impilate** con etichette (`data-th`).
+- **[assets/css/app.css](assets/css/app.css)** — `.buy-grid` /
+  `.buy-card` / `.buy-head` / `.buy-price` / `.buy-note` / `.buy-act`,
+  `.buy-subhead`, `.table-wrap`, `.ships-tbl` (+ vista a schede mobile).
+  `.upg-grid > form.row` ora ha bordo e sfondo (si applica anche a
+  mercato nero, scheda pianeta, pannello admin).
+- **[sw.js](sw.js)** — cache `subspazio-v41`.
+
+L'utente ha chiesto un **audit di ogni pagina** (desktop + tablet/
+telefono): tracciato in `docs/roadmap.md`, da svolgere a lotti.
+
 ## 2026-09-11 — Pass di coerenza: icone di sezione, tooltip non tagliati, stemmi
 
 - **Profilo** — rimossa la sotto-griglia «Sagome di nave». La marca di

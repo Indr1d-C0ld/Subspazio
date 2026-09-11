@@ -455,3 +455,45 @@ D già fatto.
 nessuna delle leve A/B/C/E. La piattaforma resta com'è: azioni istantanee,
 turni giornalieri come unico equalizzatore, mondo che avanza sul cron. Sezione
 tenuta come nota storica.
+
+---
+
+## Audit UI per-pagina (avviato 2026-09-11)
+
+Obiettivo: ogni pagina e sotto-sezione ordinata e precisa, **sia da monitor PC
+sia da tablet/smartphone**. Criteri: intestazioni coerenti (icona + titolo +
+«?»), contenuti in `.panel`, form leggibili (schede con bordo dove sono molti),
+tabelle che non sforano (contenitore scrollabile o schede sotto 820px),
+nessun bottone doppio/ambiguo, spaziatura uniforme, niente overflow orizzontale
+di pagina a 390px e 768px.
+
+| Pagina | Stato |
+|---|---|
+| `shipyard` (Cantiere) | ✅ rifatto 2026-09-11 (schede d'acquisto, tabella navi responsive) |
+| `index` (Plancia) | da verificare a fondo (già molto lavorata) |
+| `port` (Porto) | da verificare |
+| `bank` (Banca) | da verificare |
+| `blackmarket` (Mercato nero) | parziale — `.upg-grid` ora a schede; verificare |
+| `modules` (Officina/Slot/Raffineria) | da verificare (densa) |
+| `eps` (Griglia EPS) | da verificare |
+| `crew` (Equipaggio) | da verificare |
+| `missions` (Missioni) | da verificare |
+| `planet` / `planets` | da verificare (`.upg-grid` ora a schede) |
+| `factions` (Fazioni) | da verificare |
+| `contracts` (Contratti) | da verificare (tabelle) |
+| `leaderboard` (Classifica) | da verificare (tabelle larghe) |
+| `radio` (Radio) | verificato mobile il 04-09; ri-controllare dopo icone |
+| `codex` (Codex) | da verificare |
+| `routes` (Registri) | da verificare (tabelle) |
+| `shiplog` (Giornale) | da verificare |
+| `achievements` (Traguardi) | da verificare |
+| `hall` (Albo) | da verificare |
+| `corp` (Corporazione) | da verificare |
+| `battles` / `battle` (Registro/replay) | da verificare |
+| `course` (Rotta) | da verificare |
+| `profilo` (Profilo) | da verificare dopo rimozione sagome |
+| `guide` (Guida) | da verificare (griglia) |
+
+Metodo: render server-side con dati reali → screenshot chromium a 1040px e
+390px (e 768px per le tabelle) → correggere → ri-screenshot. A lotti di 4–5
+pagine per iterazione.
