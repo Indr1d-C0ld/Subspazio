@@ -9,21 +9,25 @@
   <h1><span class="sec-ic">🏢</span> Corporazione<?= partial('help', ['key' => 'corp.home']) ?></h1>
 
   <?php if ($corp === null): ?>
-    <p class="hint">Non sei in nessuna corporazione. Fondarne una costa <?= number_format($cost, 0, ',', '.') ?> cr.</p>
-    <form method="post" action="<?= e(url('/gioco/corp/crea')) ?>" class="stack">
-      <?= csrf_field() ?>
-      <label><span>Nome</span><input type="text" name="name" maxlength="48" required></label>
-      <label><span>Sigla (2-6)</span><input type="text" name="tag" maxlength="6" pattern="[A-Za-z0-9]{2,6}" required></label>
-      <label><span>Password</span><input type="password" name="password" minlength="4" required></label>
-      <button class="btn" type="submit">Fonda</button>
-    </form>
-    <hr>
-    <form method="post" action="<?= e(url('/gioco/corp/entra')) ?>" class="stack">
-      <?= csrf_field() ?>
-      <label><span>Nome o sigla</span><input type="text" name="name" required></label>
-      <label><span>Password</span><input type="password" name="password" required></label>
-      <button class="btn ghost" type="submit">Entra</button>
-    </form>
+    <p class="hint">Non sei in nessuna corporazione: una struttura sociale con cassa comune e
+       possesso condiviso di pianeti. Puoi fondarne una o entrare in una esistente.</p>
+    <div class="form-cards">
+      <form method="post" action="<?= e(url('/gioco/corp/crea')) ?>" class="stack form-card">
+        <?= csrf_field() ?>
+        <h2><span class="sec-ic">✨</span> Fonda una corporazione <span class="mut"><?= number_format($cost, 0, ',', '.') ?> cr</span></h2>
+        <label><span>Nome</span><input type="text" name="name" maxlength="48" required></label>
+        <label><span>Sigla (2-6)</span><input type="text" name="tag" maxlength="6" pattern="[A-Za-z0-9]{2,6}" required></label>
+        <label><span>Password</span><input type="password" name="password" minlength="4" required></label>
+        <button class="btn" type="submit">Fonda</button>
+      </form>
+      <form method="post" action="<?= e(url('/gioco/corp/entra')) ?>" class="stack form-card">
+        <?= csrf_field() ?>
+        <h2><span class="sec-ic">🚪</span> Entra in una corporazione</h2>
+        <label><span>Nome o sigla</span><input type="text" name="name" required></label>
+        <label><span>Password</span><input type="password" name="password" required></label>
+        <button class="btn ghost" type="submit">Entra</button>
+      </form>
+    </div>
   <?php else: ?>
     <p><strong><?= e($corp['name']) ?></strong> [<?= e($corp['tag']) ?>] — ruolo: <?= e($corp['role']) ?></p>
     <div class="grid tight">

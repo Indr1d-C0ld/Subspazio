@@ -122,6 +122,9 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 1rem 0; }
   padding: .3rem 1rem; scrollbar-width: none;
   background: rgba(9, 13, 22, .55); border-bottom: 1px solid var(--line);
   font-family: var(--font-mono); font-size: .8rem;
+  /* sfumatura sui bordi: segnala che si può scorrere */
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 1.2rem, #000 calc(100% - 1.6rem), transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 1.2rem, #000 calc(100% - 1.6rem), transparent);
 }
 .game-nav::-webkit-scrollbar { display: none; }
 .game-nav a {
@@ -536,12 +539,22 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
   background: var(--panel-2); align-items: end; gap: .55rem .7rem;
 }
 .upg-grid > form.row > .btn { align-self: end; }
+.upg-grid > form.row > .buy-subhead { flex: 1 1 100%; }
+
+/* coppie di form affiancati in schede (corp: fonda/entra, ecc.) */
+.form-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: .8rem; }
+.form-card {
+  border: 1px solid var(--line); border-radius: 10px; padding: .9rem 1rem;
+  background: var(--panel-2);
+}
+.form-card h2 { margin: 0 0 .7rem; font-size: .95rem; }
 
 /* --- tabelle larghe: contenitore che scrolla senza far scrollare la pagina --- */
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: .3rem 0 0; }
+.table-wrap .tbl { margin: 0; }
 .ships-tbl { min-width: 34rem; }
-.ships-tbl .ship-cell { display: flex; align-items: center; gap: .5rem; }
-.ships-tbl .ship-cell .ship-mark { margin: 0; }
+.ships-tbl .ship-cell, .tbl .ship-cell { display: flex; align-items: center; gap: .5rem; }
+.ships-tbl .ship-cell .ship-mark, .tbl .ship-cell .ship-mark { margin: 0; }
 .row-current { background: rgba(107, 226, 255, .07); }
 
 /* ---------------------------------------------- Radio / eventi / classifica --- */
@@ -939,8 +952,10 @@ h1 .help, h2 .help, h3 .help, summary .help, legend .help, .side-stats .help { f
 .statusbar .sb-id .v a { color: inherit; text-decoration: none; }
 .statusbar .sb-id .v a:hover { text-decoration: underline; }
 
-.ld-cmd { white-space: nowrap; }
+.ld-cmd { white-space: nowrap; display: inline-flex; align-items: center; }
 .ld-cmd .crest { margin-right: .45rem; }
+.ld-rank { color: var(--ink-soft); font-family: var(--font-mono); margin-right: .5rem; }
+.tbl.rows td.rowtitle .ld-cmd { white-space: normal; flex-wrap: wrap; }
 
 .id-preview { margin: .2rem 0 1.1rem; padding: .85rem 1rem; border: 1px solid var(--line);
   border-radius: 10px; background: var(--panel-2); }
@@ -1097,24 +1112,48 @@ h1 .help, h2 .help, h3 .help, summary .help, legend .help, .side-stats .help { f
   .buy-act { flex-direction: row; }
   .buy-act .qty { flex: 1 1 auto; width: auto; }
 
-  /* tabella navi: da griglia a schede impilate (usa i data-th) */
+  /* porto: la cella azione diventa una riga di controlli a piena larghezza */
+  .port-table.rows td.trade-cell { padding-top: .5rem; }
+  .port-table.rows td.trade-cell .trade-form {
+    display: flex; flex-wrap: wrap; gap: .4rem; width: 100%; align-items: center;
+  }
+  .port-table.rows td.trade-cell .qty { flex: 1 1 4rem; width: auto; }
+  .port-table.rows td.trade-cell .btn { flex: 1 1 auto; }
+  .port-table.rows td[data-th="Scorte"] .bar { width: 60%; }
+
+  /* tabelle .tbl.rows: da griglia a schede impilate (usano i data-th sui td) */
   .table-wrap { overflow: visible; }
-  .ships-tbl { min-width: 0; display: block; overflow: visible; white-space: normal; }
-  .ships-tbl thead { display: none; }
+  .tbl.rows, .ships-tbl {
+    min-width: 0; display: block; overflow: visible; white-space: normal; border: 0;
+  }
+  .tbl.rows thead, .ships-tbl thead { display: none; }
+  .tbl.rows tbody, .tbl.rows tr, .tbl.rows td,
   .ships-tbl tbody, .ships-tbl tr, .ships-tbl td { display: block; }
-  .ships-tbl tr { border: 1px solid var(--line); border-radius: 9px; padding: .55rem .75rem;
-    margin: 0 0 .55rem; background: var(--panel-2); }
-  .ships-tbl tr.row-current { background: rgba(107, 226, 255, .08); }
-  .ships-tbl td { display: flex; justify-content: space-between; align-items: center;
-    text-align: right; padding: .18rem 0; border: 0; }
-  .ships-tbl td::before { content: attr(data-th); color: var(--ink-soft);
-    font-size: .8rem; text-align: left; margin-right: 1rem; }
-  .ships-tbl td.ship-cell { justify-content: flex-start; text-align: left;
-    padding: .1rem 0 .4rem; border-bottom: 1px solid var(--line); margin-bottom: .3rem; }
-  .ships-tbl td.ship-cell::before { content: none; }
+  .tbl.rows tr, .ships-tbl tr {
+    border: 1px solid var(--line); border-radius: 9px; padding: .55rem .75rem;
+    margin: 0 0 .55rem; background: var(--panel-2);
+  }
+  .tbl.rows tr.row-current, .ships-tbl tr.row-current { background: rgba(107, 226, 255, .08); }
+  .tbl.rows td, .ships-tbl td {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
+    text-align: right; padding: .2rem 0; border: 0; min-height: 0;
+  }
+  .tbl.rows td::before, .ships-tbl td::before {
+    content: attr(data-th); color: var(--ink-soft); font-size: .8rem;
+    text-align: left; flex: 0 0 auto; white-space: nowrap;
+  }
+  .tbl.rows td[data-th=""]::before, .tbl.rows td:not([data-th])::before,
+  .ships-tbl td.ship-cell::before, .ships-tbl td:last-child::before { content: none; }
+  .tbl.rows td:not([data-th]), .ships-tbl td.ship-cell {
+    justify-content: flex-start; text-align: left;
+  }
+  .tbl.rows td.rowtitle, .ships-tbl td.ship-cell {
+    padding: .1rem 0 .45rem; margin-bottom: .35rem; border-bottom: 1px solid var(--line);
+    font-weight: 600;
+  }
+  .tbl.rows td.rowtitle::before { content: none; }
   .ships-tbl td:last-child { justify-content: flex-end; padding-top: .4rem; }
-  .ships-tbl td:last-child::before { content: none; }
-  .ships-tbl td:last-child:empty { display: none; }
+  .tbl.rows td:empty, .ships-tbl td:last-child:empty { display: none; }
 }
 
 @media (max-width: 380px) {

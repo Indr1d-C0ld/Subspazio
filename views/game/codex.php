@@ -16,14 +16,26 @@ foreach ($entries as $e) {
   <p class="hint">Le voci si sbloccano scansionando, risolvendo anomalie e spingendosi oltre la Frontiera.</p>
 
   <?php foreach ($byCat as $cat => $list): ?>
-    <h2><?= e(ucfirst($cat)) ?></h2>
+    <?php
+      $got = array_values(array_filter($list, static fn ($e) => $e['unlocked']));
+      $lockedN = count($list) - count($got);
+    ?>
+    <h2><span class="sec-ic">🔹</span> <?= e(ucfirst($cat)) ?>
+      <span class="mut"><?= count($got) ?>/<?= count($list) ?></span></h2>
     <div class="codex-list">
-      <?php foreach ($list as $e): ?>
-        <div class="codex-entry<?= $e['unlocked'] ? ' got' : ' locked' ?>">
-          <strong><?= $e['unlocked'] ? e($e['title']) : '???' ?></strong>
-          <p><?= $e['unlocked'] ? e($e['body']) : '<span class="mut">Voce non ancora sbloccata.</span>' ?></p>
+      <?php foreach ($got as $e): ?>
+        <div class="codex-entry got">
+          <strong><?= e($e['title']) ?></strong>
+          <p><?= e($e['body']) ?></p>
         </div>
       <?php endforeach; ?>
     </div>
+    <?php if ($lockedN > 0): ?>
+      <p class="hint codex-locked">🔒 <?= $lockedN ?>
+        <?= $lockedN === 1 ? 'voce' : 'voci' ?> ancora da scoprire in questa categoria.</p>
+    <?php endif; ?>
+    <?php if ($got === [] && $lockedN === 0): ?>
+      <p class="hint">Nessuna voce.</p>
+    <?php endif; ?>
   <?php endforeach; ?>
 </section>

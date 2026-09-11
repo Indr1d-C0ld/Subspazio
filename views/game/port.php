@@ -30,27 +30,28 @@ $used = \App\Game\Economy::holdsUsed($ship);
     Il prezzo si muove con le scorte del porto: ogni scambio sposta il mercato.
   </p>
 
-  <table class="tbl port-table">
+  <div class="table-wrap">
+  <table class="tbl rows port-table">
     <thead>
       <tr><th>Merce</th><th>Verso</th><th>Scorte</th><th class="ta-r">Prezzo</th><th class="ta-r">Equo</th><th class="ta-r">Max</th><th class="ta-r">A bordo</th><th>Azione</th></tr>
     </thead>
     <tbody>
     <?php foreach ($rows as $r): ?>
       <tr>
-        <td><strong><?= e(\App\Game\Economy::icon((string) $r['commodity'])) ?> <?= e($r['label']) ?></strong></td>
-        <td>
+        <td class="rowtitle"><strong><?= e(\App\Game\Economy::icon((string) $r['commodity'])) ?> <?= e($r['label']) ?></strong></td>
+        <td data-th="Verso">
           <?php if ($r['mode'] === 'sell'): ?><span class="pill ok">vende a te</span>
           <?php else: ?><span class="pill warn">compra da te</span><?php endif; ?>
         </td>
-        <td>
+        <td data-th="Scorte">
           <span class="bar"><span style="width: <?= (int) $r['pct'] ?>%"></span></span>
           <small><?= (int) $r['pct'] ?>%</small>
         </td>
-        <td class="ta-r nowrap"><?= number_format((float) $r['unit'], 2, ',', '.') ?></td>
-        <td class="ta-r nowrap muted"><?= number_format((float) $r['fair'], 2, ',', '.') ?></td>
-        <td class="ta-r"><?= (int) $r['max'] ?></td>
-        <td class="ta-r"><?= (int) $r['cargo'] ?></td>
-        <td class="nowrap">
+        <td class="ta-r nowrap" data-th="Prezzo"><?= number_format((float) $r['unit'], 2, ',', '.') ?></td>
+        <td class="ta-r nowrap muted" data-th="Equo"><?= number_format((float) $r['fair'], 2, ',', '.') ?></td>
+        <td class="ta-r" data-th="Max"><?= (int) $r['max'] ?></td>
+        <td class="ta-r" data-th="A bordo"><?= (int) $r['cargo'] ?></td>
+        <td class="nowrap trade-cell">
           <?php if ($r['max'] > 0): ?>
           <form method="post" action="<?= e(url('/gioco/porto/scambio')) ?>" class="inline trade-form">
             <?= csrf_field() ?>
@@ -70,6 +71,7 @@ $used = \App\Game\Economy::holdsUsed($ship);
     <?php endforeach; ?>
     </tbody>
   </table>
+  </div>
 
   <div id="haggle-panel" class="haggle-panel" hidden>
     <h2><span class="sec-ic">💬</span> Contrattazione — <span id="hg-title"></span></h2>

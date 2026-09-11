@@ -44,20 +44,24 @@ $U = e(url('/gioco/contratti'));
     <?php endif; ?>
 
     <h2><span class="sec-ic">✍️</span> Pubblica un contratto<?= partial('help', ['key' => 'contratti.pubblica']) ?></h2>
-    <form method="post" action="<?= $U ?>" class="row">
-      <?= csrf_field() ?><input type="hidden" name="op" value="bounty">
-      <label>Taglia su <input type="text" name="target" placeholder="handle"></label>
-      <label>Ricompensa <input type="number" name="reward" min="500" value="1000" class="qty"></label>
-      <button class="btn xs danger" type="submit">Metti taglia</button>
-    </form>
-    <form method="post" action="<?= $U ?>" class="row">
-      <?= csrf_field() ?><input type="hidden" name="op" value="delivery">
-      <label>Consegna <select name="commodity"><option value="ore">⛏️ Minerale</option><option value="organics">🌿 Organico</option><option value="equipment">🔧 Equip.</option></select></label>
-      <label>Qta <input type="number" name="qty" min="1" value="100" class="qty"></label>
-      <label>al settore <input type="number" name="sector" min="1" value="1" class="qty"></label>
-      <label>Ricompensa <input type="number" name="reward" min="500" value="2000" class="qty"></label>
-      <button class="btn xs" type="submit">Pubblica</button>
-    </form>
+    <div class="upg-grid">
+      <form method="post" action="<?= $U ?>" class="row">
+        <?= csrf_field() ?><input type="hidden" name="op" value="bounty">
+        <p class="buy-subhead" style="margin:0">Taglia su un comandante</p>
+        <label>Bersaglio <input type="text" name="target" placeholder="handle"></label>
+        <label>Ricompensa <input type="number" name="reward" min="500" value="1000" class="qty"></label>
+        <button class="btn xs danger" type="submit">Metti taglia</button>
+      </form>
+      <form method="post" action="<?= $U ?>" class="row">
+        <?= csrf_field() ?><input type="hidden" name="op" value="delivery">
+        <p class="buy-subhead" style="margin:0">Richiesta di consegna</p>
+        <label>Merce <select name="commodity"><option value="ore">⛏️ Minerale</option><option value="organics">🌿 Organico</option><option value="equipment">🔧 Equip.</option></select></label>
+        <label>Quantità <input type="number" name="qty" min="1" value="100" class="qty"></label>
+        <label>Al settore <input type="number" name="sector" min="1" value="1" class="qty"></label>
+        <label>Ricompensa <input type="number" name="reward" min="500" value="2000" class="qty"></label>
+        <button class="btn xs" type="submit">Pubblica</button>
+      </form>
+    </div>
   </section>
 
   <section class="panel">

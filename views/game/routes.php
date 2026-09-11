@@ -17,21 +17,23 @@
 <div class="game-grid">
   <section class="panel">
     <h1><span class="sec-ic">🧭</span> Ultimi spostamenti<?= partial('help', ['key' => 'registro.spostamenti']) ?></h1>
-    <table class="tbl compact">
+    <div class="table-wrap">
+    <table class="tbl compact rows">
       <thead><tr><th>Quando</th><th>Da → A</th><th>Modo</th><th class="ta-r">TL</th><th></th></tr></thead>
       <tbody>
       <?php foreach ($recent as $r): ?>
         <tr>
-          <td><?= e(fmt_dt($r['at'])) ?></td>
-          <td><?= (int) $r['from'] ?> → <strong><?= (int) $r['to'] ?></strong> <?= $r['to_name'] ? '<small>' . e($r['to_name']) . '</small>' : '' ?></td>
-          <td><?= e($r['mode']) ?></td>
-          <td class="ta-r"><?= (int) $r['turns'] ?></td>
+          <td class="rowtitle"><?= e(fmt_dt($r['at'])) ?> · <?= (int) $r['from'] ?> →
+            <strong><?= (int) $r['to'] ?></strong> <?= $r['to_name'] ? '<small>' . e($r['to_name']) . '</small>' : '' ?></td>
+          <td data-th="Modo"><?= e($r['mode']) ?></td>
+          <td class="ta-r" data-th="Turni"><?= (int) $r['turns'] ?></td>
           <td class="ta-r"><a class="btn xs ghost" href="<?= e(url('/gioco/rotta?to=' . $r['to'])) ?>">Rotta</a></td>
         </tr>
       <?php endforeach; ?>
       <?php if ($recent === []): ?><tr><td colspan="5" class="hint">Nessuno spostamento.</td></tr><?php endif; ?>
       </tbody>
     </table>
+    </div>
   </section>
 
   <section class="panel">
