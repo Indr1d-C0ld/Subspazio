@@ -89,7 +89,7 @@
     <?php endif; ?>
 
     <form method="post" action="<?= e(url('/gioco/corp/esci')) ?>" class="inline" style="margin-top:1rem"
-          onsubmit="return confirm('Lasciare la corporazione?')">
+          data-confirm="Lasciare la corporazione?">
       <?= csrf_field() ?><button class="btn xs danger" type="submit">Lascia la corporazione</button>
     </form>
   <?php endif; ?>

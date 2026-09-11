@@ -16,10 +16,28 @@
     inp.focus();
   });
 
-  // Evita doppi invii sui form (approvazioni, login…).
+  // Invio dei form: conferma/prompt dichiarativi + blocco doppi invii.
+  // La CSP (script-src 'self') non ammette onsubmit inline: i form che
+  // servivano una conferma usano data-confirm="testo"; quelli che
+  // raccoglievano un motivo via prompt() usano data-prompt-field="name"
+  // (+ data-prompt-message facoltativo).
   document.addEventListener('submit', (ev) => {
     const form = ev.target;
     if (!(form instanceof HTMLFormElement)) return;
+
+    const confirmMsg = form.dataset.confirm;
+    if (confirmMsg && !window.confirm(confirmMsg)) {
+      ev.preventDefault();
+      return;
+    }
+
+    const promptField = form.dataset.promptField;
+    if (promptField) {
+      const input = form.querySelector(`[name="${promptField}"]`);
+      if (input) input.value = window.prompt(form.dataset.promptMessage || '') || '';
+    }
+
+    // Evita doppi invii (approvazioni, login…).
     const btn = form.querySelector('button[type="submit"], button:not([type])');
     if (btn) {
       setTimeout(() => { btn.disabled = true; btn.dataset.busy = '1'; }, 0);

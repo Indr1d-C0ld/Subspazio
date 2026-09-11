@@ -76,7 +76,7 @@ $C = static fn (string $k = '') => e(url('/admin/gioco')) . ($k ? '#' . $k : '')
       <label>Quanti <input type="number" name="n" min="1" max="50" value="5" class="qty"></label>
       <button class="btn xs" type="submit">Spawn</button>
     </form>
-    <form method="post" action="<?= e(url('/admin/gioco/npc')) ?>" class="row" onsubmit="return confirm('Eliminare gli NPC?')">
+    <form method="post" action="<?= e(url('/admin/gioco/npc')) ?>" class="row" data-confirm="Eliminare gli NPC?">
       <?= csrf_field() ?><input type="hidden" name="op" value="purge">
       <label>Purga <select name="kind"><option value="all">tutti</option><option value="ferrengi">Ferrengi</option><option value="pirate">Pirati</option><option value="trader">Mercanti</option></select></label>
       <button class="btn xs danger" type="submit">Purga</button>
@@ -87,7 +87,7 @@ $C = static fn (string $k = '') => e(url('/admin/gioco')) . ($k ? '#' . $k : '')
 <section class="panel" id="universo">
   <h2>Universo</h2>
   <form method="post" action="<?= e(url('/admin/gioco/bigbang')) ?>" class="row"
-        onsubmit="return confirm('BIG BANG: rigenera universo e porti, riporta tutti allo StarDock. Procedere?')">
+        data-confirm="BIG BANG: rigenera universo e porti, riporta tutti allo StarDock. Procedere?">
     <?= csrf_field() ?>
     <label>Conferma (digita <code>SUBSPAZIO</code>) <input type="text" name="confirm" autocomplete="off"></label>
     <button class="btn xs danger" type="submit">BIG BANG</button>
@@ -102,7 +102,7 @@ $C = static fn (string $k = '') => e(url('/admin/gioco')) . ($k ? '#' . $k : '')
      tutti i comandanti ripartono da zero (crediti/turni/esperienza), navi e pianeti azzerati.
      I traguardi restano. Universo rigenerato solo se spunti l'opzione.</p>
   <form method="post" action="<?= e(url('/admin/gioco/stagione')) ?>" class="row"
-        onsubmit="return confirm('Chiudere la stagione <?= (int) $season['number'] ?>? Reset globale.')">
+        data-confirm="Chiudere la stagione <?= (int) $season['number'] ?>? Reset globale.">
     <?= csrf_field() ?>
     <label>Conferma (digita <code>CHIUDI</code>) <input type="text" name="confirm" autocomplete="off"></label>
     <label class="chk"><input type="checkbox" name="regen" value="1"> rigenera anche l'universo</label>
@@ -197,7 +197,7 @@ $C = static fn (string $k = '') => e(url('/admin/gioco')) . ($k ? '#' . $k : '')
                 <label>turni (vuoto=lascia) <input type="number" name="turns" value="" class="qty"></label>
                 <button class="btn xs" type="submit">Applica</button>
               </form>
-              <form method="post" action="<?= e(url('/admin/gioco/giocatore')) ?>" class="row" onsubmit="return confirm('Azzerare il comandante <?= e($p['handle']) ?>? (verra' ricreato al prossimo accesso)')">
+              <form method="post" action="<?= e(url('/admin/gioco/giocatore')) ?>" class="row" data-confirm="Azzerare il comandante <?= e($p['handle']) ?>? (verrà ricreato al prossimo accesso)">
                 <?= csrf_field() ?><input type="hidden" name="player_id" value="<?= (int) $p['id'] ?>"><input type="hidden" name="op" value="reset">
                 <button class="btn xs danger" type="submit">Azzera comandante</button>
               </form>

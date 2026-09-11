@@ -38,7 +38,7 @@ $badge = static fn (string $s): string => match ($s) {
               <?= csrf_field() ?><button class="btn xs">Approva</button>
             </form>
             <form method="post" action="<?= e(url('/admin/utenti/' . $p['id'] . '/rifiuta')) ?>" class="inline"
-                  onsubmit="return confirm('Rifiutare ed eliminare la richiesta di @<?= e($p['username']) ?>?')">
+                  data-confirm="Rifiutare ed eliminare la richiesta di @<?= e($p['username']) ?>?">
               <?= csrf_field() ?><button class="btn xs danger">Rifiuta</button>
             </form>
           </td>
@@ -69,7 +69,7 @@ $badge = static fn (string $s): string => match ($s) {
               <?= csrf_field() ?><button class="btn xs">Approva</button>
             </form>
             <form method="post" action="<?= e(url('/admin/media/' . $m['id'] . '/rifiuta')) ?>" class="inline"
-                  onsubmit="this.querySelector('[name=note]').value = prompt('Motivo del rifiuto (opzionale):') || '';">
+                  data-prompt-field="note" data-prompt-message="Motivo del rifiuto (opzionale):">
               <?= csrf_field() ?>
               <input type="hidden" name="note" value="">
               <button class="btn xs danger">Rifiuta</button>

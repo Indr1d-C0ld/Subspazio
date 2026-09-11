@@ -128,7 +128,7 @@ $u = url('/gioco/pianeta/' . (int) $p['id']);
   <?php elseif ($here && !$own): ?>
   <h2><span class="sec-ic">💥</span> Assalto<?= partial('help', ['key' => 'pianeta.assalto']) ?></h2>
   <form method="post" action="<?= e($u . '/attacca') ?>" class="row"
-        onsubmit="return confirm('Attaccare il pianeta? Colpo pesante all\'allineamento.')">
+        data-confirm="Attaccare il pianeta? Colpo pesante all'allineamento.">
     <?= csrf_field() ?>
     <label>Caccia <input type="number" name="fighters" min="0" value="0" class="qty" title="0 = tutti"></label>
     <label><input type="checkbox" name="bombard" value="1"> bombarda i coloni</label>

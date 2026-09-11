@@ -35,7 +35,7 @@
 
   <?php if ((int) $ship['genesis'] > 0): ?>
     <form method="post" action="<?= e(url('/gioco/genesi')) ?>" class="row" style="margin-top:1rem"
-          onsubmit="return confirm('Lanciare un siluro Genesi qui?')">
+          data-confirm="Lanciare un siluro Genesi qui?">
       <?= csrf_field() ?>
       <button class="btn" type="submit">Lancia siluro Genesi (crea un pianeta)</button>
     </form>

@@ -64,7 +64,7 @@ $card = function (array $o) use ($SK, $now, $at_dock, $slots, $counts, $loyLvl) 
           </form>
         <?php endif; ?>
         <form method="post" action="<?= e(url('/gioco/equipaggio/congeda')) ?>" class="inline"
-              onsubmit="return confirm('Congedare <?= e(addslashes($o['name'])) ?>? È definitivo.')">
+              data-confirm="Congedare <?= e($o['name']) ?>? È definitivo.">
           <?= csrf_field() ?><input type="hidden" name="officer" value="<?= (int) $o['id'] ?>">
           <button class="btn xs ghost" type="submit">Congeda</button>
         </form>

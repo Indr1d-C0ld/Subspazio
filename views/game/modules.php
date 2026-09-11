@@ -123,7 +123,7 @@ foreach ($installed as $m) {
               <?php endif; ?>
             <?php endif; ?>
             <form method="post" action="<?= e(url('/gioco/moduli/smonta')) ?>" class="inline"
-                  onsubmit="return confirm('Smontare <?= e(addslashes($it['name'])) ?> per <?= (int) $it['base_salvage'] ?> Leghe?')">
+                  data-confirm="Smontare <?= e($it['name']) ?> per <?= (int) $it['base_salvage'] ?> Leghe?">
               <?= csrf_field() ?><input type="hidden" name="item" value="<?= (int) $it['id'] ?>">
               <button class="btn xs ghost" type="submit">Smonta (+<?= (int) $it['base_salvage'] ?>)</button>
             </form>
@@ -150,7 +150,7 @@ foreach ($installed as $m) {
         <span class="rarity rarity-<?= e($j['rarity']) ?>"><?= e($j['item_name']) ?></span>
         <span class="mut"><?= $j['ready'] ? '✓ ' : '⚙ ' ?><?= e($when) ?></span>
         <form method="post" action="<?= e(url('/gioco/moduli/annulla-lavoro')) ?>" class="inline"
-              onsubmit="return confirm('Annullare il lavoro? I materiali tornano indietro, i turni no.')">
+              data-confirm="Annullare il lavoro? I materiali tornano indietro, i turni no.">
           <?= csrf_field() ?><input type="hidden" name="job" value="<?= (int) $j['id'] ?>">
           <button class="btn xs ghost" type="submit">Annulla</button>
         </form>

@@ -149,7 +149,7 @@ $isPod    = ($ship['type_key'] ?? '') === 'escape_pod';
 
       <?php if ($pe !== null || $ap !== null): ?>
       <form method="post" action="<?= e(url('/gioco/profilo/media/rimuovi')) ?>" class="inline"
-            onsubmit="return confirm('Rimuovere questa immagine?')">
+            data-confirm="Rimuovere questa immagine?">
         <?= csrf_field() ?>
         <input type="hidden" name="id" value="<?= (int) ($pe['id'] ?? $ap['id']) ?>">
         <button type="submit" class="btn xs ghost">Rimuovi<?= $pe !== null ? ' la richiesta' : '' ?></button>

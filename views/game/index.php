@@ -452,7 +452,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
 
       <?php if (!empty($look['port']) && (int) $look['port']['class'] !== 0): ?>
       <form method="post" action="<?= e(url('/gioco/attacca/porto')) ?>" class="row"
-            onsubmit="return confirm('Assaltare il porto? Crollo di allineamento garantito.')">
+            data-confirm="Assaltare il porto? Crollo di allineamento garantito.">
         <?= csrf_field() ?>
         <label>Assalta il porto · Caccia <input type="number" name="fighters" min="0" value="0" class="qty" title="0 = tutti"></label>
         <button class="btn xs danger" type="submit">Assalta</button>
