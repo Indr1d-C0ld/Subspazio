@@ -110,6 +110,9 @@ dopo ogni cluster.
 | **Aiuto contestuale «?»** — `Help` + partial su ~55 intestazioni; v2: `help.js` (tendina `position:fixed` mai tagliata) + icona «?» a dimensione fissa | fatto — 2026-09-11 |
 | **Pass di coerenza UI** — icona `.sec-ic` su ogni `<h1>/<h2>/<summary>` di gioco (~85); profilo senza sagome di nave; stemmi 18→28 | fatto — 2026-09-11 |
 | **fix FedNews** — doppio bollettino ravvicinato (e2e distruttivo vs cron) | fatto — 2026-09-11 |
+| **Audit UI responsivo** — tabelle a schede sotto 820px, form riordinati in schede (Cantiere, Porto, Classifica, Contratti, Corp, Codex, Registri) | fatto — 2026-09-11 |
+| **fix onsubmit inline** — 14 form CSP-morti convertiti a `data-confirm`/`data-prompt-field` delegati | fatto — 2026-09-11 |
+| **Stemma di flotta casuale ai nuovi comandanti** — prima tutti nascevano con lo stesso stemma di default | fatto — 2026-09-11 |
 | **C — resta** | NPC nominati ricorrenti · operazioni a tempo · anomalia della stagione |
 | **Coerenza distanze/tempi** — discussa 2026-09-11 (analisi sotto). **Accantonata su decisione dell'utente**: nessuna delle leve A/B/C/E viene perseguita. |
 | **#2 — Combattimento B1: tipi d'arma con profilo** | ~~scartato~~ — non si fa: snatura il combattimento (nessuna agency nel momento, morra cinese a info nascosta con pochi giocatori, superficie di bilanciamento enorme). In alternativa, se in futuro si vuole texture d'arma: un solo asse «penetrazione scudi» (S). I tipi d'arma veri hanno senso solo con le classi di nave (tema D). |
@@ -256,6 +259,22 @@ aspettare le classi di nave del tema D.
   `data-prompt-field`/`data-prompt-message` (→ `prompt()`, scrive nel
   campo). Tutti i 14 form convertiti; verificato con test funzionali
   headless (`dispatchEvent` + mock di `confirm`/`prompt`). `sw.js` → v44.
+
+### feat — stemma di flotta casuale ai nuovi comandanti (2026-09-11)
+
+- Prima ogni giocatore nasceva con `players.crest = NULL`, che
+  `Identity::crest()` fa ricadere sempre sullo stesso default (`delta`)
+  finché non lo si personalizza dal Profilo: tutti i comandanti nuovi si
+  presentavano identici in classifica/plancia/liste.
+- `Identity::randomCrest()` pesca uno stemma a caso fra i 28 curati.
+  `PlayerService::ensureForUser()` lo passa all'`INSERT` del nuovo
+  giocatore invece di lasciare la colonna `NULL`. Chi personalizza dal
+  Profilo sovrascrive normalmente questo valore iniziale.
+- Backfill una tantum sul live per i comandanti già registrati con
+  `crest` ancora `NULL` (mai personalizzato); chi lo aveva già scelto non
+  è stato toccato.
+- e2e `scratchpad/test_crest_random.php` (8 check, utenti/giocatori/navi
+  usa-e-getta ripuliti a fine test).
 
 ### Rifiniture identità/UI — dettaglio di quanto consegnato
 

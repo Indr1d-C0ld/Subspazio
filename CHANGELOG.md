@@ -4,6 +4,28 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-11 — Stemma di flotta casuale ai nuovi comandanti
+
+Ogni nuovo giocatore aveva `players.crest = NULL`, che `Identity::crest()`
+fa ricadere sempre sullo stesso stemma di default (`delta`) finché non lo
+si personalizza dal Profilo — tutti i comandanti nuovi si presentavano
+identici in classifica, plancia e liste.
+
+- **[src/Game/Identity.php](src/Game/Identity.php)** — `randomCrest()`:
+  pesca uno stemma a caso fra i 28 curati.
+- **[src/Game/PlayerService.php](src/Game/PlayerService.php)** —
+  `ensureForUser()`: l'`INSERT` del nuovo giocatore valorizza ora
+  `players.crest` con `Identity::randomCrest()` invece di lasciarlo
+  `NULL`. Chi carica un avatar o sceglie un altro stemma dal Profilo
+  sovrascrive normalmente questo valore iniziale.
+- **Backfill una tantum** sul live: i comandanti già registrati con
+  `crest` ancora `NULL` (mai personalizzato) hanno ricevuto uno stemma
+  casuale; chi lo aveva già scelto non è stato toccato.
+- e2e `scratchpad/test_crest_random.php`: `randomCrest()` sempre valido e
+  vario su 100 tiri; `ensureForUser()` assegna un crest valido e diverso
+  fra più creazioni (con utenti/giocatori/navi usa-e-getta, ripuliti a
+  fine test).
+
 ## 2026-09-11 — Confirm/prompt sui form: da `onsubmit` inline (morti) a delegati
 
 La CSP del sito (`script-src 'self'`) blocca ogni `onsubmit` inline: 13 form
