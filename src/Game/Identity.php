@@ -40,6 +40,12 @@ final class Identity
     ];
     public const DEFAULT_CREST = 'delta';
 
+    /** Uno stemma a caso fra i curati — assegnato ai nuovi comandanti alla creazione. */
+    public static function randomCrest(): string
+    {
+        return self::CRESTS[array_rand(self::CRESTS)];
+    }
+
     /** Etichette leggibili degli stemmi astratti. */
     public const CREST_LABELS = [
         'delta' => 'Delta', 'orbita' => 'Orbita', 'stella' => 'Stella', 'corona' => 'Corona',

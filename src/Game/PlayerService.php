@@ -74,9 +74,9 @@ final class PlayerService
         try {
             $protectHours = GameConfig::int('newbie.protect_hours', 48);
             Database::run(
-                'INSERT INTO players (user_id, handle, sector_id, credits, turns, turns_reset_on, protected_until)
-                 VALUES (?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? HOUR))',
-                [(int) $user['id'], $handle, $stardock, $startCredits, $perDay, $today, $protectHours]
+                'INSERT INTO players (user_id, handle, sector_id, credits, turns, turns_reset_on, protected_until, crest)
+                 VALUES (?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? HOUR), ?)',
+                [(int) $user['id'], $handle, $stardock, $startCredits, $perDay, $today, $protectHours, Identity::randomCrest()]
             );
             $playerId = Database::lastInsertId();
 
