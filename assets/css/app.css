@@ -646,16 +646,19 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 .cfg-group .tbl th { background: transparent; }
 .cfg-group input[type=text] { width: 14rem; padding: .25rem .45rem; border-radius: 6px; }
 .cfg-group input.qty, .cfg-group select { padding: .25rem .45rem; border-radius: 6px; }
-.inline-details { display: inline-block; }
+.inline-details { display: inline-block; position: relative; }
 .inline-details > summary { display: inline-block; list-style: none; }
 .inline-details > summary::-webkit-details-marker { display: none; }
 .mod-more {
-  position: absolute; z-index: 20;
+  position: absolute; z-index: 20; top: 100%; right: 0;
+  width: max-content; max-width: min(90vw, 30rem);
+  white-space: normal;
   background: linear-gradient(180deg, rgba(16,26,44,.99), rgba(12,20,34,.99));
   border: 1px solid var(--line); border-radius: 8px; padding: .7rem;
   box-shadow: 0 12px 40px -8px rgba(0,0,0,.8); margin-top: .3rem;
 }
-.mod-more .row { margin: .3rem 0; }
+.mod-more .row { display: flex; align-items: end; gap: .5rem; flex-wrap: wrap; margin: .3rem 0; }
+.mod-more label { display: flex; flex-direction: column; gap: .25rem; font-size: .82rem; color: var(--ink-soft); }
 
 /* --------------------------------------------------------- Giornale di bordo --- */
 .shiplog-card .shiplog-head { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
@@ -1053,11 +1056,11 @@ h1 .help, h2 .help, h3 .help, summary .help, legend .help, .side-stats .help { f
   .statusbar > div:has(a) { grid-column: 1 / -1; }
 
   .row, .stack label, .tools .row, .upg-grid .row, .hg-controls,
-  .radio-compose .row, .combat-tools .row {
+  .radio-compose .row, .combat-tools .row, .mod-more .row {
     flex-direction: column; align-items: stretch; gap: .5rem;
   }
   .upg-grid { grid-template-columns: 1fr; }
-  .row label, .tools label, .upg-grid label, .hg-controls label { width: 100%; }
+  .row label, .tools label, .upg-grid label, .hg-controls label, .mod-more label { width: 100%; }
   input[type="text"], input[type="number"], input[type="email"], input[type="password"],
   select, textarea, .cfg-group input[type=text], .cfg-group input.qty,
   .tools input, .upg-grid input.qty, .hg-controls input, .qty {
@@ -1082,7 +1085,7 @@ h1 .help, h2 .help, h3 .help, summary .help, legend .help, .side-stats .help { f
 
   #toast-host { left: .5rem; right: .5rem; bottom: .5rem; max-width: none; }
   .alert-panel { position: fixed; left: .5rem; right: .5rem; top: 3.6rem; width: auto; max-height: 70vh; }
-  .mod-more { position: fixed; left: .8rem; right: .8rem; z-index: 30; }
+  .mod-more { position: fixed; left: .8rem; right: .8rem; top: auto; width: auto; max-width: none; z-index: 30; }
 
   /* canale+mittente su una riga, il testo del messaggio va a capo su tutta
      la larghezza invece di stiparsi nella colonna del canale (3rem) */
