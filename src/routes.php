@@ -234,6 +234,7 @@ $router->post('/admin/utenti/{id}/rifiuta', [AdminController::class, 'reject'], 
 $router->get('/admin/media/{id}/file', [MediaController::class, 'raw'], $admin);
 $router->post('/admin/media/{id}/approva', [AdminController::class, 'approveMedia'], $admin);
 $router->post('/admin/media/{id}/rifiuta', [AdminController::class, 'rejectMedia'], $admin);
+$router->post('/admin/media/{id}/rimuovi', [AdminController::class, 'removeMedia'], $admin);
 
 // Pannello di controllo del gioco
 $router->get('/admin/gioco', [AdminGameController::class, 'show'], $admin);

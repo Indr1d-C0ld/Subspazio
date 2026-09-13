@@ -16,6 +16,7 @@ final class AdminGameController
     {
         return Response::html(view('admin/game', [
             'title'   => 'Controllo gioco',
+            'wide'    => true,
             'stats'   => Admin::stats(),
             'config'  => Admin::configGrouped(),
             'players' => Admin::players(120),

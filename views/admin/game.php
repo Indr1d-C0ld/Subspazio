@@ -3,6 +3,7 @@
 /** @var array<string, list<array<string,mixed>>> $config */
 /** @var list<array<string,mixed>> $players */
 use App\Game\Identity;
+use App\Game\MediaAsset;
 $C = static fn (string $k = '') => e(url('/admin/gioco')) . ($k ? '#' . $k : '');
 ?>
 <section class="panel">
@@ -167,7 +168,7 @@ $C = static fn (string $k = '') => e(url('/admin/gioco')) . ($k ? '#' . $k : '')
         <td class="ta-r"><?= (int) $p['sector_id'] ?></td>
         <td class="ta-r"><?= number_format((int) $p['rating'], 0, ',', '.') ?></td>
         <td class="nowrap"><?= e(fmt_dt($p['last_seen_at'])) ?></td>
-        <td class="nowrap">
+        <td class="actions-wrap">
           <?php if ($p['role'] !== 'admin'): ?>
           <form method="post" action="<?= e(url('/admin/gioco/giocatore')) ?>" class="inline">
             <?= csrf_field() ?><input type="hidden" name="user_id" value="<?= (int) $p['user_id'] ?>"><input type="hidden" name="op" value="kick">
@@ -231,6 +232,21 @@ $C = static fn (string $k = '') => e(url('/admin/gioco')) . ($k ? '#' . $k : '')
                 <label>Protetto fino a <input type="datetime-local" name="protected_until" value="<?= $p['protected_until'] ? e(str_replace(' ', 'T', substr((string) $p['protected_until'], 0, 16))) : '' ?>"></label>
                 <button class="btn xs" type="submit">Salva profilo</button>
               </form>
+              <?php $media = MediaAsset::forOwner('player', (int) $p['id']); ?>
+              <?php foreach (['avatar' => 'Avatar', 'logo' => 'Logo di flotta'] as $kind => $label): ?>
+                <?php $cur = $media[$kind]['approved'] ?? null; ?>
+                <?php if ($cur): ?>
+                  <div class="media-mini">
+                    <img src="<?= e(url('/admin/media/' . (int) $cur['id'] . '/file')) ?>" alt="<?= e($label) ?> di <?= e($p['handle']) ?>">
+                    <span class="hint"><?= e($label) ?></span>
+                    <form method="post" action="<?= e(url('/admin/media/' . (int) $cur['id'] . '/rimuovi')) ?>" class="inline"
+                          data-confirm="Rimuovere <?= e(mb_strtolower($label)) ?> di <?= e($p['handle']) ?>? Tornerà allo stemma di default.">
+                      <?= csrf_field() ?><input type="hidden" name="back" value="/admin/gioco#giocatori">
+                      <button class="btn xs danger" type="submit">Rimuovi</button>
+                    </form>
+                  </div>
+                <?php endif; ?>
+              <?php endforeach; ?>
             </div>
           </details>
           <?php else: ?><span class="hint">—</span><?php endif; ?>

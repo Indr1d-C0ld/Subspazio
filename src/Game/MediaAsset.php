@@ -369,6 +369,23 @@ final class MediaAsset
         return ['ok' => true];
     }
 
+    /**
+     * Rimozione forzata da parte dell'admin: qualunque stato, qualunque
+     * proprietario (a differenza di reject(), che vale solo per i pending).
+     * @return array{ok:bool, error?:string, owner_type?:string, owner_id?:int, kind?:string}
+     */
+    public static function removeByAdmin(int $id): array
+    {
+        $a = self::get($id);
+        if ($a === null) {
+            return ['ok' => false, 'error' => 'Immagine non trovata.'];
+        }
+        self::purgeFile($a);
+        Database::run('DELETE FROM media_assets WHERE id = ?', [$id]);
+        self::$cache = [];
+        return ['ok' => true, 'owner_type' => (string) $a['owner_type'], 'owner_id' => (int) $a['owner_id'], 'kind' => (string) $a['kind']];
+    }
+
     // --- interni ---------------------------------------------------------
 
     /** @return array{data:string,w:int,h:int} */

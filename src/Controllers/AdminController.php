@@ -80,6 +80,22 @@ final class AdminController
         return redirect('/admin');
     }
 
+    /** Rimozione forzata (anche di un'immagine già approvata) — usata dal controllo giocatori. */
+    public function removeMedia(Request $request, string $id): Response
+    {
+        $res = MediaAsset::removeByAdmin((int) $id);
+        if ($res['ok']) {
+            $this->audit('media.remove', (int) $id, $request->ip(), [
+                'owner_type' => $res['owner_type'], 'owner_id' => $res['owner_id'], 'kind' => $res['kind'],
+            ]);
+            Session::flash('success', 'Immagine rimossa.');
+        } else {
+            Session::flash('error', $res['error'] ?? 'Operazione non riuscita.');
+        }
+        $back = $request->str('back');
+        return redirect($back !== '' ? $back : '/admin');
+    }
+
     public function approve(Request $request, string $id): Response
     {
         return $this->transition((int) $id, 'active', 'user.approve', $request, [

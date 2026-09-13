@@ -659,6 +659,18 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 }
 .mod-more .row { display: flex; align-items: end; gap: .5rem; flex-wrap: wrap; margin: .3rem 0; }
 .mod-more label { display: flex; flex-direction: column; gap: .25rem; font-size: .82rem; color: var(--ink-soft); }
+/* quando un pannello "Altro"/"Profilo" e' aperto su una riga vicina al fondo
+   della tabella, il pannello stesso non ha piu' spazio sotto e il popup resta
+   sospeso oltre il proprio sfondo: allunghiamo il pannello per contenerlo. */
+@media (min-width: 821px) {
+  #giocatori:has(.inline-details[open]) { padding-bottom: 24rem; }
+}
+/* colonna Azioni della tabella Giocatori: 4 controlli non ci stanno mai su
+   una riga sola senza sforare il pannello, quindi vanno a capo invece di
+   forzare l'intera tabella a espandersi oltre il proprio sfondo. */
+.actions-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; }
+.media-mini { display: flex; align-items: center; gap: .5rem; margin: .4rem 0; }
+.media-mini img { width: 2rem; height: 2rem; border-radius: 6px; object-fit: cover; border: 1px solid var(--line); }
 
 /* --------------------------------------------------------- Giornale di bordo --- */
 .shiplog-card .shiplog-head { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }

@@ -45,10 +45,14 @@ if (!function_exists('url')) {
 }
 
 if (!function_exists('asset')) {
+    /** URL di un file sotto assets/, con `?v=<mtime>` per invalidare la cache del browser a ogni deploy. */
     function asset(string $path): string
     {
         $base = (string) ($GLOBALS['__base_path'] ?? '');
-        return $base . '/assets/' . ltrim($path, '/');
+        $rel  = ltrim($path, '/');
+        $abs  = rtrim((string) ($GLOBALS['__project_root'] ?? ''), '/') . '/assets/' . $rel;
+        $v    = is_file($abs) ? (string) filemtime($abs) : null;
+        return $base . '/assets/' . $rel . ($v !== null ? '?v=' . $v : '');
     }
 }
 
