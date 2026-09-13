@@ -2,6 +2,7 @@
 /** @var array<string,mixed> $stats */
 /** @var array<string, list<array<string,mixed>>> $config */
 /** @var list<array<string,mixed>> $players */
+use App\Game\Identity;
 $C = static fn (string $k = '') => e(url('/admin/gioco')) . ($k ? '#' . $k : '');
 ?>
 <section class="panel">
@@ -200,6 +201,35 @@ $C = static fn (string $k = '') => e(url('/admin/gioco')) . ($k ? '#' . $k : '')
               <form method="post" action="<?= e(url('/admin/gioco/giocatore')) ?>" class="row" data-confirm="Azzerare il comandante <?= e($p['handle']) ?>? (verrà ricreato al prossimo accesso)">
                 <?= csrf_field() ?><input type="hidden" name="player_id" value="<?= (int) $p['id'] ?>"><input type="hidden" name="op" value="reset">
                 <button class="btn xs danger" type="submit">Azzera comandante</button>
+              </form>
+            </div>
+          </details>
+          <details class="inline-details">
+            <summary class="btn xs ghost">Profilo</summary>
+            <div class="mod-more">
+              <form method="post" action="<?= e(url('/admin/gioco/giocatore')) ?>" class="row">
+                <?= csrf_field() ?><input type="hidden" name="player_id" value="<?= (int) $p['id'] ?>"><input type="hidden" name="op" value="profile">
+                <label>Handle <input type="text" name="handle" value="<?= e($p['handle']) ?>" maxlength="24" class="qty"></label>
+                <label>Colore
+                  <select name="color">
+                    <option value="">(default)</option>
+                    <?php foreach (Identity::PALETTE as $hex => $label): ?>
+                      <option value="<?= e($hex) ?>" <?= $hex === (string) $p['color'] ? 'selected' : '' ?>><?= e($label) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </label>
+                <label>Stemma
+                  <select name="crest">
+                    <option value="">(default)</option>
+                    <?php foreach (Identity::CRESTS as $key): ?>
+                      <option value="<?= e($key) ?>" <?= $key === (string) $p['crest'] ? 'selected' : '' ?>><?= e(Identity::crestLabel($key)) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </label>
+                <label>Motto <input type="text" name="motto" value="<?= e((string) $p['motto']) ?>" maxlength="80" class="qty"></label>
+                <label>Allineamento <input type="number" name="alignment" value="<?= (int) $p['alignment'] ?>" class="qty"></label>
+                <label>Protetto fino a <input type="datetime-local" name="protected_until" value="<?= $p['protected_until'] ? e(str_replace(' ', 'T', substr((string) $p['protected_until'], 0, 16))) : '' ?>"></label>
+                <button class="btn xs" type="submit">Salva profilo</button>
               </form>
             </div>
           </details>

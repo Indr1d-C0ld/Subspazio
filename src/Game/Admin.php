@@ -153,7 +153,8 @@ final class Admin
     {
         return Database::all(
             "SELECT p.id, p.handle, p.credits, p.turns, p.sector_id, p.alignment, p.kills, p.deaths,
-                    p.rating, p.last_seen_at, u.id AS user_id, u.username, u.status, u.role
+                    p.rating, p.last_seen_at, p.color, p.crest, p.motto, p.protected_until,
+                    u.id AS user_id, u.username, u.status, u.role
              FROM players p JOIN users u ON u.id = p.user_id
              ORDER BY p.last_seen_at IS NULL, p.last_seen_at DESC
              LIMIT ?",
@@ -216,6 +217,71 @@ final class Admin
         $row = Database::first('SELECT handle FROM players WHERE id = ?', [$playerId]);
         Database::run('DELETE FROM players WHERE id = ?', [$playerId]);
         self::audit($actor, 'player.reset', ['player_id' => $playerId, 'handle' => $row['handle'] ?? null]);
+        return ['ok' => true];
+    }
+
+    /**
+     * Modifica del profilo di un giocatore da parte dell'admin: handle,
+     * identità (colore/stemma/motto), allineamento e protezione novizio.
+     * @param array<string,mixed> $in campi: handle, color, crest, motto, alignment, protected_until
+     */
+    public static function editProfile(int $actor, int $playerId, array $in): array
+    {
+        $player = Database::first('SELECT * FROM players WHERE id = ?', [$playerId]);
+        if ($player === null) {
+            return ['ok' => false, 'error' => 'Giocatore inesistente.'];
+        }
+
+        $handle = trim((string) ($in['handle'] ?? ''));
+        $color  = (string) ($in['color'] ?? '');
+        $crest  = (string) ($in['crest'] ?? '');
+        $motto  = trim((string) ($in['motto'] ?? ''));
+        $alignment = (int) ($in['alignment'] ?? $player['alignment']);
+        $protectedRaw = trim((string) ($in['protected_until'] ?? ''));
+
+        $errors = [];
+        if ($handle === '' || mb_strlen($handle) > 24 || !preg_match('/^[A-Za-z0-9_ -]+$/', $handle)) {
+            $errors[] = 'Handle non valido (max 24 caratteri: lettere, numeri, spazio, - o _).';
+        } elseif (Database::first('SELECT 1 x FROM players WHERE handle = ? AND id <> ?', [$handle, $playerId]) !== null) {
+            $errors[] = 'Handle già in uso.';
+        }
+        if ($color !== '' && !isset(Identity::PALETTE[$color])) {
+            $errors[] = 'Colore non valido.';
+        }
+        if ($crest !== '' && !Identity::validCrest($crest)) {
+            $errors[] = 'Stemma non valido.';
+        }
+        if (mb_strlen($motto) > 80) {
+            $errors[] = 'Il motto non può superare 80 caratteri.';
+        }
+        $protectedUntil = null;
+        if ($protectedRaw !== '') {
+            $ts = strtotime($protectedRaw);
+            if ($ts === false) {
+                $errors[] = 'Data di protezione non valida.';
+            } else {
+                $protectedUntil = date('Y-m-d H:i:s', $ts);
+            }
+        }
+        if ($errors !== []) {
+            return ['ok' => false, 'error' => implode(' ', $errors)];
+        }
+
+        Database::run(
+            'UPDATE players SET handle = ?, color = ?, crest = ?, motto = ?, alignment = ?, protected_until = ? WHERE id = ?',
+            [$handle, $color ?: null, $crest ?: null, $motto !== '' ? mb_substr($motto, 0, 80) : null, $alignment, $protectedUntil, $playerId]
+        );
+        self::audit($actor, 'player.profile', [
+            'player_id' => $playerId,
+            'before' => [
+                'handle' => $player['handle'], 'color' => $player['color'], 'crest' => $player['crest'],
+                'motto' => $player['motto'], 'alignment' => (int) $player['alignment'], 'protected_until' => $player['protected_until'],
+            ],
+            'after' => [
+                'handle' => $handle, 'color' => $color ?: null, 'crest' => $crest ?: null,
+                'motto' => $motto ?: null, 'alignment' => $alignment, 'protected_until' => $protectedUntil,
+            ],
+        ]);
         return ['ok' => true];
     }
 }

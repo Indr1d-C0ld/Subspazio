@@ -89,6 +89,14 @@ final class AdminGameController
             'activate'  => Admin::setStatus($actor, $uid, 'active'),
             'teleport'  => Admin::teleport($actor, $pid, $request->int('sector', 1)),
             'adjust'    => Admin::adjust($actor, $pid, $request->int('credits', 0), $request->str('turns') === '' ? null : $request->int('turns')),
+            'profile'   => Admin::editProfile($actor, $pid, [
+                'handle'          => $request->str('handle'),
+                'color'           => $request->str('color'),
+                'crest'           => $request->str('crest'),
+                'motto'           => $request->str('motto'),
+                'alignment'       => $request->int('alignment'),
+                'protected_until' => $request->str('protected_until'),
+            ]),
             'reset'     => Admin::resetPlayer($actor, $pid),
             default     => ['ok' => false, 'error' => 'Azione sconosciuta.'],
         };
