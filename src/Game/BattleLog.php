@@ -8,6 +8,11 @@ use App\Core\Database;
 
 /**
  * Registro dei combattimenti e replay round-per-round dal combat_log.
+ *
+ * Le battaglie non scadono: il giocatore puo' rivedere le ultime 40, per
+ * quanto vecchie siano. Una retention su `combat_log` cancellerebbe replay
+ * che i comandanti si aspettano di ritrovare — se un giorno servira'
+ * potarla, la finestra va scelta insieme a questo limite, non contro.
  */
 final class BattleLog
 {

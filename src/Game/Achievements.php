@@ -72,6 +72,16 @@ final class Achievements
             return [];
         }
         $bank = (int) (Database::first('SELECT balance FROM bank_accounts WHERE player_id = ?', [$playerId])['balance'] ?? 0);
+
+        // ATTENZIONE prima di introdurre una retention su trade_log o
+        // combat_log: 'trades' e 'ferrengi' qui sotto contano TUTTA la storia
+        // del comandante, non una finestra recente. Potare quelle tabelle
+        // revocherebbe traguardi gia' meritati, in silenzio e senza modo di
+        // ricostruirli. Se un giorno servira' liberare spazio, prima vanno
+        // materializzati dei contatori sul giocatore — come gia' accade per
+        // kills, deaths e port_busts, che infatti stanno su `players`.
+        // Valutato il 2026-09-15 (reperto 05): le due tabelle pesano 48 e
+        // 64 KB, non c'e' alcun motivo di toccarle.
         $ctx = [
             'wealth'    => (int) $p['credits'] + $bank,
             'kills'     => (int) $p['kills'],
