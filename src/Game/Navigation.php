@@ -449,6 +449,7 @@ final class Navigation
             'UPDATE sectors SET beacon = ?, beacon_by = ? WHERE id = ?',
             [$text === '' ? null : $text, (int) $player['id'], (int) $player['sector_id']]
         );
+        Universe::forget((int) $player['sector_id']);
         return ['ok' => true, 'beacon' => $text === '' ? null : $text];
     }
 

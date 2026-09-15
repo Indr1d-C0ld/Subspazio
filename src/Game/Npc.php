@@ -55,13 +55,27 @@ final class Npc
             'SELECT * FROM npcs WHERE last_move_at < DATE_SUB(NOW(), INTERVAL ? MINUTE) LIMIT 200',
             [$interval]
         );
-        $n = 0;
+        if ($due === []) {
+            return 0;
+        }
+
+        // Due letture per l'intero gruppo, non due per ogni NPC: prima le
+        // rotte uscenti dai settori di partenza, poi in un colpo solo i
+        // settori di destinazione, che restano in cache per le scelte sotto.
+        $rotte = Universe::warpsFromMany(array_map(static fn ($n) => (int) $n['sector_id'], $due));
+        $destinazioni = $rotte === [] ? [] : array_merge(...array_values($rotte));
+        if ($destinazioni !== []) {
+            Universe::sectorsMany($destinazioni);
+        }
+
+        $mosse = [];
         foreach ($due as $npc) {
-            $adj = Universe::warpsFrom((int) $npc['sector_id']);
+            $adj = $rotte[(int) $npc['sector_id']] ?? [];
             if ($adj === []) {
                 continue;
             }
-            // Ferrengi evitano la Fedspace; i mercanti preferiscono i settori con porto
+            // Ferrengi evitano la Fedspace; i mercanti preferiscono i settori con porto.
+            // Universe::sector() qui non tocca il database: la cache e' gia' calda.
             $pick = $adj[array_rand($adj)];
             if ($npc['kind'] === 'ferrengi') {
                 $safe = array_values(array_filter($adj, static fn ($s) => !(bool) (Universe::sector($s)['is_fedspace'] ?? 0)));
@@ -69,15 +83,44 @@ final class Npc
                     $pick = $safe[array_rand($safe)];
                 }
             } elseif ($npc['kind'] === 'trader') {
-                $ports = array_values(array_filter($adj, static fn ($s) => (int) (Database::first('SELECT has_port FROM sectors WHERE id = ?', [$s])['has_port'] ?? 0) === 1));
+                $ports = array_values(array_filter($adj, static fn ($s) => (int) (Universe::sector($s)['has_port'] ?? 0) === 1));
                 if ($ports !== [] && mt_rand(0, 1)) {
                     $pick = $ports[array_rand($ports)];
                 }
             }
-            Database::run('UPDATE npcs SET sector_id = ?, last_move_at = NOW() WHERE id = ?', [$pick, $npc['id']]);
-            $n++;
+            $mosse[(int) $npc['id']] = $pick;
         }
-        return $n;
+
+        return self::applicaMosse($mosse);
+    }
+
+    /**
+     * Scrive tutti gli spostamenti in una sola istruzione: con un centinaio di
+     * NPC, cento UPDATE separati erano la seconda meta' del costo del tick.
+     *
+     * @param array<int,int> $mosse id NPC => settore di destinazione
+     */
+    private static function applicaMosse(array $mosse): int
+    {
+        if ($mosse === []) {
+            return 0;
+        }
+
+        $casi = '';
+        $params = [];
+        foreach ($mosse as $npcId => $sectorId) {
+            $casi .= ' WHEN ? THEN ?';
+            $params[] = $npcId;
+            $params[] = $sectorId;
+        }
+        $in = implode(',', array_fill(0, count($mosse), '?'));
+        $params = [...$params, ...array_keys($mosse)];
+
+        Database::run(
+            "UPDATE npcs SET sector_id = CASE id{$casi} END, last_move_at = NOW() WHERE id IN ({$in})",
+            $params
+        );
+        return count($mosse);
     }
 
     private static function engage(): int

@@ -141,6 +141,7 @@ final class PortGenerator
                 Database::run("UPDATE sectors SET has_port = 1 WHERE id IN ($in)", $chunk);
             }
         }
+        Universe::forget(); // has_port è cambiato per mezza galassia
 
         // mercato regionale
         $regions = Database::all('SELECT id FROM regions');

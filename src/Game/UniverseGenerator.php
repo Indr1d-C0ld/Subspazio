@@ -115,6 +115,8 @@ final class UniverseGenerator
             }
         }
 
+        Universe::forget(); // settori e rotte sono stati rifatti da zero
+
         return [
             'sectors'        => $this->count,
             'warps_directed' => $directed,
