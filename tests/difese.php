@@ -26,12 +26,35 @@ return static function (): void {
 
     Esito::sezione('Reperto 12 — lo scudo novizio copre mine e caccia');
 
-    // Un settore fuori Fedspace, altrimenti onEnterSector esce subito.
+    // Il cron muove gli NPC ogni minuto: senza prendere il suo stesso lock,
+    // uno puo' entrare nel settore di prova a meta' test. Gli NPC NON sono
+    // coperti dallo scudo — per disegno — quindi ne distruggerebbero il
+    // novizio e il test fallirebbe a caso (visto accadere).
+    $lockFile = (string) ($GLOBALS['__project_root'] ?? dirname(__DIR__)) . '/storage/tick.lock';
+    $lock = fopen($lockFile, 'c');
+    $preso = false;
+    if ($lock !== false) {
+        for ($i = 0; $i < 100 && !$preso; $i++) {
+            $preso = flock($lock, LOCK_EX | LOCK_NB);
+            if (!$preso) {
+                usleep(100_000);
+            }
+        }
+    }
+    Esito::verifica('preso il lock del clock, gli NPC restano fermi', $preso);
+
+    // Un settore fuori Fedspace, senza NPC ne' pianeti: lo scudo non copre
+    // quelli, quindi falserebbero la prova sulle difese dei giocatori.
     $settore = Database::first(
-        'SELECT id FROM sectors WHERE is_fedspace = 0 AND is_stardock = 0 ORDER BY RAND() LIMIT 1'
+        "SELECT s.id FROM sectors s
+         WHERE s.is_fedspace = 0 AND s.is_stardock = 0
+           AND NOT EXISTS (SELECT 1 FROM npcs n WHERE n.sector_id = s.id)
+           AND NOT EXISTS (SELECT 1 FROM planets pl WHERE pl.sector_id = s.id AND pl.destroyed = 0)
+         ORDER BY RAND() LIMIT 1"
     );
     if ($settore === null) {
-        Esito::verifica('nessun settore fuori Fedspace: prova saltata', true);
+        Esito::verifica('nessun settore libero da NPC: prova saltata', true);
+        if ($lock !== false) { if ($preso) { flock($lock, LOCK_UN); } fclose($lock); }
         return;
     }
     $sid = (int) $settore['id'];
@@ -102,6 +125,12 @@ return static function (): void {
         }
         Database::run('DELETE FROM sector_mines WHERE owner_player_id = ?', [$idAgg]);
         Universe::forget();
+        if ($lock !== false) {
+            if ($preso) {
+                flock($lock, LOCK_UN);
+            }
+            fclose($lock);
+        }
     }
 
     // --- Reperto 09 -------------------------------------------------------
