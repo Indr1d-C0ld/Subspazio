@@ -96,6 +96,23 @@ return static function (): void {
     $da = (int) $partenza['id'];
     $vicini = Universe::warpsFrom($da);
 
+    // Il cron gira ogni minuto e muove gli NPC con lo stesso codice: senza
+    // prendere il suo stesso lock, puo' spostare quelli di prova un istante
+    // prima di noi e rendere il test intermittente (successo). Qui lo si
+    // tiene per la durata della prova, cosi' il tick vero salta il giro.
+    $lockFile = (string) ($GLOBALS['__project_root'] ?? dirname(__DIR__)) . '/storage/tick.lock';
+    $lock = fopen($lockFile, 'c');
+    $preso = false;
+    if ($lock !== false) {
+        for ($tentativi = 0; $tentativi < 100 && !$preso; $tentativi++) {
+            $preso = flock($lock, LOCK_EX | LOCK_NB);
+            if (!$preso) {
+                usleep(100_000); // il tick dura decine di ms: dieci secondi bastano
+            }
+        }
+    }
+    Esito::verifica('preso il lock del clock, il cron non interferisce', $preso);
+
     $npcIds = [];
     try {
         foreach (['trader', 'pirate', 'ferrengi'] as $i => $kind) {
@@ -159,6 +176,12 @@ return static function (): void {
             );
         }
         Universe::forget();
+        if ($lock !== false) {
+            if ($preso) {
+                flock($lock, LOCK_UN);
+            }
+            fclose($lock);
+        }
     }
 
     $rimasti = (int) (Database::first("SELECT COUNT(*) n FROM npcs WHERE name LIKE '__test\\_%'")['n'] ?? 0);

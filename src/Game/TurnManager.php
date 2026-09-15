@@ -55,13 +55,27 @@ final class TurnManager
         }
 
         $perDay = self::perDay();
-        Database::run(
-            'UPDATE players SET turns = ?, turns_reset_on = ? WHERE id = ?',
-            [$perDay, $today, $player['id']]
-        );
-        $player['turns'] = $perDay;
-        $player['turns_reset_on'] = $today;
-        return $player;
+
+        // La data va vincolata nella WHERE, non solo controllata sulla
+        // fotografia qui sopra: due richieste che entrano insieme nel cambio
+        // giorno la condividono, e la seconda — arrivata magari dopo che il
+        // giocatore aveva gia' speso dei turni — li rimetterebbe al massimo,
+        // restituendo di fatto quel che era stato consumato.
+        $applicato = Database::run(
+            'UPDATE players SET turns = ?, turns_reset_on = ?
+             WHERE id = ? AND (turns_reset_on IS NULL OR turns_reset_on < ?)',
+            [$perDay, $today, $player['id'], $today]
+        )->rowCount() > 0;
+
+        if ($applicato) {
+            $player['turns'] = $perDay;
+            $player['turns_reset_on'] = $today;
+            return $player;
+        }
+
+        // Il refill l'ha gia' fatto qualcun altro: la fotografia in mano e'
+        // vecchia per definizione, quindi si rilegge invece di inventare.
+        return Database::first('SELECT * FROM players WHERE id = ?', [$player['id']]) ?? $player;
     }
 
     /** Reset di massa, invocato dal tick. Ritorna il numero di giocatori aggiornati. */

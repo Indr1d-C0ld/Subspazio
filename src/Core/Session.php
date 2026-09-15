@@ -6,6 +6,16 @@ namespace App\Core;
 
 final class Session
 {
+    /**
+     * I flash che erano in attesa all'inizio di questa richiesta.
+     * Fotografati all'avvio ma NON ancora tolti dalla sessione: vengono
+     * scartati solo se qualcuno li legge davvero. Vedi consumaFlash().
+     *
+     * @var array<string,mixed>|null
+     */
+    private static ?array $flashInArrivo = null;
+    private static bool $flashConsumati = false;
+
     public static function start(): void
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
@@ -41,7 +51,7 @@ final class Session
             $_SESSION['_born'] = $now;
         }
 
-        self::startFlashCycle();
+        self::apriFlash();
     }
 
     public static function get(string $key, mixed $default = null): mixed
@@ -93,11 +103,35 @@ final class Session
 
     // --- Flash ---------------------------------------------------------------
 
-    /** Promuove i flash impostati nella richiesta precedente a "leggibili ora". */
-    private static function startFlashCycle(): void
+    /**
+     * Fotografa i flash in attesa senza toglierli dalla sessione.
+     *
+     * Prima il ciclo avanzava a ogni avvio di sessione, comprese le chiamate
+     * di sfondo: il polling della radio, che parte ogni sei secondi, poteva
+     * consumare il messaggio destinato alla pagina e farlo sparire — circa
+     * una azione su venti restava senza la propria conferma. Ora un flash si
+     * scarta solo quando qualcuno lo legge davvero, e una risposta JSON non
+     * legge nulla.
+     */
+    private static function apriFlash(): void
     {
-        $_SESSION['_flash_now']  = $_SESSION['_flash_next'] ?? [];
-        $_SESSION['_flash_next'] = [];
+        self::$flashInArrivo = $_SESSION['_flash_next'] ?? [];
+        self::$flashConsumati = false;
+    }
+
+    /**
+     * Toglie dalla sessione esattamente i flash fotografati all'avvio — non
+     * quelli scritti durante questa richiesta, che sono per la prossima.
+     */
+    private static function consumaFlash(): void
+    {
+        if (self::$flashConsumati) {
+            return;
+        }
+        self::$flashConsumati = true;
+        foreach (array_keys(self::$flashInArrivo ?? []) as $k) {
+            unset($_SESSION['_flash_next'][$k]);
+        }
     }
 
     public static function flash(string $key, mixed $value): void
@@ -107,12 +141,14 @@ final class Session
 
     public static function getFlash(string $key, mixed $default = null): mixed
     {
-        return $_SESSION['_flash_now'][$key] ?? $default;
+        self::consumaFlash();
+        return self::$flashInArrivo[$key] ?? $default;
     }
 
     public static function hasFlash(string $key): bool
     {
-        return isset($_SESSION['_flash_now'][$key]);
+        self::consumaFlash();
+        return isset(self::$flashInArrivo[$key]);
     }
 
     /** Conserva i vecchi input per il re-render dei form dopo un errore. */
@@ -124,6 +160,7 @@ final class Session
 
     public static function old(string $key, mixed $default = ''): mixed
     {
-        return $_SESSION['_flash_now']['_old'][$key] ?? $default;
+        self::consumaFlash();
+        return self::$flashInArrivo['_old'][$key] ?? $default;
     }
 }
