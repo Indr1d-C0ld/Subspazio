@@ -92,8 +92,7 @@ final class AdminController
         } else {
             Session::flash('error', $res['error'] ?? 'Operazione non riuscita.');
         }
-        $back = $request->str('back');
-        return redirect($back !== '' ? $back : '/admin');
+        return redirect(self::destinazioneSicura($request->str('back'), '/admin'));
     }
 
     public function approve(Request $request, string $id): Response
@@ -193,5 +192,23 @@ final class AdminController
         } catch (\Throwable) {
             // non bloccante
         }
+    }
+
+    /**
+     * Accetta una destinazione di ritorno solo se e' un percorso interno.
+     *
+     * Oggi `url()` antepone il prefisso di deploy, quindi un `//sito-esterno`
+     * diventerebbe comunque un percorso relativo e innocuo — ma e' l'ambiente
+     * a salvarci, non il codice: servita dalla radice del dominio, la stessa
+     * stringa diventerebbe un redirect aperto verso l'esterno. Meglio
+     * chiuderla mentre e' teorica.
+     */
+    private static function destinazioneSicura(string $back, string $ripiego): string
+    {
+        // una sola barra iniziale, niente "//host" ne' "/\host" ne' schemi
+        if ($back === '' || !preg_match('#^/[^/\\\\]#', $back) || str_contains($back, ':')) {
+            return $ripiego;
+        }
+        return $back;
     }
 }

@@ -764,6 +764,25 @@ final class Combat
         $mine = static fn (int $ownerId): bool => $ownerId === $pid || Corp::areMates($pid, $ownerId);
         $noEngage = Crew::consumePending($pid, 'no_engage') !== null;
 
+        // Lo scudo novizio vale contro tutto cio' che un altro comandante ha
+        // piazzato qui — cannoni planetari, mine, caccia schierati — non
+        // contro NPC e pericoli ambientali, che fanno parte del mestiere.
+        // Prima era verificato nel solo attacco diretto, e un nuovo arrivato
+        // poteva comunque perdere la nave entrando in un settore minato: una
+        // disparita' fra quel che l'aiuto prometteva e quel che accadeva.
+        $protetto = Ranks::isProtected($player);
+        $scudoAttivo = false;
+        $saltaPvP = static function (int $ownerId) use ($mine, $protetto, &$scudoAttivo): bool {
+            if ($mine($ownerId)) {
+                return true;
+            }
+            if ($protetto) {
+                $scudoAttivo = true;
+                return true;
+            }
+            return false;
+        };
+
         // hazard ambientali (Fase 9): radiazioni / tempeste ioniche all'ingresso
         $hz = SectorFeatures::entryHazards($player, $ship);
         $ship = $hz['ship'];
@@ -779,8 +798,9 @@ final class Combat
         ) as $pl) {
             $ownerId = (int) ($pl['owner_player_id'] ?? 0);
             $corpId = (int) ($pl['corp_id'] ?? 0);
-            $friendly = ($ownerId > 0 && $mine($ownerId))
-                || ($corpId > 0 && $corpId === (Corp::corpIdOf($pid) ?? -1));
+            $friendly = ($ownerId > 0 && $saltaPvP($ownerId))
+                || ($corpId > 0 && $corpId === (Corp::corpIdOf($pid) ?? -1))
+                || $protetto;
             if ($friendly) {
                 continue;
             }
@@ -802,7 +822,7 @@ final class Combat
 
         // 1) mine Armid
         foreach (Database::all("SELECT * FROM sector_mines WHERE sector_id = ? AND type = 'armid'", [$sectorId]) as $m) {
-            if ($mine((int) $m['owner_player_id'])) {
+            if ($saltaPvP((int) $m['owner_player_id'])) {
                 continue;
             }
             $dmg = (int) ceil((int) $m['qty'] * GameConfig::float('combat.armid_damage', 1.0));
@@ -823,7 +843,7 @@ final class Combat
         }
 
         // 1b) mine Limpet: si agganciano allo scafo (nessun danno), abilitano il tracking
-        foreach (Limpet::onEnter($pid, (int) $ship['id'], $sectorId, $mine) as $ev) {
+        foreach (Limpet::onEnter($pid, (int) $ship['id'], $sectorId, $saltaPvP) as $ev) {
             $events[] = $ev;
         }
 
@@ -839,7 +859,7 @@ final class Combat
             $events[] = 'Sotto occultamento scivoli oltre le forze schierate nel settore.';
         }
         foreach ($groups as $g) {
-            if ($mine((int) $g['owner_player_id']) || (int) $g['qty'] <= 0) {
+            if ($saltaPvP((int) $g['owner_player_id']) || (int) $g['qty'] <= 0) {
                 continue;
             }
             $hostile = false;
@@ -920,6 +940,13 @@ final class Combat
             if ($out['destroyed']) {
                 return ['events' => $events, 'player' => Database::first('SELECT * FROM players WHERE id = ?', [$pid]), 'ship' => PlayerService::ship((int) Database::first('SELECT ship_id FROM players WHERE id = ?', [$pid])['ship_id']), 'destroyed' => true];
             }
+        }
+
+        // Se lo scudo ha fermato qualcosa, va detto: un settore che "non fa
+        // niente" senza spiegazione si legge come un bug, non come una
+        // protezione.
+        if ($scudoAttivo) {
+            array_unshift($events, 'Protezione novizio: le forze schierate qui da altri comandanti non possono farti nulla.');
         }
 
         return [

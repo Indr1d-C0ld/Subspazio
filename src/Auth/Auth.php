@@ -102,7 +102,17 @@ final class Auth
             [$login, mb_strtolower($login)]
         );
 
-        if ($row === null || !password_verify($password, (string) $row['password_hash'])) {
+        if ($row === null) {
+            // Si verifica comunque, contro un hash fittizio. Saltare del
+            // tutto password_verify() rende la risposta molto piu' rapida per
+            // un utente inesistente, e con Argon2id a 64 MB la differenza si
+            // misura dall'esterno: diventa un modo per scoprire chi e'
+            // iscritto senza indovinarne la password.
+            password_verify($password, self::hashFittizio());
+            return ['ok' => false, 'code' => 'bad_credentials'];
+        }
+
+        if (!password_verify($password, (string) $row['password_hash'])) {
             return ['ok' => false, 'code' => 'bad_credentials'];
         }
 
@@ -222,5 +232,34 @@ final class Auth
             return ['memory_cost' => 65536, 'time_cost' => 4, 'threads' => 2];
         }
         return ['cost' => 12];
+    }
+
+    /**
+     * Hash di riferimento contro cui verificare quando l'utente non esiste,
+     * cosi' i due rami del login costano lo stesso.
+     *
+     * E' una costante, non un password_hash() calcolato al volo: sotto PHP-FPM
+     * ogni richiesta parte da zero, quindi calcolarlo avrebbe significato
+     * pagare un hash *piu'* una verifica — circa il doppio del ramo con
+     * l'utente vero, cioe' lo stesso oracolo di prima solo rovesciato
+     * (misurato: 370 ms contro 210).
+     *
+     * Generato con i parametri di algoOptions(); se quelli cambiano va
+     * rigenerato, altrimenti il pareggio si sfalsa:
+     *   php -r 'echo password_hash("x", PASSWORD_ARGON2ID,
+     *           ["memory_cost"=>65536,"time_cost"=>4,"threads"=>2]);'
+     */
+    private const HASH_FITTIZIO =
+        '$argon2id$v=19$m=65536,t=4,p=2$SXBsRjBOR0lQVlJFMkFxYg$dURK+3+I7qNlLqw0F8lP9ZHkiYzr8sXbBYoJ4S/BUHE';
+
+    private static function hashFittizio(): string
+    {
+        // Se l'ambiente non ha Argon2id, il confronto deve comunque costare
+        // qualcosa di paragonabile ai veri hash, che li' sarebbero bcrypt.
+        if (!defined('PASSWORD_ARGON2ID')) {
+            static $bcrypt = null;
+            return $bcrypt ??= password_hash('x', PASSWORD_DEFAULT, self::algoOptions());
+        }
+        return self::HASH_FITTIZIO;
     }
 }

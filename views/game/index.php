@@ -167,7 +167,9 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
      <strong><?= (int) $player['turns'] ?> turni</strong> al giorno.</p>
   <p>Ogni salto di <strong>Warp</strong> costa <?= (int) $ship['turns_per_warp'] ?> turno/i; il
      <strong>computer di bordo</strong> traccia rotte verso i settori esplorati. La Federazione (settori bassi)
-     è protetta. Sei sotto <strong>protezione novizio</strong> per le prime 48 ore. La
+     è protetta. Per le prime 48 ore sei sotto <strong>protezione novizio</strong>: nessun altro comandante
+     può attaccarti, e le mine e i caccia che ha schierato non ti toccano. NPC ostili e pericoli
+     ambientali restano invece affar tuo. La
      <a href="<?= e(url('/gioco/guida')) ?>">Guida rapida</a> spiega tutti i sistemi; qui sotto i tuoi primi passi.</p>
 </section>
 <?php endif; ?>

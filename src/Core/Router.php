@@ -107,13 +107,13 @@ final class Router
                 ? null
                 : $this->fail(403, 'Area riservata agli amministratori.'),
 
-            'player' => $this->ensurePlayer(),
+            'player' => $this->ensurePlayer($request),
 
             default => null,
         };
     }
 
-    private function ensurePlayer(): ?Response
+    private function ensurePlayer(Request $request): ?Response
     {
         $user = Auth::user();
         if ($user === null) {
@@ -133,6 +133,20 @@ final class Router
         \App\Game\Ctx::$player  = $bundle['player'];
         \App\Game\Ctx::$ship    = $bundle['ship'];
         \App\Game\Ctx::$created = $bundle['created'];
+
+        // Freno sulle azioni di gioco. Le sole richieste che cambiano stato
+        // vengono contate: la navigazione in lettura non consuma nulla. La
+        // soglia e' pensata larga — un umano non ci arriva nemmeno cliccando
+        // forsennatamente, mentre chi martella in automatico la sfonda subito.
+        // Serve soprattutto a non lasciare la superficie di gioco senza
+        // alcun argine: i turni limitano molte azioni, ma non tutte.
+        if ($request->method() !== 'GET') {
+            $perMinuto = \App\Game\GameConfig::int('limits.player_actions_per_min', 120);
+            if ($perMinuto > 0
+                && !\App\Core\RateLimiter::hit('azioni:' . (int) $bundle['player']['id'], $perMinuto, 60)) {
+                return $this->fail(429, 'Stai andando troppo in fretta: attendi qualche secondo e riprova.');
+            }
+        }
 
         try {
             \App\Core\Database::run(
