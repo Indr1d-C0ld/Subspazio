@@ -52,8 +52,26 @@ final class BlackMarket
         $alignHit = (int) floor(GameConfig::int('blackmarket.align_per_sale', -3) * max(1, $qty / 100));
         $alignHit = max($alignHit, -60);
 
-        Database::run("UPDATE ships SET {$col} = {$col} - ? WHERE id = ?", [$qty, $ship['id']]);
-        Database::run('UPDATE players SET credits = credits + ?, alignment = alignment + ? WHERE id = ?', [$total, $alignHit, $player['id']]);
+        // Merce e pagamento si muovono insieme: la stiva viene scalata solo se
+        // il carico c'e' davvero (il controllo sopra guarda una copia in
+        // memoria, che due richieste concorrenti condividerebbero) e i crediti
+        // seguono nella stessa transazione.
+        $pdo = Database::pdo();
+        $pdo->beginTransaction();
+        try {
+            if (!Wallet::takeFromShip((int) $ship['id'], $col, $qty)) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'Carico insufficiente.'];
+            }
+            Wallet::credit((int) $player['id'], ['credits' => $total]);
+            Wallet::charge((int) $player['id'], [], ['alignment' => $alignHit]);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
         Achievements::award((int) $player['id'], 'black_market');
 
         return ['ok' => true, 'total' => $total, 'unit' => round($unit, 2), 'align' => $alignHit];
@@ -83,8 +101,21 @@ final class BlackMarket
             if ((int) $player['credits'] < $unit) {
                 return ['ok' => false, 'error' => "Servono {$unit} cr."];
             }
-            Database::run('UPDATE players SET credits = credits - ?, alignment = alignment + ? WHERE id = ?', [$unit, $alignBuy, $player['id']]);
-            Database::run("UPDATE ships SET {$spec['col']} = 1 WHERE id = ?", [$ship['id']]);
+            $pdo = Database::pdo();
+            $pdo->beginTransaction();
+            try {
+                if (!Wallet::charge((int) $player['id'], ['credits' => $unit], ['alignment' => $alignBuy])) {
+                    $pdo->rollBack();
+                    return ['ok' => false, 'error' => "Servono {$unit} cr."];
+                }
+                Database::run("UPDATE ships SET {$spec['col']} = 1 WHERE id = ?", [$ship['id']]);
+                $pdo->commit();
+            } catch (\Throwable $e) {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
+                throw $e;
+            }
             Achievements::award((int) $player['id'], 'black_market');
             return ['ok' => true, 'cost' => $unit, 'align' => $alignBuy];
         }
@@ -98,8 +129,21 @@ final class BlackMarket
         if ((int) $player['credits'] < $cost) {
             return ['ok' => false, 'error' => "Servono {$cost} cr."];
         }
-        Database::run('UPDATE players SET credits = credits - ?, alignment = alignment + ? WHERE id = ?', [$cost, $alignBuy, $player['id']]);
-        Database::run("UPDATE ships SET {$spec['col']} = {$spec['col']} + ? WHERE id = ?", [$qty, $ship['id']]);
+        $pdo = Database::pdo();
+        $pdo->beginTransaction();
+        try {
+            if (!Wallet::charge((int) $player['id'], ['credits' => $cost], ['alignment' => $alignBuy])) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Servono {$cost} cr."];
+            }
+            Database::run("UPDATE ships SET {$spec['col']} = {$spec['col']} + ? WHERE id = ?", [$qty, $ship['id']]);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
         Achievements::award((int) $player['id'], 'black_market');
         return ['ok' => true, 'qty' => $qty, 'cost' => $cost, 'align' => $alignBuy];
     }
@@ -118,7 +162,9 @@ final class BlackMarket
         if ((int) $player['credits'] < $cost) {
             return ['ok' => false, 'error' => "Ripulire la taglia costa {$cost} cr."];
         }
-        Database::run('UPDATE players SET credits = credits - ?, bounty = 0 WHERE id = ?', [$cost, $player['id']]);
+        if (!Wallet::charge((int) $player['id'], ['credits' => $cost], [], ['bounty' => 0])) {
+            return ['ok' => false, 'error' => "Ripulire la taglia costa {$cost} cr."];
+        }
         Achievements::award((int) $player['id'], 'black_market');
         return ['ok' => true, 'cost' => $cost];
     }

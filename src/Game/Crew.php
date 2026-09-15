@@ -159,7 +159,10 @@ final class Crew
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
-            Database::run('UPDATE players SET credits = credits - ? WHERE id = ?', [(int) $c['cost'], (int) $player['id']]);
+            if (!Wallet::charge((int) $player['id'], ['credits' => (int) $c['cost']])) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Servono {$c['cost']} cr per l'ingaggio."];
+            }
             Database::run(
                 'INSERT INTO officers (player_id, name, role, archetype, level, xp, skills, assigned, origin)
                  VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?)',
@@ -226,8 +229,21 @@ final class Crew
         if ((int) $player['credits'] < $cost) {
             return ['ok' => false, 'error' => "Servono {$cost} cr per le cure."];
         }
-        Database::run('UPDATE players SET credits = credits - ? WHERE id = ?', [$cost, (int) $player['id']]);
-        Database::run("UPDATE officers SET status = 'active', ready_at = NULL WHERE id = ?", [$officerId]);
+        $pdo = Database::pdo();
+        $pdo->beginTransaction();
+        try {
+            if (!Wallet::charge((int) $player['id'], ['credits' => $cost])) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Servono {$cost} cr per le cure."];
+            }
+            Database::run("UPDATE officers SET status = 'active', ready_at = NULL WHERE id = ?", [$officerId]);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
         return ['ok' => true, 'name' => $o['name'], 'cost' => $cost];
     }
 

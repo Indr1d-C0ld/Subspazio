@@ -184,15 +184,22 @@ final class Industry
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
-            Database::run(
-                'UPDATE players SET turns = turns - ?, credits = credits - ?, components = components - ?, crystals = crystals - ?, salvage = salvage - ? WHERE id = ?',
-                [$cost, (int) $r['cost_credits'], (int) $r['cost_components'], (int) $r['cost_crystals'], (int) $r['cost_salvage'], (int) $player['id']]
-            );
-            if ((int) $r['cargo_ore'] + (int) $r['cargo_equ'] + (int) $r['cargo_org'] > 0) {
-                Database::run(
-                    'UPDATE ships SET hold_ore = hold_ore - ?, hold_equipment = hold_equipment - ?, hold_organics = hold_organics - ? WHERE id = ?',
-                    [(int) $r['cargo_ore'], (int) $r['cargo_equ'], (int) $r['cargo_org'], (int) $ship['id']]
-                );
+            $charged = Wallet::charge((int) $player['id'], [
+                'turns'      => $cost,
+                'credits'    => (int) $r['cost_credits'],
+                'components' => (int) $r['cost_components'],
+                'crystals'   => (int) $r['cost_crystals'],
+                'salvage'    => (int) $r['cost_salvage'],
+            ]);
+            if (!$charged) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'Risorse insufficienti per avviare la lavorazione.'];
+            }
+            foreach (['cargo_ore' => 'hold_ore', 'cargo_equ' => 'hold_equipment', 'cargo_org' => 'hold_organics'] as $k => $holdCol) {
+                if ((int) $r[$k] > 0 && !Wallet::takeFromShip((int) $ship['id'], $holdCol, (int) $r[$k])) {
+                    $pdo->rollBack();
+                    return ['ok' => false, 'error' => 'Materie prime insufficienti nelle stive.'];
+                }
             }
             Database::run(
                 "INSERT INTO craft_jobs (player_id, recipe_key, item_key, item_name, rarity, cost, ready_at)

@@ -213,8 +213,10 @@ final class Modules
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
-            Database::run('UPDATE players SET credits = credits - ?, salvage = salvage - ? WHERE id = ?',
-                [$costCr, $costMat, (int) $player['id']]);
+            if (!Wallet::charge((int) $player['id'], ['credits' => $costCr, 'salvage' => $costMat])) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Servono {$costCr} cr e {$costMat} Leghe di recupero."];
+            }
             Database::run('UPDATE player_items SET item_key = ?, rolled = ? WHERE id = ?',
                 [$target['ckey'], $rolled, $itemId]);
             $pdo->commit();

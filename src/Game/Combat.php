@@ -153,11 +153,15 @@ final class Combat
                     : GameConfig::int('combat.kill_evil_alignment', 15);
                 $bounty = (int) floor($loot * GameConfig::float('combat.bounty_pct', 0.1) * GameConfig::float('combat.bounty_mult', 1.0)) * ((int) $target['alignment'] >= 0 ? 1 : 0);
 
+                // Si prende quel che la vittima ha davvero adesso, non quel che
+                // aveva quando e' stato calcolato il bottino: l'attaccante
+                // incassa esattamente cio' che e' stato sottratto, cosi' lo
+                // scontro non puo' creare ne' distruggere crediti.
+                $loot = Wallet::seize((int) $target['id'], $loot);
                 Database::run(
                     'UPDATE players SET credits = credits + ?, kills = kills + 1, experience = experience + ?, alignment = alignment + ?, bounty = bounty + ? WHERE id = ?',
                     [$loot, $expGain, $align, $bounty, $atkPlayer['id']]
                 );
-                Database::run('UPDATE players SET credits = credits - ? WHERE id = ?', [$loot, $target['id']]);
                 $drops = Loot::rollKill((int) $atkPlayer['id'], 'pvp', $sectorId,
                     (float) ($tShip['combat_rating'] ?? 1.0), null, $target);
                 Crew::awardKillXp((int) $atkPlayer['id']);
@@ -842,11 +846,14 @@ final class Combat
 
             if ($g['mode'] === 'toll') {
                 $toll = (int) $g['toll'];
-                if ((int) $player['credits'] >= $toll) {
-                    Database::run('UPDATE players SET credits = credits - ? WHERE id = ?', [$toll, $pid]);
-                    Database::run('UPDATE players SET credits = credits + ? WHERE id = ?', [$toll, $g['owner_player_id']]);
+                // Trasferimento atomico: o il pedaggio passa di mano per intero
+                // o non si muove nulla. Due UPDATE indipendenti potevano far
+                // sparire crediti dall'economia a meta' strada.
+                if ($toll > 0 && Wallet::transfer($pid, (int) $g['owner_player_id'], $toll)) {
                     $player['credits'] = (int) $player['credits'] - $toll;
                     $events[] = "Pedaggio di {$toll} cr versato a {$g['handle']}.";
+                } elseif ($toll <= 0) {
+                    $events[] = "I caccia di {$g['handle']} ti lasciano passare senza pedaggio.";
                 } else {
                     $events[] = "Pedaggio non pagato: i caccia di {$g['handle']} aprono il fuoco.";
                     $hostile = true;

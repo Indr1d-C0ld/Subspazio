@@ -392,11 +392,13 @@ final class Economy
 
             $col = self::shipColumn($commodity);
             if ($action === 'buy') {
-                if ((int) $freshPlayer['credits'] < $total) {
+                // Il lock sul porto serializza gli acquisti fra loro, ma non
+                // contro le altre vie che spendono crediti (cantiere, mercato
+                // nero, cassa corp): il vincolo va ripetuto nell'UPDATE.
+                if (!Wallet::charge((int) $player['id'], ['credits' => $total])) {
                     $pdo->rollBack();
                     return ['ok' => false, 'error' => 'Crediti insufficienti.'];
                 }
-                Database::run('UPDATE players SET credits = credits - ? WHERE id = ?', [$total, $player['id']]);
                 Database::run("UPDATE ships SET {$col} = {$col} + ? WHERE id = ?", [$qty, $ship['id']]);
                 Database::run(
                     "UPDATE ports SET {$pf}_stock = {$pf}_stock - ?, credits = credits + ? WHERE id = ?",
@@ -407,8 +409,11 @@ final class Economy
                     $pdo->rollBack();
                     return ['ok' => false, 'error' => 'Il porto non ha credito sufficiente.'];
                 }
-                Database::run('UPDATE players SET credits = credits + ? WHERE id = ?', [$total, $player['id']]);
-                Database::run("UPDATE ships SET {$col} = {$col} - ? WHERE id = ?", [$qty, $ship['id']]);
+                if (!Wallet::takeFromShip((int) $ship['id'], $col, $qty)) {
+                    $pdo->rollBack();
+                    return ['ok' => false, 'error' => 'Carico insufficiente.'];
+                }
+                Wallet::credit((int) $player['id'], ['credits' => $total]);
                 Database::run(
                     "UPDATE ports SET {$pf}_stock = {$pf}_stock + ?, credits = credits - ? WHERE id = ?",
                     [$qty, $total, $port['id']]

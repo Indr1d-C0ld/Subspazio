@@ -386,10 +386,21 @@ final class Planets
             }
         }
 
-        Database::run('UPDATE planets SET stock_ore = stock_ore - ?, stock_equ = stock_equ - ?, credits = GREATEST(0, credits - ?), citadel_upgrade_to = ?, citadel_ready_at = DATE_ADD(NOW(), INTERVAL ? HOUR) WHERE id = ?',
-            [$c['ore'], $c['equ'], min($treasury, $c['cr']), $nx['level'], $c['hours'], $planetId]);
-        if ($fromShip > 0) {
-            Database::run('UPDATE players SET credits = credits - ? WHERE id = ?', [$fromShip, $player['id']]);
+        $pdo = Database::pdo();
+        $pdo->beginTransaction();
+        try {
+            if ($fromShip > 0 && !Wallet::charge((int) $player['id'], ['credits' => $fromShip])) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Servono {$fromShip} cr di tasca tua oltre alla tesoreria."];
+            }
+            Database::run('UPDATE planets SET stock_ore = stock_ore - ?, stock_equ = stock_equ - ?, credits = GREATEST(0, credits - ?), citadel_upgrade_to = ?, citadel_ready_at = DATE_ADD(NOW(), INTERVAL ? HOUR) WHERE id = ?',
+                [$c['ore'], $c['equ'], min($treasury, $c['cr']), $nx['level'], $c['hours'], $planetId]);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
         }
         return ['ok' => true, 'level' => $nx['level'], 'hours' => $c['hours']];
     }
@@ -413,9 +424,20 @@ final class Planets
         }
         $fromT = min((int) $p['credits'], $cr);
         $fromS = $cr - $fromT;
-        Database::run('UPDATE planets SET stock_equ = stock_equ - ?, credits = credits - ?, quasar_level = quasar_level + 1 WHERE id = ?', [$equ, $fromT, $planetId]);
-        if ($fromS > 0) {
-            Database::run('UPDATE players SET credits = credits - ? WHERE id = ?', [$fromS, $player['id']]);
+        $pdo = Database::pdo();
+        $pdo->beginTransaction();
+        try {
+            if ($fromS > 0 && !Wallet::charge((int) $player['id'], ['credits' => $fromS])) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Servono {$fromS} cr di tasca tua oltre alla tesoreria."];
+            }
+            Database::run('UPDATE planets SET stock_equ = stock_equ - ?, credits = credits - ?, quasar_level = quasar_level + 1 WHERE id = ?', [$equ, $fromT, $planetId]);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
         }
         return ['ok' => true, 'quasar_level' => (int) $p['quasar_level'] + 1];
     }

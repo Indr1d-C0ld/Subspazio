@@ -89,13 +89,29 @@ final class Contracts
             return ['ok' => false, 'error' => 'Tipo di contratto sconosciuto.'];
         }
 
-        Database::run('UPDATE players SET credits = credits - ? WHERE id = ?', [$reward, $pid]);
-        Database::run(
-            'INSERT INTO contracts (kind, issuer_player_id, target_player_id, commodity, qty, sector_id, reward, expires_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? HOUR))',
-            [$kind, $pid, $target, $commodity, $qty, $sector, $reward, $expiry]
-        );
-        $id = Database::lastInsertId();
+        // La ricompensa va in deposito adesso: addebito e contratto nascono
+        // insieme, altrimenti un errore fra i due lascerebbe un contratto
+        // scoperto o crediti trattenuti senza contropartita.
+        $pdo = Database::pdo();
+        $pdo->beginTransaction();
+        try {
+            if (!Wallet::charge($pid, ['credits' => $reward])) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Servono {$reward} cr da mettere in deposito."];
+            }
+            Database::run(
+                'INSERT INTO contracts (kind, issuer_player_id, target_player_id, commodity, qty, sector_id, reward, expires_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? HOUR))',
+                [$kind, $pid, $target, $commodity, $qty, $sector, $reward, $expiry]
+            );
+            $id = Database::lastInsertId();
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
 
         if ($kind === 'bounty') {
             Radio::system("TAGLIA: {$player['handle']} offre " . number_format($reward, 0, ',', '.') . " cr per la testa di un comandante.");

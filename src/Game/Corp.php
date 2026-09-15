@@ -156,7 +156,10 @@ final class Corp
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
-            Database::run('UPDATE players SET credits = credits - ? WHERE id = ?', [$cost, $player['id']]);
+            if (!Wallet::charge((int) $player['id'], ['credits' => $cost])) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Servono {$cost} cr per fondare una corporazione."];
+            }
             Database::run(
                 'INSERT INTO corporations (name, tag, password_hash, ceo_player_id, treasury) VALUES (?, ?, ?, ?, 0)',
                 [$name, $tag, password_hash($password, PASSWORD_DEFAULT), $player['id']]

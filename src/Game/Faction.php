@@ -208,14 +208,27 @@ final class Faction
             return ['ok' => false, 'error' => "Servono {$cost} cr per l'ammenda."];
         }
         $target = GameConfig::int('faction.amnesty_target', -30);
-        Database::run('UPDATE players SET credits = credits - ? WHERE id = ?', [$cost, (int) $player['id']]);
-        Database::run(
-            'INSERT INTO player_reputation (player_id, faction, value) VALUES (?, "fed", ?)
-             ON DUPLICATE KEY UPDATE value = ?',
-            [(int) $player['id'], $target, $target]
-        );
-        Database::run('INSERT INTO faction_log (player_id, faction, delta, reason) VALUES (?, "fed", 0, "ammenda pagata")',
-            [(int) $player['id']]);
+        $pdo = Database::pdo();
+        $pdo->beginTransaction();
+        try {
+            if (!Wallet::charge((int) $player['id'], ['credits' => $cost])) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Servono {$cost} cr per l'ammenda."];
+            }
+            Database::run(
+                'INSERT INTO player_reputation (player_id, faction, value) VALUES (?, "fed", ?)
+                 ON DUPLICATE KEY UPDATE value = ?',
+                [(int) $player['id'], $target, $target]
+            );
+            Database::run('INSERT INTO faction_log (player_id, faction, delta, reason) VALUES (?, "fed", 0, "ammenda pagata")',
+                [(int) $player['id']]);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
         return ['ok' => true, 'cost' => $cost];
     }
 
@@ -258,11 +271,24 @@ final class Faction
         if ((int) $player['credits'] < (int) $o['price']) {
             return ['ok' => false, 'error' => "Servono {$o['price']} cr."];
         }
-        Database::run('UPDATE players SET credits = credits - ? WHERE id = ?', [(int) $o['price'], (int) $player['id']]);
-        Database::run(
-            "INSERT INTO player_items (player_id, item_key, source) VALUES (?, ?, 'shop')",
-            [(int) $player['id'], $o['ref']]
-        );
+        $pdo = Database::pdo();
+        $pdo->beginTransaction();
+        try {
+            if (!Wallet::charge((int) $player['id'], ['credits' => (int) $o['price']])) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Servono {$o['price']} cr."];
+            }
+            Database::run(
+                "INSERT INTO player_items (player_id, item_key, source) VALUES (?, ?, 'shop')",
+                [(int) $player['id'], $o['ref']]
+            );
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
         return ['ok' => true, 'name' => $o['item_name'], 'cost' => (int) $o['price']];
     }
 

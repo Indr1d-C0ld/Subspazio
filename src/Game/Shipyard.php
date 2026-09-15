@@ -75,7 +75,10 @@ final class Shipyard
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
-            Database::run('UPDATE players SET credits = credits - ? WHERE id = ?', [$cost, $player['id']]);
+            if (!Wallet::charge((int) $player['id'], ['credits' => $cost])) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Servono {$cost} cr (permuta {$tradeIn})."];
+            }
             // caccia/scudi/scanner/transwarp/cloak NON si trasferiscono; sonde/mine/genesis si'.
             Database::run(
                 "UPDATE ships SET type_key = ?, name = ?, holds_total = ?, fighters = ?, shields = ?,
@@ -205,8 +208,21 @@ final class Shipyard
             return ['ok' => false, 'error' => "Servono {$cost} cr; puoi permetterti {$aff} unita\'."];
         }
 
-        Database::run('UPDATE players SET credits = credits - ? WHERE id = ?', [$cost, $player['id']]);
-        Database::run("UPDATE ships SET {$col} = {$col} + ? WHERE id = ?", [$qty, $ship['id']]);
+        $pdo = Database::pdo();
+        $pdo->beginTransaction();
+        try {
+            if (!Wallet::charge((int) $player['id'], ['credits' => $cost])) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Servono {$cost} cr."];
+            }
+            Database::run("UPDATE ships SET {$col} = {$col} + ? WHERE id = ?", [$qty, $ship['id']]);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
         return ['ok' => true, 'kind' => $kind, 'qty' => $qty, 'cost' => $cost];
     }
 
@@ -232,8 +248,9 @@ final class Shipyard
             if ((int) $player['credits'] < $unit) {
                 return ['ok' => false, 'error' => "Servono {$unit} cr."];
             }
-            Database::run('UPDATE players SET credits = credits - ? WHERE id = ?', [$unit, $player['id']]);
-            Database::run("UPDATE ships SET {$spec['col']} = 1 WHERE id = ?", [$ship['id']]);
+            if (!self::payAndApply((int) $player['id'], $unit, "UPDATE ships SET {$spec['col']} = 1 WHERE id = ?", [$ship['id']])) {
+                return ['ok' => false, 'error' => "Servono {$unit} cr."];
+            }
             return ['ok' => true, 'item' => $item, 'cost' => $unit];
         }
 
@@ -244,8 +261,9 @@ final class Shipyard
             if ((int) $player['credits'] < $unit) {
                 return ['ok' => false, 'error' => "Servono {$unit} cr."];
             }
-            Database::run('UPDATE players SET credits = credits - ? WHERE id = ?', [$unit, $player['id']]);
-            Database::run("UPDATE ships SET {$spec['col']} = ? WHERE id = ?", [$spec['enum'], $ship['id']]);
+            if (!self::payAndApply((int) $player['id'], $unit, "UPDATE ships SET {$spec['col']} = ? WHERE id = ?", [$spec['enum'], $ship['id']])) {
+                return ['ok' => false, 'error' => "Servono {$unit} cr."];
+            }
             return ['ok' => true, 'item' => $item, 'cost' => $unit];
         }
 
@@ -261,8 +279,35 @@ final class Shipyard
             $aff = $unit > 0 ? intdiv((int) $player['credits'], $unit) : 0;
             return ['ok' => false, 'error' => "Servono {$cost} cr; puoi permetterti {$aff}."];
         }
-        Database::run('UPDATE players SET credits = credits - ? WHERE id = ?', [$cost, $player['id']]);
-        Database::run("UPDATE ships SET {$spec['col']} = {$spec['col']} + ? WHERE id = ?", [$qty, $ship['id']]);
+        if (!self::payAndApply((int) $player['id'], $cost, "UPDATE ships SET {$spec['col']} = {$spec['col']} + ? WHERE id = ?", [$qty, $ship['id']])) {
+            return ['ok' => false, 'error' => "Servono {$cost} cr."];
+        }
         return ['ok' => true, 'item' => $item, 'qty' => $qty, 'cost' => $cost];
+    }
+
+    /**
+     * Paga e consegna come operazione unica: se il saldo non copre il prezzo
+     * non viene toccato nulla, e se la consegna fallisce l'addebito rientra.
+     *
+     * @param list<mixed> $params parametri della query di consegna
+     */
+    private static function payAndApply(int $playerId, int $cost, string $applySql, array $params): bool
+    {
+        $pdo = Database::pdo();
+        $pdo->beginTransaction();
+        try {
+            if (!Wallet::charge($playerId, ['credits' => $cost])) {
+                $pdo->rollBack();
+                return false;
+            }
+            Database::run($applySql, $params);
+            $pdo->commit();
+            return true;
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
     }
 }

@@ -165,8 +165,21 @@ final class Subsystems
         if ((int) $player['credits'] < $cost) {
             return ['ok' => false, 'error' => "Servono {$cost} cr per riparare {$broken} moduli."];
         }
-        Database::run('UPDATE ship_modules SET broken_at = NULL WHERE ship_id = ? AND broken_at IS NOT NULL', [$shipId]);
-        Database::run('UPDATE players SET credits = credits - ? WHERE id = ?', [$cost, (int) $player['id']]);
+        $pdo = Database::pdo();
+        $pdo->beginTransaction();
+        try {
+            if (!Wallet::charge((int) $player['id'], ['credits' => $cost])) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Servono {$cost} cr per riparare {$broken} moduli."];
+            }
+            Database::run('UPDATE ship_modules SET broken_at = NULL WHERE ship_id = ? AND broken_at IS NOT NULL', [$shipId]);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
         ShipLog::write((int) $player['id'], 'system', 'info', 'Riparazioni allo StarDock',
             "{$broken} moduli rimessi in linea per {$cost} cr.");
         return ['ok' => true, 'count' => $broken, 'cost' => $cost];
