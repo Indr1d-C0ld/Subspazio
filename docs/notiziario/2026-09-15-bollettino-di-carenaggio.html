@@ -1,0 +1,382 @@
+<title>Bollettino di Carenaggio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#05080d;
+    --panel:#0d1420;
+    --panel-2:#121b2c;
+    --panel-3:#0a1119;
+    --line:#22314a;
+    --line-soft:#1a2537;
+    --ink:#dfe7f2;
+    --ink-soft:#8fa2bd;
+    --ink-dim:#5c6d87;
+    --signal:#4fd8c4;
+    --signal-dim:#2f7d72;
+    --amber:#f2b84b;
+    --red:#e2685f;
+    --font-mono:'IBM Plex Mono',ui-monospace,'SF Mono',Consolas,monospace;
+    --font-sans:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(79,216,196,.07), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 0%, rgba(242,184,75,.05), transparent 55%),
+      var(--void);
+    color:var(--ink);
+    font-family:var(--font-sans);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  ::selection{background:var(--signal-dim);color:#fff;}
+
+  a{color:var(--signal);text-decoration:none;border-bottom:1px solid var(--signal-dim);}
+  a:hover{border-bottom-color:var(--signal);}
+  a:focus-visible, button:focus-visible{outline:2px solid var(--signal);outline-offset:3px;border-radius:2px;}
+
+  .wrap{max-width:46rem;margin:0 auto;padding:2.75rem 1.5rem 5rem;}
+
+  /* ---------- header / comm link ---------- */
+  .commhead{
+    display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;
+    padding-bottom:1.1rem;margin-bottom:1.1rem;border-bottom:1px solid var(--line);
+  }
+  .commhead .chan{
+    font-family:var(--font-mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--signal);display:flex;align-items:center;gap:.5rem;
+  }
+  .chan .dot{width:.4rem;height:.4rem;border-radius:50%;background:var(--signal);
+    box-shadow:0 0 0 3px rgba(79,216,196,.18);}
+  .commhead .stamp{
+    font-family:var(--font-mono);font-size:.72rem;color:var(--ink-dim);letter-spacing:.03em;text-align:right;
+  }
+
+  .kicker{
+    font-family:var(--font-mono);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink-soft);margin:0 0 .6rem;
+  }
+  h1{
+    font-family:var(--font-sans);font-weight:700;font-size:2.15rem;line-height:1.15;
+    margin:0 0 .5rem;color:#fff;text-wrap:balance;letter-spacing:-.01em;
+  }
+  .lede{color:var(--ink-soft);font-size:1.05rem;max-width:38rem;margin:0 0 0;}
+  .lede strong{color:var(--ink);font-weight:600;}
+
+  /* ---------- section ---------- */
+  .section{margin-top:3rem;}
+  .sec-head{
+    display:flex;align-items:baseline;gap:.75rem;margin-bottom:1.1rem;
+  }
+  .sec-tag{
+    font-family:var(--font-mono);font-size:.68rem;font-weight:600;letter-spacing:.12em;
+    color:var(--void);background:var(--signal);padding:.28rem .55rem;border-radius:3px;
+    white-space:nowrap;
+  }
+  .sec-tag.amber{background:var(--amber);}
+  .sec-head h2{
+    font-family:var(--font-sans);font-size:1.3rem;font-weight:600;margin:0;color:var(--ink);
+  }
+  .sec-note{font-family:var(--font-mono);font-size:.78rem;color:var(--ink-dim);margin:-.6rem 0 1.2rem;}
+
+  .entries{display:flex;flex-direction:column;gap:.6rem;}
+  .entry{
+    display:grid;grid-template-columns:5.6rem 1fr;gap:1.1rem;
+    padding:1rem 1.1rem;border:1px solid var(--line-soft);border-radius:10px;
+    background:linear-gradient(180deg, var(--panel), var(--panel-3));
+  }
+  .entry .glyph{
+    font-family:var(--font-mono);font-size:.68rem;color:var(--signal);letter-spacing:.05em;
+    padding-top:.15rem;white-space:nowrap;
+  }
+  .entry h3{margin:0 0 .3rem;font-size:1rem;font-weight:600;color:var(--ink);}
+  .entry p{margin:0;color:var(--ink-soft);font-size:.93rem;}
+  .entry p + p{margin-top:.45rem;}
+
+  @media (max-width:560px){
+    .entry{grid-template-columns:1fr;gap:.35rem;}
+    .entry .glyph{padding-top:0;}
+  }
+
+  /* ---------- repair log (fixes) ---------- */
+  .fixlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.7rem;}
+  .fixlist li{
+    display:flex;align-items:flex-start;gap:.7rem;
+    font-size:.93rem;color:var(--ink-soft);
+  }
+  .fixlist li::before{
+    content:'✓';font-family:var(--font-mono);color:var(--signal);font-weight:600;
+    flex:0 0 auto;line-height:1.6;
+  }
+  .fixlist .fix-text{flex:1 1 auto;min-width:0;}
+  .fixlist strong{color:var(--ink);font-weight:600;}
+
+  /* ---------- callout ---------- */
+  .callout{
+    margin-top:3rem;padding:1.4rem 1.5rem;border:1px solid var(--line);border-radius:12px;
+    background:var(--panel-2);position:relative;overflow:hidden;
+  }
+  .callout::before{
+    content:'';position:absolute;inset:0 auto 0 0;width:3px;
+    background:linear-gradient(180deg,var(--amber),var(--signal));
+  }
+  .callout h2{margin:0 0 .5rem;font-size:1.05rem;color:var(--ink);}
+  .callout p{margin:0 0 .8rem;color:var(--ink-soft);font-size:.94rem;}
+  .callout p:last-child{margin-bottom:0;}
+  .callout .btnrow{display:flex;gap:.7rem;flex-wrap:wrap;margin-top:1rem;}
+  .btn{
+    font-family:var(--font-mono);font-size:.78rem;letter-spacing:.03em;
+    padding:.6rem 1rem;border-radius:7px;border:1px solid var(--line);
+    color:var(--ink);background:var(--panel-3);border-bottom-width:1px;
+  }
+  .btn.primary{background:var(--signal);color:var(--void);border-color:var(--signal);font-weight:600;}
+
+  /* ---------- sign-off ---------- */
+  .signoff{
+    margin-top:3rem;padding-top:1.4rem;border-top:1px solid var(--line);
+    display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+    font-family:var(--font-mono);font-size:.78rem;color:var(--ink-dim);
+  }
+  .signoff .who{color:var(--ink-soft);}
+  .signoff .who b{color:var(--ink);font-weight:600;}
+
+  @media (prefers-reduced-motion:no-preference){
+    .entry, .callout{animation:rise .5s ease-out both;}
+    .section:nth-of-type(2) .entry{animation-delay:.02s;}
+    .section:nth-of-type(3) .entry{animation-delay:.03s;}
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  @media (prefers-reduced-motion:reduce){
+    .entry,.callout{animation:none;}
+  }
+
+  /* ---------- quadro strumenti (solo in questo numero: ci sono misure vere) ---------- */
+  .readout{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:1px;
+    background:var(--line-soft);border:1px solid var(--line-soft);border-radius:10px;
+    overflow:hidden;margin:2rem 0 0;
+  }
+  .readout div{background:linear-gradient(180deg,var(--panel),var(--panel-3));padding:1rem 1.1rem;}
+  .readout .v{
+    font-family:var(--font-mono);font-size:1.5rem;font-weight:600;color:var(--signal);
+    display:block;line-height:1.1;font-variant-numeric:tabular-nums;
+  }
+  .readout .v small{font-size:.9rem;color:var(--ink-soft);font-weight:400;}
+  .readout .k{
+    font-family:var(--font-mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink-dim);display:block;margin-top:.45rem;line-height:1.5;
+  }
+  @media print{ .readout div{background:var(--panel)!important;} }
+
+  /* ---------- stampa / PDF ---------- */
+  @media print {
+    html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+    body { background: var(--void) !important; animation: none; }
+    a { border-bottom-color: var(--signal-dim) !important; }
+
+    /* Chromium non rispetta in modo affidabile break-inside:avoid sui
+       contenitori grid/flex durante l'impaginazione: le schede tornano a un
+       layout a blocchi solo in stampa, che si spezza in modo prevedibile. */
+    .entry {
+      display: block; animation: none;
+      break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid;
+    }
+    .entry .glyph { display: block; margin: 0 0 .4rem; }
+
+    .callout {
+      display: block; animation: none;
+      break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid;
+    }
+    .callout .btnrow .btn { display: inline-block; margin: 0 .5rem .5rem 0; }
+
+    .fixlist li { display: block; break-inside: avoid; page-break-inside: avoid; }
+    .fixlist li::before { display: inline; margin-right: .5rem; }
+
+    /* Il quadro strumenti e' una griglia: stessa trappola delle schede, va
+       reso a blocchi anche lui o Chromium lo spezza a meta' pagina. */
+    .readout {
+      display: block; border: 1px solid var(--line-soft); border-radius: 10px; overflow: hidden;
+      break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid;
+    }
+    /* In colonne strette le etichette andrebbero a capo parola per parola:
+       in stampa il quadro diventa quattro righe, numero a sinistra. */
+    .readout div {
+      display: block; width: auto; padding: .55rem 1rem;
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .readout div:last-child { border-bottom: 0; }
+    .readout .v { display: inline-block; min-width: 8.5rem; font-size: 1.2rem; vertical-align: baseline; }
+    .readout .k { display: inline; margin: 0; }
+
+    .commhead, .sec-head { break-after: avoid; page-break-after: avoid; }
+    .signoff { break-before: avoid; page-break-before: avoid; }
+  }
+
+</style>
+
+<div class="wrap">
+
+  <div class="commhead">
+    <span class="chan"><span class="dot"></span>Canale Federazione · Bollettino di Carenaggio</span>
+    <span class="stamp">15/09/2026 · bacino StarDock</span>
+  </div>
+
+  <p class="kicker">Notiziario dello sviluppo — SubSpazio</p>
+  <h1>La flotta esce dal bacino di carenaggio</h1>
+  <p class="lede">Nessuna nuova rotta, nessun cannone in più: questa volta il lavoro è stato
+  tutto sotto il fasciame. Ogni sistema di bordo è passato sotto ispezione, uno per uno.
+  <strong>Ne escono una protezione più larga per i nuovi arrivati, un gioco che risponde
+  più in fretta, e conti di bordo a prova di manomissione.</strong></p>
+
+  <!-- ================= LA COSA CHE CAMBIA IN GIOCO ================= -->
+  <section class="section">
+    <div class="sec-head">
+      <span class="sec-tag">PONTE DI COMANDO</span>
+      <h2>Lo scudo dei nuovi arrivati ora protegge davvero</h2>
+    </div>
+    <p class="sec-note">L'unica modifica di questo ciclo che si vede dalla plancia — ed è a favore di chi comincia.</p>
+
+    <div class="entries">
+      <div class="entry">
+        <span class="glyph">// PRIME 48H</span>
+        <div>
+          <h3>Non solo gli attacchi diretti</h3>
+          <p>Finora la protezione novizio fermava un comandante che ti puntava addosso i caccia,
+          ma non le <strong>mine</strong> seminate da un veterano, né i <strong>caccia schierati</strong>
+          a presidio di un settore, né i <strong>cannoni Quasar</strong> di un pianeta fortificato.
+          Si poteva perdere la nave entrando in un settore sbagliato, con lo scudo attivo.</p>
+          <p>Da oggi lo scudo copre tutto ciò che un altro comandante ha piazzato là. E quando
+          ferma qualcosa te lo dice, invece di lasciarti attraversare un campo minato senza
+          capire perché non è successo nulla.</p>
+        </div>
+      </div>
+
+      <div class="entry">
+        <span class="glyph">// RESTA COSÌ</span>
+        <div>
+          <h3>Quello che lo scudo non copre, e non coprirà</h3>
+          <p>NPC ostili, pirati, Ferrengi, radiazioni e tempeste ioniche restano affar tuo
+          fin dal primo salto. Lo scudo è una tregua fra comandanti, non una passeggiata:
+          la frontiera resta pericolosa anche nelle prime quarantott'ore.</p>
+          <p>Il testo d'aiuto in plancia è stato riscritto per dire esattamente questo — prima
+          prometteva più di quanto mantenesse.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= QUADRO STRUMENTI ================= -->
+  <div class="readout">
+    <div><span class="v">95<small>s</small> → 32<small>ms</small></span>
+      <span class="k">il momento peggiore del ciclo di gioco</span></div>
+    <div><span class="v">12<small>/12</small></span>
+      <span class="k">punti deboli trovati e chiusi</span></div>
+    <div><span class="v">132</span>
+      <span class="k">controlli automatici a ogni modifica</span></div>
+    <div><span class="v">0</span>
+      <span class="k">conti di bordo risultati alterati</span></div>
+  </div>
+
+  <!-- ================= SALA MACCHINE ================= -->
+  <section class="section">
+    <div class="sec-head">
+      <span class="sec-tag">SALA MACCHINE</span>
+      <h2>Quello che non si vede, ma si sente</h2>
+    </div>
+
+    <div class="entries">
+      <div class="entry">
+        <span class="glyph">// TEMPI</span>
+        <div>
+          <h3>Il tempo di gioco non si ferma più</h3>
+          <p>Il ciclo che fa vivere la galassia — muove gli NPC, matura gli interessi, fa
+          crescere i coloni — ogni tanto arrancava. Il 6 settembre ci ha messo
+          <strong>95 secondi</strong> a chiudere un giro che ne ha sessanta a disposizione,
+          e il giro successivo è saltato: due minuti in cui la galassia, semplicemente,
+          non è andata avanti.</p>
+          <p>Il collo di bottiglia era nel modo in cui gli NPC sceglievano dove spostarsi.
+          Oggi lo stesso giro, con gli stessi novantuno NPC in movimento, si chiude in
+          <strong>trentadue millesimi di secondo</strong>.</p>
+        </div>
+      </div>
+
+      <div class="entry">
+        <span class="glyph">// CONTI</span>
+        <div>
+          <h3>I conti di bordo sono blindati</h3>
+          <p>Una revisione completa ha trovato alcuni modi in cui i registri di bordo
+          avrebbero potuto essere manipolati, con richieste inviate al momento giusto.
+          Sono stati chiusi <strong>tutti</strong>, dal Cantiere al mercato nero, dai
+          pedaggi ai bottini di guerra.</p>
+          <p>Vale la pena dirlo chiaramente: i registri sono stati controllati uno per uno,
+          e <strong>nessun conto risulta alterato</strong>. Erano falle mai usate da nessuno.</p>
+        </div>
+      </div>
+
+      <div class="entry">
+        <span class="glyph">// GUARDIA</span>
+        <div>
+          <h3>Un guasto non ferma più tutto</h3>
+          <p>Quando un sistema di bordo andava in avaria, si portava dietro tutti quelli
+          che venivano dopo: contratti in scadenza, classifiche e notiziario potevano
+          restare fermi per minuti senza che nessuno se ne accorgesse.</p>
+          <p>Adesso ogni sistema è compartimentato: uno che si guasta resta un guasto isolato,
+          viene segnalato, e gli altri continuano a girare.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= RIPARAZIONI ================= -->
+  <section class="section">
+    <div class="sec-head">
+      <span class="sec-tag amber">RIPARAZIONI DI BORDO</span>
+      <h2>Piccole cose che davano fastidio</h2>
+    </div>
+
+    <ul class="fixlist">
+      <li><span class="fix-text"><strong>I messaggi di conferma non spariscono più.</strong>
+      Capitava — circa una volta su venti — di completare un'azione e non vedersi dire nulla,
+      restando col dubbio che non fosse andata a buon fine. Era un messaggio che si perdeva
+      per strada, non l'azione.</span></li>
+
+      <li><span class="fix-text"><strong>I turni si ricaricano una volta sola.</strong>
+      Al cambio del giorno di gioco, in una finestra molto stretta, la ricarica poteva
+      ripetersi e restituire turni già spesi. Ora la pagina si gira una volta e basta.</span></li>
+
+      <li><span class="fix-text"><strong>La schermata di accesso non rivela più chi è iscritto.</strong>
+      Dal tempo di risposta era possibile capire se un nome esistesse, anche senza
+      indovinarne la password.</span></li>
+
+      <li><span class="fix-text"><strong>Un freno contro il martellamento automatico.</strong>
+      Le azioni di gioco hanno ora un limite di ritmo, tarato molto al di sopra di quanto
+      un comandante in carne e ossa possa cliccare: non te ne accorgerai. Se dovessi vedere
+      un avviso che ti invita ad attendere qualche secondo, ora sai da dove viene.</span></li>
+    </ul>
+  </section>
+
+  <!-- ================= CHIUSURA ================= -->
+  <div class="callout">
+    <h2>Perché raccontarvi un ciclo di manutenzione</h2>
+    <p>Un bollettino che non annuncia nuove meccaniche è una scelta insolita. Ma un universo
+    persistente vive di fiducia: sapere che i conti tornano, che il tempo di gioco scorre e
+    che chi comincia non viene falciato al terzo salto conta quanto una nuova classe di nave.</p>
+    <p>Le rotte nuove torneranno nel prossimo dispaccio. Questo era il turno della sala macchine.</p>
+    <div class="btnrow">
+      <a class="btn primary" href="https://SERVER-DI-GIOCO/subspazio/">Entra in SubSpazio →</a>
+      <a class="btn" href="mailto:subspazio@proton.me">Scrivi per informazioni</a>
+    </div>
+  </div>
+
+  <div class="signoff">
+    <span class="who">Trasmesso da <b>Lyra Venn</b> · Rete Comm della Flotta</span>
+    <span>FINE BOLLETTINO</span>
+  </div>
+
+</div>

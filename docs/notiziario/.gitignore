@@ -1,0 +1,2 @@
+# I PDF si rigenerano con ./genera-pdf.sh: niente binari nel repo.
+*.pdf

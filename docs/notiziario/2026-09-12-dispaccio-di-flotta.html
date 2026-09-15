@@ -1,0 +1,378 @@
+<title>Dispaccio di Flotta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#05080d;
+    --panel:#0d1420;
+    --panel-2:#121b2c;
+    --panel-3:#0a1119;
+    --line:#22314a;
+    --line-soft:#1a2537;
+    --ink:#dfe7f2;
+    --ink-soft:#8fa2bd;
+    --ink-dim:#5c6d87;
+    --signal:#4fd8c4;
+    --signal-dim:#2f7d72;
+    --amber:#f2b84b;
+    --red:#e2685f;
+    --font-mono:'IBM Plex Mono',ui-monospace,'SF Mono',Consolas,monospace;
+    --font-sans:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(79,216,196,.07), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 0%, rgba(242,184,75,.05), transparent 55%),
+      var(--void);
+    color:var(--ink);
+    font-family:var(--font-sans);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  ::selection{background:var(--signal-dim);color:#fff;}
+
+  a{color:var(--signal);text-decoration:none;border-bottom:1px solid var(--signal-dim);}
+  a:hover{border-bottom-color:var(--signal);}
+  a:focus-visible, button:focus-visible{outline:2px solid var(--signal);outline-offset:3px;border-radius:2px;}
+
+  .wrap{max-width:46rem;margin:0 auto;padding:2.75rem 1.5rem 5rem;}
+
+  /* ---------- header / comm link ---------- */
+  .commhead{
+    display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;
+    padding-bottom:1.1rem;margin-bottom:1.1rem;border-bottom:1px solid var(--line);
+  }
+  .commhead .chan{
+    font-family:var(--font-mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--signal);display:flex;align-items:center;gap:.5rem;
+  }
+  .chan .dot{width:.4rem;height:.4rem;border-radius:50%;background:var(--signal);
+    box-shadow:0 0 0 3px rgba(79,216,196,.18);}
+  .commhead .stamp{
+    font-family:var(--font-mono);font-size:.72rem;color:var(--ink-dim);letter-spacing:.03em;text-align:right;
+  }
+
+  .kicker{
+    font-family:var(--font-mono);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink-soft);margin:0 0 .6rem;
+  }
+  h1{
+    font-family:var(--font-sans);font-weight:700;font-size:2.15rem;line-height:1.15;
+    margin:0 0 .5rem;color:#fff;text-wrap:balance;letter-spacing:-.01em;
+  }
+  .lede{color:var(--ink-soft);font-size:1.05rem;max-width:38rem;margin:0 0 0;}
+  .lede strong{color:var(--ink);font-weight:600;}
+
+  /* ---------- section ---------- */
+  .section{margin-top:3rem;}
+  .sec-head{
+    display:flex;align-items:baseline;gap:.75rem;margin-bottom:1.1rem;
+  }
+  .sec-tag{
+    font-family:var(--font-mono);font-size:.68rem;font-weight:600;letter-spacing:.12em;
+    color:var(--void);background:var(--signal);padding:.28rem .55rem;border-radius:3px;
+    white-space:nowrap;
+  }
+  .sec-tag.amber{background:var(--amber);}
+  .sec-head h2{
+    font-family:var(--font-sans);font-size:1.3rem;font-weight:600;margin:0;color:var(--ink);
+  }
+  .sec-note{font-family:var(--font-mono);font-size:.78rem;color:var(--ink-dim);margin:-.6rem 0 1.2rem;}
+
+  .entries{display:flex;flex-direction:column;gap:.6rem;}
+  .entry{
+    display:grid;grid-template-columns:5.6rem 1fr;gap:1.1rem;
+    padding:1rem 1.1rem;border:1px solid var(--line-soft);border-radius:10px;
+    background:linear-gradient(180deg, var(--panel), var(--panel-3));
+  }
+  .entry .glyph{
+    font-family:var(--font-mono);font-size:.68rem;color:var(--signal);letter-spacing:.05em;
+    padding-top:.15rem;white-space:nowrap;
+  }
+  .entry h3{margin:0 0 .3rem;font-size:1rem;font-weight:600;color:var(--ink);}
+  .entry p{margin:0;color:var(--ink-soft);font-size:.93rem;}
+  .entry p + p{margin-top:.45rem;}
+
+  @media (max-width:560px){
+    .entry{grid-template-columns:1fr;gap:.35rem;}
+    .entry .glyph{padding-top:0;}
+  }
+
+  /* ---------- repair log (fixes) ---------- */
+  .fixlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.7rem;}
+  .fixlist li{
+    display:flex;align-items:flex-start;gap:.7rem;
+    font-size:.93rem;color:var(--ink-soft);
+  }
+  .fixlist li::before{
+    content:'✓';font-family:var(--font-mono);color:var(--signal);font-weight:600;
+    flex:0 0 auto;line-height:1.6;
+  }
+  .fixlist .fix-text{flex:1 1 auto;min-width:0;}
+  .fixlist strong{color:var(--ink);font-weight:600;}
+
+  /* ---------- callout ---------- */
+  .callout{
+    margin-top:3rem;padding:1.4rem 1.5rem;border:1px solid var(--line);border-radius:12px;
+    background:var(--panel-2);position:relative;overflow:hidden;
+  }
+  .callout::before{
+    content:'';position:absolute;inset:0 auto 0 0;width:3px;
+    background:linear-gradient(180deg,var(--amber),var(--signal));
+  }
+  .callout h2{margin:0 0 .5rem;font-size:1.05rem;color:var(--ink);}
+  .callout p{margin:0 0 .8rem;color:var(--ink-soft);font-size:.94rem;}
+  .callout p:last-child{margin-bottom:0;}
+  .callout .btnrow{display:flex;gap:.7rem;flex-wrap:wrap;margin-top:1rem;}
+  .btn{
+    font-family:var(--font-mono);font-size:.78rem;letter-spacing:.03em;
+    padding:.6rem 1rem;border-radius:7px;border:1px solid var(--line);
+    color:var(--ink);background:var(--panel-3);border-bottom-width:1px;
+  }
+  .btn.primary{background:var(--signal);color:var(--void);border-color:var(--signal);font-weight:600;}
+
+  /* ---------- sign-off ---------- */
+  .signoff{
+    margin-top:3rem;padding-top:1.4rem;border-top:1px solid var(--line);
+    display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+    font-family:var(--font-mono);font-size:.78rem;color:var(--ink-dim);
+  }
+  .signoff .who{color:var(--ink-soft);}
+  .signoff .who b{color:var(--ink);font-weight:600;}
+
+  @media (prefers-reduced-motion:no-preference){
+    .entry, .callout{animation:rise .5s ease-out both;}
+    .section:nth-of-type(2) .entry{animation-delay:.02s;}
+    .section:nth-of-type(3) .entry{animation-delay:.03s;}
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  @media (prefers-reduced-motion:reduce){
+    .entry,.callout{animation:none;}
+  }
+
+  /* ---------- stampa / PDF ---------- */
+  @media print {
+    html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { background: var(--void) !important; animation: none; }
+    a { border-bottom-color: var(--signal-dim) !important; }
+
+    /* Chromium non rispetta in modo affidabile break-inside:avoid sui
+       contenitori grid/flex durante l'impaginazione: le schede tornano a un
+       layout a blocchi solo in stampa, che si spezza in modo prevedibile. */
+    .entry {
+      display: block; animation: none;
+      break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid;
+    }
+    .entry .glyph { display: block; margin: 0 0 .4rem; }
+
+    .callout {
+      display: block; animation: none;
+      break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid;
+    }
+    .callout .btnrow .btn { display: inline-block; margin: 0 .5rem .5rem 0; }
+
+    .fixlist li { display: block; break-inside: avoid; page-break-inside: avoid; }
+    .fixlist li::before { display: inline; margin-right: .5rem; }
+
+    .commhead, .sec-head { break-after: avoid; page-break-after: avoid; }
+    .signoff { break-before: avoid; page-break-before: avoid; }
+  }
+</style>
+
+<div class="wrap">
+
+  <div class="commhead">
+    <span class="chan"><span class="dot"></span>Canale Federazione · Dispaccio di Flotta</span>
+    <span class="stamp">12/09/2026 · settore StarDock</span>
+  </div>
+
+  <p class="kicker">Notiziario dello sviluppo — SubSpazio</p>
+  <h1>Sette giorni di manovre: ecco cosa è cambiato in plancia</h1>
+  <p class="lede">Dal notiziario radiofonico ai dispositivi di occultamento, dalla griglia
+  di potenza alle nuove identità di comando: la settimana appena chiusa è stata la più densa
+  da quando il beta è aperto. <strong>Riepilogo per l'equipaggio — e per chi sta ancora
+  decidendo se salire a bordo.</strong></p>
+
+  <!-- ================= NUOVE MECCANICHE ================= -->
+  <section class="section">
+    <div class="sec-head">
+      <span class="sec-tag">NUOVE MANOVRE</span>
+      <h2>Cose che ora puoi fare in gioco</h2>
+    </div>
+    <div class="entries">
+
+      <div class="entry">
+        <div class="glyph">// ROTTA</div>
+        <div>
+          <h3>Incontri lungo la rotta</h3>
+          <p>A ogni salto, una piccola possibilità di imbattersi in qualcosa: relitti di
+          battaglia, pattuglie della Federazione, contrabbandieri Ferrengi, sonde precursori
+          e altro — dieci scenari diversi già in orbita. Alcune scelte mettono alla prova
+          l'abilità di un tuo ufficiale: rispondi in tempo, o l'occasione svanisce.</p>
+        </div>
+      </div>
+
+      <div class="entry">
+        <div class="glyph">// RADIO</div>
+        <div>
+          <h3>Il Notiziario della Federazione</h3>
+          <p>Ogni giorno un bollettino racconta lo stato reale della galassia — shock di
+          mercato, il comandante in vetta, nuove colonie, l'ultima vittoria registrata —
+          letto da un conduttore che cambia a rotazione. Lo trovi in Radio, e un'anteprima
+          ti aspetta appena entri in plancia.</p>
+        </div>
+      </div>
+
+      <div class="entry">
+        <div class="glyph">// CANTIERE</div>
+        <div>
+          <h3>Occultamento e Transwarp, finalmente vivi</h3>
+          <p>Due dispositivi in vendita da tempo che non facevano nulla ora funzionano
+          davvero. <strong>Occultamento:</strong> sparisci dai sensori — ti vede solo chi ha
+          uno scanner olografico nel tuo settore — ma sei più lento e ti riveli aprendo il
+          fuoco. <strong>Transwarp:</strong> salto istantaneo verso un settore già esplorato,
+          rotte ignorate, a turni fissi.</p>
+        </div>
+      </div>
+
+      <div class="entry">
+        <div class="glyph">// ARMAMENTI</div>
+        <div>
+          <h3>Le mine Limpet ora tracciano davvero</h3>
+          <p>Si agganciano allo scafo di chi ci passa sopra — nessun danno — e ti mostrano
+          la sua posizione in tempo reale sulla mappa, finché non raggiunge lo StarDock.</p>
+        </div>
+      </div>
+
+      <div class="entry">
+        <div class="glyph">// SISTEMI</div>
+        <div>
+          <h3>Griglia di potenza e guasti ai sottosistemi</h3>
+          <p>Ridistribuisci le otto tacche del reattore fra scudi, armi, motori e sensori:
+          più forza in un canale, meno negli altri. E ora un colpo pesante può mandare
+          fuori uso un sottosistema — si ripara allo StarDock, con l'Ingegnere di bordo, o
+          da solo dopo qualche ora.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= IDENTITÀ ================= -->
+  <section class="section">
+    <div class="sec-head">
+      <span class="sec-tag amber">IDENTITÀ DI COMANDO</span>
+      <h2>Come ti presenti alla galassia</h2>
+    </div>
+    <div class="entries">
+
+      <div class="entry">
+        <div class="glyph">// PROFILO</div>
+        <div>
+          <h3>Colore, stemma, motto, nave</h3>
+          <p>Personalizzi il colore d'accento, uno stemma, un motto e il nome/registro della
+          tua nave — compaiono in plancia, classifica e in ogni lista dove ti incontrano gli
+          altri comandanti. Ora la scelta è fra <strong>28 stemmi</strong>, non più 18.</p>
+        </div>
+      </div>
+
+      <div class="entry">
+        <div class="glyph">// FLOTTA</div>
+        <div>
+          <h3>Avatar personale e logo di flotta</h3>
+          <p>Puoi caricare un'immagine per il tuo comandante e un logo per la tua flotta —
+          passano da un controllo prima di diventare visibili agli altri, come per le
+          iscrizioni.</p>
+        </div>
+      </div>
+
+      <div class="entry">
+        <div class="glyph">// CANTIERE</div>
+        <div>
+          <h3>Le navi hanno una faccia</h3>
+          <p>Ogni modello — dalla Capsula di salvataggio all'Imperial StarShip — ha ora
+          un'illustrazione vera al posto della sagoma generica, visibile in plancia,
+          classifica e catalogo.</p>
+        </div>
+      </div>
+
+      <div class="entry">
+        <div class="glyph">// ARRIVI</div>
+        <div>
+          <h3>Chi arriva ora nasce già diverso</h3>
+          <p>I nuovi comandanti ricevono uno stemma <strong>a caso</strong> fra i 28 fin dal
+          primo momento, invece di presentarsi tutti identici finché non lo personalizzano.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= INTERFACCIA ================= -->
+  <section class="section">
+    <div class="sec-head">
+      <span class="sec-tag">PLANCIA</span>
+      <h2>Più chiara, ovunque la guardi</h2>
+    </div>
+    <p class="sec-note">Passata di revisione su ogni schermata di gioco, da computer e da telefono.</p>
+    <div class="entries">
+
+      <div class="entry">
+        <div class="glyph">// AIUTO</div>
+        <div>
+          <h3>Un «?» spiega ogni sezione</h3>
+          <p>Ogni pannello e ogni meccanica ha ora un piccolo punto d'aiuto che ne racconta
+          lo scopo — utile se torni dopo una pausa, indispensabile se sei nuovo.</p>
+        </div>
+      </div>
+
+      <div class="entry">
+        <div class="glyph">// SCHERMO</div>
+        <div>
+          <h3>Ordine su tutte le pagine, anche da telefono</h3>
+          <p>Tabelle, moduli e pulsanti sono stati riordinati ovunque sforavano o si
+          confondevano — dal Cantiere al Porto, dalla Classifica ai Contratti. Niente più
+          colonne fuori schermo su mobile.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= FIX ================= -->
+  <div class="callout">
+    <h2>Riparazioni di bordo</h2>
+    <p>Tre difetti individuati e corretti in settimana:</p>
+    <ul class="fixlist">
+      <li><span class="fix-text"><strong>Il notiziario non esce più in doppia copia</strong> di seguito.</span></li>
+      <li><span class="fix-text"><strong>I pulsanti di conferma ora chiedono davvero conferma</strong> prima di
+        eseguire azioni delicate (congedare un ufficiale, lasciare la corporazione,
+        smontare un modulo…).</span></li>
+      <li><span class="fix-text"><strong>Avatar e loghi caricati sono al sicuro</strong> anche in caso di riavvio
+        del server.</span></li>
+    </ul>
+  </div>
+
+  <!-- ================= CTA ================= -->
+  <div class="callout" style="margin-top:1.2rem">
+    <h2>Non sei ancora a bordo?</h2>
+    <p>SubSpazio è in beta aperta: un universo persistente da esplorare, commerciare,
+    combattere e colonizzare — ispirato alle door BBS di TradeWars 2002, reinventato per il
+    web. L'accesso richiede solo una registrazione (con approvazione rapida).</p>
+    <div class="btnrow">
+      <a class="btn primary" href="https://SERVER-DI-GIOCO/subspazio/" style="border-bottom:none">Entra in SubSpazio →</a>
+      <a class="btn" href="mailto:subspazio@proton.me" style="border-bottom:none">Scrivi per informazioni</a>
+    </div>
+  </div>
+
+  <div class="signoff">
+    <span class="who">Trasmesso da <b>Lyra Venn</b> · Rete Comm della Flotta</span>
+    <span>FINE DISPACCIO</span>
+  </div>
+
+</div>
