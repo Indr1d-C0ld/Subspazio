@@ -46,6 +46,7 @@ final class Admin
             'richest'        => Database::first('SELECT handle, credits FROM players ORDER BY credits DESC LIMIT 1'),
             'top_rating'     => Database::first('SELECT handle, rating FROM players ORDER BY rating DESC LIMIT 1'),
             'universe_at'    => GameConfig::str('universe.generated_at', '(mai)'),
+            'tick'           => TickHealth::stato(),
         ];
     }
 

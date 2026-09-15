@@ -669,6 +669,9 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
    una riga sola senza sforare il pannello, quindi vanno a capo invece di
    forzare l'intera tabella a espandersi oltre il proprio sfondo. */
 .actions-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; }
+/* salute del clock: il guasto del tick è silenzioso per natura, qui diventa visibile */
+.tick-health { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; margin-top: .6rem; }
+.tick-health .hint { margin: 0; }
 .media-mini { display: flex; align-items: center; gap: .5rem; margin: .4rem 0; }
 .media-mini img { width: 2rem; height: 2rem; border-radius: 6px; object-fit: cover; border: 1px solid var(--line); }
 

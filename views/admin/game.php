@@ -39,6 +39,29 @@ $C = static fn (string $k = '') => e(url('/admin/gioco')) . ($k ? '#' . $k : '')
     Top rating: <?= $stats['top_rating'] ? e($stats['top_rating']['handle']) : '—' ?> ·
     Universo generato: <?= e(fmt_dt($stats['universe_at'])) ?>
   </p>
+
+  <?php
+    $tk = $stats['tick'] ?? null;
+    $pill = ['regolare' => 'ok', 'degradato' => 'warn', 'avaria' => 'err', 'fermo' => 'err'][$tk['stato'] ?? ''] ?? 'mut';
+  ?>
+  <?php if ($tk !== null): ?>
+    <div class="tick-health">
+      <span class="pill <?= e($pill) ?>">clock <?= e($tk['stato']) ?></span>
+      <span class="hint">
+        <?php if ($tk['stato'] === 'fermo'): ?>
+          Nessuna esecuzione da <?= e(fmt_dt($tk['ultimo_at'])) ?> — il cron sembra fermo.
+        <?php elseif ($tk['consecutivi'] > 0): ?>
+          <?= (int) $tk['consecutivi'] ?> esecuzioni consecutive con errori.
+          <?php if ($tk['ultima_nota']): ?><strong><?= e($tk['ultima_nota']) ?></strong><?php endif; ?>
+        <?php else: ?>
+          Ultima esecuzione <?= e(fmt_dt($tk['ultimo_at'])) ?>.
+        <?php endif; ?>
+        · <?= (int) $tk['corse_24h'] ?> corse in 24h<?= (int) $tk['falliti_24h'] > 0 ? ' (' . (int) $tk['falliti_24h'] . ' con errori)' : '' ?>
+        · media <?= (int) $tk['durata_media_ms'] ?> ms, picco <?= number_format((int) $tk['durata_max_ms'], 0, ',', '.') ?> ms
+        · diario <?= number_format((int) $tk['righe'], 0, ',', '.') ?> righe
+      </span>
+    </div>
+  <?php endif; ?>
 </section>
 
 <section class="panel" id="eventi">
