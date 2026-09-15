@@ -16,12 +16,12 @@
              autocapitalize="none" autocorrect="off" spellcheck="false" required>
     </label>
     <label>
-      <span>Password (min. 10 caratteri)</span>
-      <input type="password" name="password" autocomplete="new-password" minlength="10" required>
+      <span>Password (min. <?= (int) App\Auth\Auth::minPasswordLength() ?> caratteri)</span>
+      <input type="password" name="password" autocomplete="new-password" minlength="<?= (int) App\Auth\Auth::minPasswordLength() ?>" required>
     </label>
     <label>
       <span>Conferma password</span>
-      <input type="password" name="password_confirm" autocomplete="new-password" minlength="10" required>
+      <input type="password" name="password_confirm" autocomplete="new-password" minlength="<?= (int) App\Auth\Auth::minPasswordLength() ?>" required>
     </label>
     <button type="submit" class="btn">Invia richiesta</button>
   </form>

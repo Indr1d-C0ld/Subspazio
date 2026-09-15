@@ -177,8 +177,9 @@ final class Auth
         if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 190) {
             $errors['email'] = 'Indirizzo email non valido.';
         }
-        if (strlen($password) < 10) {
-            $errors['password'] = 'La password deve avere almeno 10 caratteri.';
+        $minimo = self::minPasswordLength();
+        if (strlen($password) < $minimo) {
+            $errors['password'] = "La password deve avere almeno {$minimo} caratteri.";
         }
         if ($password !== $confirm) {
             $errors['password_confirm'] = 'Le password non coincidono.';
@@ -216,6 +217,26 @@ final class Auth
         );
 
         return ['ok' => true, 'errors' => [], 'user_id' => Database::lastInsertId()];
+    }
+
+    /**
+     * Lunghezza minima richiesta per una password, unica per tutto il
+     * progetto: registrazione, comandi CLI e attributo minlength del form.
+     *
+     * Regolabile dal pannello (`security.password_min_length`). Il valore
+     * consigliato resta 10: sotto si guadagna comodita' e si perde robustezza,
+     * e la soglia vale per ogni account, non solo per chi la abbassa. C'e' un
+     * pavimento a 6 perche' un refuso in configurazione non possa azzerare del
+     * tutto il controllo.
+     */
+    public static function minPasswordLength(): int
+    {
+        try {
+            $v = \App\Game\GameConfig::int('security.password_min_length', 10);
+        } catch (\Throwable) {
+            $v = 10;   // database non raggiungibile: si resta sul consigliato
+        }
+        return max(6, $v);
     }
 
     // --- Hashing ------------------------------------------------------------

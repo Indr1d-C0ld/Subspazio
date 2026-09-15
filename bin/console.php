@@ -84,9 +84,10 @@ try {
                 out('Email non valida.');
                 exit(1);
             }
-            $pw1 = prompt('Password (min 10): ', true);
+            $minimo = \App\Auth\Auth::minPasswordLength();
+            $pw1 = prompt("Password (min {$minimo}): ", true);
             $pw2 = prompt('Conferma password: ', true);
-            if (strlen($pw1) < 10 || $pw1 !== $pw2) {
+            if (strlen($pw1) < $minimo || $pw1 !== $pw2) {
                 out('Password troppo corta o non coincidente.');
                 exit(1);
             }
@@ -115,9 +116,10 @@ try {
                 out("Utente '{$username}' inesistente. Vedi: user:list");
                 exit(1);
             }
-            $pw1 = $args[1] ?? prompt('Nuova password (min 10): ', true);
+            $minimo = \App\Auth\Auth::minPasswordLength();
+            $pw1 = $args[1] ?? prompt("Nuova password (min {$minimo}): ", true);
             $pw2 = isset($args[1]) ? $args[1] : prompt('Conferma password: ', true);
-            if (strlen($pw1) < 10 || $pw1 !== $pw2) {
+            if (strlen($pw1) < $minimo || $pw1 !== $pw2) {
                 out('Password troppo corta o non coincidente.');
                 exit(1);
             }

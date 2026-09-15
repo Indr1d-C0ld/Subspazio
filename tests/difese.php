@@ -216,6 +216,48 @@ return static function (): void {
         substr($primo, 0, 34)
     );
 
+    Esito::sezione('Lunghezza minima delle password');
+
+    Esito::scenario('una sola fonte di verità, non un numero copiato in giro');
+    $minimo = Auth::minPasswordLength();
+    Esito::verifica('Auth::minPasswordLength() risponde', $minimo >= 6, "{$minimo} caratteri");
+
+    $riga = Database::first('SELECT cvalue, default_value FROM game_config WHERE ckey = ?', ['security.password_min_length']);
+    Esito::verifica('la soglia è regolabile dal pannello', $riga !== null);
+    Esito::uguale('e il valore consigliato resta 10', '10', (string) ($riga['default_value'] ?? ''));
+
+    Esito::scenario('registrazione e form si allineano da soli');
+    $pwOk   = str_repeat('a', $minimo);
+    $pwCorta = str_repeat('a', $minimo - 1);
+    $rOk = Auth::register(['username' => '__test_minok', 'email' => '__test_minok@invalid.test',
+                           'password' => $pwOk, 'password_confirm' => $pwOk]);
+    if (!empty($rOk['ok'])) {
+        // ripulisce subito: register() scrive davvero
+        Database::run('DELETE FROM users WHERE id = ?', [(int) $rOk['user_id']]);
+    }
+    Esito::verifica("una password di {$minimo} caratteri passa", !empty($rOk['ok']),
+        implode(' ', $rOk['errors'] ?? []));
+
+    $rNo = Auth::register(['username' => '__test_mincorta', 'email' => '__test_mincorta@invalid.test',
+                           'password' => $pwCorta, 'password_confirm' => $pwCorta]);
+    Esito::verifica('una di un carattere più corta viene respinta', empty($rNo['ok']));
+    Esito::verifica('e il messaggio cita la soglia corrente',
+        str_contains((string) ($rNo['errors']['password'] ?? ''), (string) $minimo),
+        $rNo['errors']['password'] ?? '');
+
+    Esito::scenario('il pavimento regge anche a una configurazione assurda');
+    $salva = (string) $riga['cvalue'];
+    try {
+        App\Game\GameConfig::set('security.password_min_length', '2');
+        App\Game\GameConfig::forget();
+        Esito::verifica('configurando 2 si applica comunque 6', Auth::minPasswordLength() === 6,
+            (string) Auth::minPasswordLength());
+    } finally {
+        App\Game\GameConfig::set('security.password_min_length', $salva);
+        App\Game\GameConfig::forget();
+    }
+    Esito::uguale('valore ripristinato dopo la prova', $minimo, Auth::minPasswordLength());
+
     // --- Reperto 10 -------------------------------------------------------
 
     Esito::sezione('Reperto 10 — destinazioni di ritorno vincolate');
