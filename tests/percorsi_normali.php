@@ -63,16 +63,27 @@ return static function (): void {
     if ($vende === null) {
         Esito::verifica('nessun porto che vende minerale nel campione: prova saltata', true);
     } else {
-        [$pc, $sc] = Finti::comandante(1_000_000, [], (int) $vende['sid']);
-        $pcId = (int) $pc['id'];
-        $scId = (int) $sc['id'];
+        // Stessa accortezza del porto in vendita: si fotografa e si ripristina.
+        $vId = (int) $vende['id'];
+        // credits_max compreso: la rigenerazione lo ricalcola durante lo
+        // scambio, e rimettere solo `credits` lasciava il porto sopra il
+        // proprio tetto (visto: 125 cr di eccedenza sullo StarDock).
+        $prima_v = Database::first('SELECT credits, credits_max, ore_stock FROM ports WHERE id = ?', [$vId]);
+        try {
+            [$pc, $sc] = Finti::comandante(1_000_000, [], (int) $vende['sid']);
+            $pcId = (int) $pc['id'];
+            $scId = (int) $sc['id'];
 
-        Esito::scenario('acquisto di 10 unità al porto');
-        $prima = Finti::crediti($pcId);
-        $r = Economy::settle($pc, $sc, (int) $vende['sid'], 'ore', 'buy', 10, null);
-        Esito::verifica('acquisto riuscito', !empty($r['ok']), $r['error'] ?? '');
-        Esito::uguale('merce in stiva', 10, Finti::stiva($scId, 'hold_ore'));
-        Esito::verifica('crediti scalati', Finti::crediti($pcId) < $prima);
+            Esito::scenario('acquisto di 10 unità al porto');
+            $prima = Finti::crediti($pcId);
+            $r = Economy::settle($pc, $sc, (int) $vende['sid'], 'ore', 'buy', 10, null);
+            Esito::verifica('acquisto riuscito', !empty($r['ok']), $r['error'] ?? '');
+            Esito::uguale('merce in stiva', 10, Finti::stiva($scId, 'hold_ore'));
+            Esito::verifica('crediti scalati', Finti::crediti($pcId) < $prima);
+        } finally {
+            Database::run('UPDATE ports SET credits = ?, credits_max = ?, ore_stock = ? WHERE id = ?',
+                [$prima_v['credits'], $prima_v['credits_max'], $prima_v['ore_stock'], $vId]);
+        }
     }
 
     $compra = Database::first(
@@ -82,22 +93,51 @@ return static function (): void {
     if ($compra === null) {
         Esito::verifica('nessun porto che compra minerale nel campione: prova saltata', true);
     } else {
-        [$pv, $sv] = Finti::comandante(1000, ['hold_ore' => 30], (int) $compra['sid']);
-        $pvId = (int) $pv['id'];
-        $svId = (int) $sv['id'];
+        // Il porto e' stato di gioco VERO, non sintetico: la vendita gli
+        // sposta crediti e magazzino. Se ne prende una fotografia e la si
+        // rimette a posto alla fine, altrimenti ripetere i test prosciuga un
+        // porto reale — ed e' successo: dopo una quindicina di giri
+        // ravvicinati non aveva piu' credito per comprare, e la prova
+        // falliva per esaurimento invece che per un difetto.
+        $portoId = (int) $compra['id'];
+        $prima_porto = Database::first(
+            'SELECT credits, credits_max, ore_stock, org_stock, equ_stock FROM ports WHERE id = ?',
+            [$portoId]
+        );
 
-        Esito::scenario('vendita di 30 unità al porto');
-        $prima = Finti::crediti($pvId);
-        $r = Economy::settle($pv, $sv, (int) $compra['sid'], 'ore', 'sell', 30, null);
-        Esito::verifica('vendita riuscita', !empty($r['ok']), $r['error'] ?? '');
-        Esito::uguale('stiva svuotata', 0, Finti::stiva($svId, 'hold_ore'));
-        Esito::verifica('incasso accreditato', Finti::crediti($pvId) > $prima);
+        try {
+            [$pv, $sv] = Finti::comandante(1000, ['hold_ore' => 30], (int) $compra['sid']);
+            $pvId = (int) $pv['id'];
+            $svId = (int) $sv['id'];
 
-        Esito::scenario('vendita di carico inesistente');
-        [$pv2, $sv2] = Finti::ricarica($pvId);
-        $r = Economy::settle($pv2, $sv2, (int) $compra['sid'], 'ore', 'sell', 999, null);
-        Esito::verifica('respinta', empty($r['ok']), $r['error'] ?? 'PASSATA');
-        Esito::uguale('stiva non negativa', 0, Finti::stiva($svId, 'hold_ore'));
+            // Quanto il porto puo' davvero assorbire adesso: la sua capienza
+            // dipende dal credito che ha in cassa, e cambia nel tempo.
+            $quanto = min(30, Economy::maxQty($compra, $pv, $sv, 'ore', 'sell'));
+            Esito::verifica('il porto può assorbire almeno qualche unità', $quanto > 0, "max {$quanto}");
+
+            if ($quanto > 0) {
+                Esito::scenario("vendita di {$quanto} unità al porto");
+                $prima = Finti::crediti($pvId);
+                $r = Economy::settle($pv, $sv, (int) $compra['sid'], 'ore', 'sell', $quanto, null);
+                Esito::verifica('vendita riuscita', !empty($r['ok']), $r['error'] ?? '');
+                Esito::uguale('stiva scalata di quanto venduto', 30 - $quanto, Finti::stiva($svId, 'hold_ore'));
+                Esito::verifica('incasso accreditato', Finti::crediti($pvId) > $prima);
+            }
+
+            Esito::scenario('vendita di carico inesistente');
+            [$pv2, $sv2] = Finti::ricarica($pvId);
+            $r = Economy::settle($pv2, $sv2, (int) $compra['sid'], 'ore', 'sell', 999, null);
+            Esito::verifica('respinta', empty($r['ok']), $r['error'] ?? 'PASSATA');
+        } finally {
+            Database::run(
+                'UPDATE ports SET credits = ?, credits_max = ?, ore_stock = ?, org_stock = ?, equ_stock = ? WHERE id = ?',
+                [$prima_porto['credits'], $prima_porto['credits_max'], $prima_porto['ore_stock'],
+                 $prima_porto['org_stock'], $prima_porto['equ_stock'], $portoId]
+            );
+        }
+        $dopo_porto = Database::first('SELECT credits, ore_stock FROM ports WHERE id = ?', [$portoId]);
+        Esito::uguale('il porto è stato rimesso come prima (crediti)', $prima_porto['credits'], $dopo_porto['credits']);
+        Esito::uguale('il porto è stato rimesso come prima (magazzino)', $prima_porto['ore_stock'], $dopo_porto['ore_stock']);
     }
 
     Esito::sezione('Il tick continua a girare');

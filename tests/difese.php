@@ -157,9 +157,26 @@ return static function (): void {
     // scalda: il primo giro paga la connessione e il calcolo dell'hash fittizio
     $misura('__test_inesistente');
 
+    // Due accortezze, entrambe necessarie perche' la prova regga anche con la
+    // macchina occupata:
+    //
+    //  - si prende il MINIMO di piu' campioni, non la media: una misura di
+    //    tempo puo' solo peggiorare per rumore, mai migliorare, quindi il
+    //    minimo e' la stima piu' pulita del costo reale;
+    //  - i due rami si misurano ALTERNATI, non prima tutti gli uni e poi gli
+    //    altri. Misurandoli in blocco, sotto carico il primo assorbe il picco
+    //    e sembra piu' lento: falso allarme visto davvero (rapporto 1,7 con
+    //    un secondo processo in esecuzione), mentre i componenti presi
+    //    singolarmente costano identici.
     Esito::scenario('tempo di risposta per un utente inesistente contro uno reale');
-    $tInesistente = min($misura('__test_nessuno_1'), $misura('__test_nessuno_2'));
-    $tEsistente   = min($misura($esistente), $misura($esistente));
+    $campioniA = [];
+    $campioniB = [];
+    for ($i = 0; $i < 5; $i++) {
+        $campioniA[] = $misura('__test_nessuno_' . mt_rand());
+        $campioniB[] = $misura($esistente);
+    }
+    $tInesistente = min($campioniA);
+    $tEsistente   = min($campioniB);
     $rapporto = $tEsistente > 0 ? $tInesistente / $tEsistente : 0;
 
     Esito::verifica(

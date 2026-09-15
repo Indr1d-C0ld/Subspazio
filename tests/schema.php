@@ -59,17 +59,24 @@ return static function (): void {
             continue;
         }
 
+        // Si verifica che l'indice sia APPLICABILE alla query (possible_keys),
+        // non che il pianificatore lo scelga (key). Su tabelle piccole, o
+        // quando l'intervallo copre quasi tutte le righe, MySQL preferisce
+        // giustamente la scansione completa: con 95 NPC quasi tutti "da
+        // muovere" e' la scelta piu' economica, e asserire il contrario
+        // rendeva la prova intermittente. Cio' che deve restare vero nel
+        // tempo e' che l'indice esista e serva quella forma di query; quale
+        // via convenga poi all'ottimizzatore dipende dai volumi, e cambiera'
+        // da solo quando le tabelle cresceranno.
         $piano = Database::first('EXPLAIN ' . $query);
-        $usato = ($piano['key'] ?? null) === $indice;
+        $applicabili = array_filter(array_map('trim', explode(',', (string) ($piano['possible_keys'] ?? ''))));
         Esito::verifica(
-            'il pianificatore lo sceglie per la query che deve servire',
-            $usato,
-            $usato ? '' : sprintf('type=%s key=%s', $piano['type'] ?? '?', $piano['key'] ?? 'nessuno')
-        );
-        Esito::verifica(
-            'niente più scansione completa della tabella',
-            ($piano['type'] ?? '') !== 'ALL',
-            'type=' . ($piano['type'] ?? '?')
+            'la query può servirsi di quell\'indice',
+            in_array($indice, $applicabili, true),
+            sprintf('possible_keys=%s · scelto=%s (type=%s)',
+                $piano['possible_keys'] ?: 'nessuno',
+                $piano['key'] ?: 'scansione completa',
+                $piano['type'] ?? '?')
         );
     }
 

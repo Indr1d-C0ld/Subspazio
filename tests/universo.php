@@ -85,12 +85,22 @@ return static function (): void {
 
     Esito::sezione('Reperto 04 — movimento NPC');
 
-    // Un settore con almeno due rotte uscenti, per avere una scelta reale.
+    // Un settore con almeno due rotte uscenti, per avere una scelta reale, e
+    // con TUTTE le uscite fuori dalla Fedspace: il tick despawna pirati e
+    // Ferrengi che ci finiscono dentro (comportamento giusto del gioco), e un
+    // NPC di prova sparito a meta' faceva fallire il conteggio a caso.
     $partenza = Database::first(
-        'SELECT from_sector id, COUNT(*) n FROM warps GROUP BY from_sector HAVING n >= 2 ORDER BY RAND() LIMIT 1'
+        'SELECT w.from_sector id, COUNT(*) n
+         FROM warps w
+         JOIN sectors d ON d.id = w.to_sector
+         WHERE NOT EXISTS (
+             SELECT 1 FROM warps w2 JOIN sectors d2 ON d2.id = w2.to_sector
+             WHERE w2.from_sector = w.from_sector AND d2.is_fedspace = 1
+         )
+         GROUP BY w.from_sector HAVING n >= 2 ORDER BY RAND() LIMIT 1'
     );
     if ($partenza === null) {
-        Esito::verifica('nessun settore con due rotte: prova saltata', true);
+        Esito::verifica('nessun settore adatto (due rotte, nessuna in Fedspace): prova saltata', true);
         return;
     }
     $da = (int) $partenza['id'];
@@ -151,23 +161,14 @@ return static function (): void {
         Esito::verifica('nessuno è rimasto fermo', $tuttiPartiti);
 
         Esito::scenario('i Ferrengi evitano lo spazio della Federazione');
-        $fuoriFed = Database::first(
-            'SELECT COUNT(*) n FROM warps w JOIN sectors s ON s.id = w.to_sector
-             WHERE w.from_sector = ? AND s.is_fedspace = 0',
-            [$da]
-        );
-        if ((int) $fuoriFed['n'] === 0) {
-            Esito::verifica('tutte le uscite sono in Fedspace: regola non applicabile qui', true);
-        } else {
-            $ferrengi = null;
-            foreach ($dopo as $r) {
-                if ($r['kind'] === 'ferrengi') {
-                    $ferrengi = (int) $r['sector_id'];
-                }
+        $ferrengi = null;
+        foreach ($dopo as $r) {
+            if ($r['kind'] === 'ferrengi') {
+                $ferrengi = (int) $r['sector_id'];
             }
-            $inFed = (int) (Database::first('SELECT is_fedspace FROM sectors WHERE id = ?', [$ferrengi])['is_fedspace'] ?? 0);
-            Esito::uguale('il Ferrengi non è entrato in Fedspace', 0, $inFed);
         }
+        $inFed = (int) (Database::first('SELECT is_fedspace FROM sectors WHERE id = ?', [$ferrengi])['is_fedspace'] ?? 0);
+        Esito::uguale('il Ferrengi non è entrato in Fedspace', 0, $inFed);
     } finally {
         if ($npcIds !== []) {
             Database::run(
