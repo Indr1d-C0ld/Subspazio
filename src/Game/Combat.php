@@ -139,7 +139,10 @@ final class Combat
         $expGain = 0;
         $drops = ['items' => [], 'salvage' => 0];
         try {
-            Database::run('UPDATE players SET turns = turns - ? WHERE id = ?', [$turnCost, $atkPlayer['id']]);
+            if (!Wallet::charge((int) $atkPlayer['id'], ['turns' => $turnCost])) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Turni insufficienti (servono {$turnCost})."];
+            }
             Database::run('UPDATE players SET protected_until = NULL WHERE id = ? AND protected_until IS NOT NULL', [$atkPlayer['id']]);
             Database::run('UPDATE ships SET fighters = ?, shields = ? WHERE id = ?', [max(0, $atkFtrLeft), $r['att_shd'], $atkShip['id']]);
             Database::run('UPDATE ships SET fighters = ?, shields = ? WHERE id = ?', [$r['def_ftr'], $r['def_shd'], $tShip['id']]);
@@ -283,7 +286,11 @@ final class Combat
         $stolen = [];
         $drops = ['items' => [], 'salvage' => 0];
         try {
-            Database::run('UPDATE players SET turns = turns - ?, protected_until = NULL WHERE id = ?', [$turnCost, $atkPlayer['id']]);
+            if (!Wallet::charge((int) $atkPlayer['id'], ['turns' => $turnCost])) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Turni insufficienti (servono {$turnCost})."];
+            }
+            Database::run('UPDATE players SET protected_until = NULL WHERE id = ? AND protected_until IS NOT NULL', [$atkPlayer['id']]);
             Database::run('UPDATE ships SET fighters = ?, shields = ? WHERE id = ?', [max(0, $atkFtrLeft), $r['att_shd'], $atkShip['id']]);
             Database::run('UPDATE ports SET fighters = ? WHERE id = ?', [$r['def_ftr'], $port['id']]);
 
@@ -396,7 +403,11 @@ final class Combat
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
-            Database::run('UPDATE players SET turns = turns - ?, protected_until = NULL WHERE id = ?', [$turnCost, $atkPlayer['id']]);
+            if (!Wallet::charge((int) $atkPlayer['id'], ['turns' => $turnCost])) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Turni insufficienti (servono {$turnCost})."];
+            }
+            Database::run('UPDATE players SET protected_until = NULL WHERE id = ? AND protected_until IS NOT NULL', [$atkPlayer['id']]);
 
             $atkFtr = $commit;
             $atkShd = (int) $atkShip['shields'];
@@ -593,7 +604,10 @@ final class Combat
         $exp = 0;
         $drops = ['items' => [], 'salvage' => 0];
         try {
-            Database::run('UPDATE players SET turns = turns - ? WHERE id = ?', [$turnCost, $atkPlayer['id']]);
+            if (!Wallet::charge((int) $atkPlayer['id'], ['turns' => $turnCost])) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Turni insufficienti (servono {$turnCost})."];
+            }
             Database::run('UPDATE ships SET fighters = ?, shields = ? WHERE id = ?', [max(0, $atkFtrLeft), $r['att_shd'], $atkShip['id']]);
 
             if ($killed) {

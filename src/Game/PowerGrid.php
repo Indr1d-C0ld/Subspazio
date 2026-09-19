@@ -175,12 +175,14 @@ final class PowerGrid
             $sets[] = self::COL[$c] . ' = ?';
             $params[] = $new[$c];
         }
+        // Qui non c'e' transazione: si paga prima di ritarare, altrimenti a
+        // cassa vuota la griglia resta cambiata e il turno non si paga.
+        if ($cost > 0 && !Wallet::charge((int) $player['id'], ['turns' => $cost])) {
+            return ['ok' => false, 'error' => "Turni insufficienti (servono {$cost})."];
+        }
         $params = array_merge($params, $shieldParams, [(int) $ship['id']]);
         Database::run('UPDATE ships SET ' . implode(', ', $sets) . $shieldSql . ' WHERE id = ?', $params);
 
-        if ($cost > 0) {
-            Database::run('UPDATE players SET turns = turns - ? WHERE id = ?', [$cost, (int) $player['id']]);
-        }
         return ['ok' => true, 'cost' => $cost];
     }
 

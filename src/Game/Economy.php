@@ -374,7 +374,7 @@ final class Economy
 
             $fairUnit = self::fairUnit($port, $commodity);
             $std = self::quote($port, $commodity, $action, $qty);
-            $walk = GameConfig::float('economy.haggle.walk_band', 0.16) + 0.03;
+            $walk = GameConfig::float('economy.haggle.walk_band', 0.14) + 0.03;
 
             if ($agreedTotal === null) {
                 $total = $std['total'];

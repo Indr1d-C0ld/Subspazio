@@ -38,7 +38,7 @@ final class ModuleController
             'max_jobs'   => GameConfig::int('craft.max_jobs', 3),
             'refine'     => [
                 'ore' => GameConfig::int('craft.refine_ore_per_component', 4),
-                'equ' => GameConfig::int('craft.refine_equ_per_component', 2),
+                'equ' => GameConfig::int('craft.refine_equ_per_component', 3),
             ],
         ]));
     }

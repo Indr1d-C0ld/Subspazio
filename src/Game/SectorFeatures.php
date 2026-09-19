@@ -13,6 +13,34 @@ use App\Core\Database;
  */
 final class SectorFeatures
 {
+    /**
+     * Addebito dei turni con il vincolo nella WHERE, non sulla fotografia in
+     * mano. Il controllo preventivo su $player['turns'] resta utile per dare
+     * un messaggio sensato, ma non e' una garanzia: fra quel controllo e la
+     * scrittura ci sta un'altra richiesta dello stesso comandante.
+     *
+     * @param array<string,mixed> $player
+     */
+    private static function spendiTurni(array $player, int $cost): bool
+    {
+        return $cost <= 0 || Wallet::charge((int) $player['id'], ['turns' => $cost]);
+    }
+
+    /**
+     * Esaurisce una feature a colpo singolo, una volta sola.
+     *
+     * Senza il vincolo `depleted = 0` due raccolte simultanee dello stesso
+     * deposito pagano entrambe: il secondo UPDATE non trova piu' niente da
+     * cambiare, ma nessuno lo controlla e la ricompensa parte lo stesso.
+     */
+    private static function esaurisci(int $featureId): bool
+    {
+        return Database::run(
+            'UPDATE sector_features SET depleted = 1 WHERE id = ? AND depleted = 0',
+            [$featureId]
+        )->rowCount() > 0;
+    }
+
     public const KIND_LABEL = [
         'wreck' => 'Relitto', 'cache' => 'Deposito', 'anomaly' => 'Anomalia',
         'hazard' => 'Pericolo', 'asteroid' => 'Giacimento',
@@ -161,6 +189,11 @@ final class SectorFeatures
         if ((int) $player['turns'] < $cost) {
             return ['ok' => false, 'error' => "Turni insufficienti per una scansione (servono {$cost})."];
         }
+        // Si paga prima di rivelare: pagare dopo regala la scansione a chi
+        // ne lancia due insieme.
+        if (!self::spendiTurni($player, $cost)) {
+            return ['ok' => false, 'error' => "Turni insufficienti per una scansione (servono {$cost})."];
+        }
         $range = self::scanRange($ship);
         $sectors = self::bfs((int) $player['sector_id'], $range);
 
@@ -180,7 +213,6 @@ final class SectorFeatures
                 self::codexForFeature((int) $player['id'], $f);
             }
         }
-        Database::run('UPDATE players SET turns = turns - ? WHERE id = ?', [$cost, (int) $player['id']]);
         Codex::unlock((int) $player['id'], 'scan_basics');
         if (self::regionKind((int) $player['sector_id']) === 'deep') {
             Codex::unlock((int) $player['id'], 'deep_space');
@@ -202,6 +234,9 @@ final class SectorFeatures
         if ((int) $player['turns'] < $cost) {
             return ['ok' => false, 'error' => "Turni insufficienti (servono {$cost})."];
         }
+        if (!self::spendiTurni($player, $cost)) {
+            return ['ok' => false, 'error' => "Turni insufficienti (servono {$cost})."];
+        }
         $feats = Database::all('SELECT id, sector_id, kind, subtype, richness FROM sector_features WHERE depleted = 0 AND sector_id = ?', [$targetSector]);
         $found = 0;
         foreach ($feats as $f) {
@@ -212,7 +247,6 @@ final class SectorFeatures
             }
         }
         Database::run('UPDATE ships SET probes = probes - 1 WHERE id = ?', [(int) $ship['id']]);
-        Database::run('UPDATE players SET turns = turns - ? WHERE id = ?', [$cost, (int) $player['id']]);
         Database::run('INSERT IGNORE INTO player_visited_sectors (player_id, sector_id) VALUES (?, ?)', [(int) $player['id'], $targetSector]);
         return ['ok' => true, 'found' => $found, 'sector' => $targetSector];
     }
@@ -254,7 +288,17 @@ final class SectorFeatures
         $module = null;
         $officer = null;
         try {
-            Database::run('UPDATE players SET turns = turns - ?, salvage = salvage + ? WHERE id = ?', [$cost, $sal, (int) $player['id']]);
+            // Prima si reclama il relitto, poi si paga: al secondo arrivato
+            // non deve costare nulla, e soprattutto non deve fruttare nulla.
+            if (!self::esaurisci($featureId)) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'Qualcuno ha gia\' ripulito questo relitto.'];
+            }
+            if (!self::spendiTurni($player, $cost)) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Turni insufficienti (servono {$cost})."];
+            }
+            Wallet::credit((int) $player['id'], ['salvage' => $sal]);
 
             $modPct = $deep ? GameConfig::int('scan.wreck_module_deep_pct', 60) : GameConfig::int('scan.wreck_module_pct', 35);
             if (mt_rand(1, 100) <= $modPct + (int) $f['richness'] * 3) {
@@ -282,7 +326,6 @@ final class SectorFeatures
                 $parts[] = "sopravvissuto recuperato: {$name} (" . Crew::roleLabel($role) . ", ferito)";
             }
 
-            Database::run('UPDATE sector_features SET depleted = 1 WHERE id = ?', [$featureId]);
             Codex::unlock((int) $player['id'], 'wreck_generic');
             if ($deep) {
                 Faction::onDeepWork((int) $player['id']);
@@ -325,12 +368,18 @@ final class SectorFeatures
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
-            Database::run('UPDATE players SET turns = turns - ?, credits = credits + ?, salvage = salvage + ? WHERE id = ?',
-                [$cost, $cr, $sal, (int) $player['id']]);
+            if (!self::esaurisci($featureId)) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'Qualcuno ha gia\' svuotato questo deposito.'];
+            }
+            if (!self::spendiTurni($player, $cost)) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Turni insufficienti (servono {$cost})."];
+            }
+            Wallet::credit((int) $player['id'], ['credits' => $cr, 'salvage' => $sal]);
             if ($cargo > 0) {
                 Database::run("UPDATE ships SET {$col} = {$col} + ? WHERE id = ?", [$cargo, (int) $ship['id']]);
             }
-            Database::run('UPDATE sector_features SET depleted = 1 WHERE id = ?', [$featureId]);
             Codex::unlock((int) $player['id'], 'cache_generic');
             $pdo->commit();
         } catch (\Throwable $e) {
@@ -386,16 +435,34 @@ final class SectorFeatures
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
-            Database::run('UPDATE players SET turns = turns - ?, crystals = crystals + ? WHERE id = ?',
-                [$cost, $crystals, (int) $player['id']]);
-            Database::run('UPDATE ships SET hold_ore = hold_ore + ? WHERE id = ?', [$yield, (int) $ship['id']]);
+            // Il residuo del giacimento si legge, si modifica e si riscrive:
+            // fra la lettura e la scrittura ci sta un'altra estrazione, che
+            // porterebbe via lo stesso minerale due volte. Si riscrive solo se
+            // nel frattempo nessuno l'ha toccato (confronto-e-scambio sul
+            // valore letto), altrimenti non se ne fa nulla.
             $newLeft = $left - $yield;
-            if ($newLeft <= 0) {
-                Database::run('UPDATE sector_features SET depleted = 1 WHERE id = ?', [$featureId]);
-            } else {
-                Database::run('UPDATE sector_features SET data = ? WHERE id = ?',
-                    [json_encode(['ore_left' => $newLeft], JSON_UNESCAPED_UNICODE), $featureId]);
+            $applicato = Database::run(
+                'UPDATE sector_features SET data = ?, depleted = ?
+                  WHERE id = ? AND depleted = 0 AND (data <=> ?)',
+                [
+                    json_encode(['ore_left' => max(0, $newLeft)], JSON_UNESCAPED_UNICODE),
+                    $newLeft <= 0 ? 1 : 0,
+                    $featureId,
+                    $f['data'],
+                ]
+            )->rowCount() > 0;
+            if (!$applicato) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'Il giacimento è cambiato mentre estraevi: riprova.'];
             }
+            if (!self::spendiTurni($player, $cost)) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Turni insufficienti (servono {$cost})."];
+            }
+            if ($crystals > 0) {
+                Wallet::credit((int) $player['id'], ['crystals' => $crystals]);
+            }
+            Database::run('UPDATE ships SET hold_ore = hold_ore + ? WHERE id = ?', [$yield, (int) $ship['id']]);
             Codex::unlock((int) $player['id'], 'asteroid_generic');
             $pdo->commit();
         } catch (\Throwable $e) {
@@ -440,20 +507,33 @@ final class SectorFeatures
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
-            Database::run('UPDATE players SET turns = turns - ? WHERE id = ?', [$cost, (int) $player['id']]);
+            if (!self::spendiTurni($player, $cost)) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Turni insufficienti (servono {$cost})."];
+            }
             if ($prog < $need) {
-                Database::run('UPDATE player_feature_state SET progress = ? WHERE player_id = ? AND feature_id = ?',
+                Database::run('UPDATE player_feature_state SET progress = ? WHERE player_id = ? AND feature_id = ? AND resolved = 0',
                     [$prog, (int) $player['id'], $featureId]);
                 $pdo->commit();
                 return ['ok' => true, 'done' => false, 'text' => "Analisi in corso: {$prog}/{$need}" . ($hasSci ? ' (Scienziato: +bonus)' : '')];
             }
             // risolta
-            Database::run('UPDATE player_feature_state SET progress = ?, resolved = 1 WHERE player_id = ? AND feature_id = ?',
-                [$need, (int) $player['id'], $featureId]);
-            Database::run('UPDATE sector_features SET depleted = 1 WHERE id = ?', [$featureId]);
+            // La ricompensa dell'anomalia si paga una volta per comandante:
+            // il vincolo `resolved = 0` e' l'unico punto in cui due analisi
+            // simultanee si escludono a vicenda.
+            $risolta = Database::run(
+                'UPDATE player_feature_state SET progress = ?, resolved = 1
+                  WHERE player_id = ? AND feature_id = ? AND resolved = 0',
+                [$need, (int) $player['id'], $featureId]
+            )->rowCount() > 0;
+            if (!$risolta) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'Anomalia già risolta.'];
+            }
+            self::esaurisci($featureId);
             $deep = self::regionKind((int) $f['sector_id']) === 'deep';
             $cr = (int) round(1200 * (int) $f['richness'] * ($deep ? 1.6 : 1.0));
-            Database::run('UPDATE players SET credits = credits + ? WHERE id = ?', [$cr, (int) $player['id']]);
+            Wallet::credit((int) $player['id'], ['credits' => $cr]);
             Crew::awardKillXp((int) $player['id'], 30 * (int) $f['richness']);
             $module = Loot::grant((int) $player['id'], 'anomaly', $deep, 'exp');
             Codex::unlock((int) $player['id'], 'anomaly_generic');

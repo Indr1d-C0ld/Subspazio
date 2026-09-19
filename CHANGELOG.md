@@ -4,6 +4,103 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-19 — Audit delle meccaniche: turni, giacimenti e warp sotto concorrenza
+
+Non un audit di sicurezza — quello è di settembre — ma la domanda «le regole
+che il gioco promette sono quelle che applica». Cinque reperti, quattro provati
+facendoli accadere su un comandante usa-e-getta.
+
+**La radice è una sola.** L'audit di settembre aveva trovato che controllare la
+capienza sulla fotografia di `$player` e poi scrivere senza vincolo lascia
+passare due richieste concorrenti, e aveva costruito `App\Game\Wallet` per
+questo: il vincolo dentro la `WHERE`, dove il database lo applica una volta
+sola. Lo aveva collegato ai **crediti**. Ai **turni** no — benché `Wallet` li
+sapesse già scalare (`turns` è in `SPENDABLE` dal primo giorno, semplicemente
+non lo chiamava nessuno). Due sessioni dello stesso account sono ammesse,
+quindi la corsa è raggiungibile da un browser qualunque.
+
+- **[src/Game/Navigation.php](src/Game/Navigation.php)** — *reperto 01, alto.*
+  Il vincolo c'era (`AND turns >= ?`) ma nessuno controllava se avesse morso.
+  Quando non mordeva, l'`UPDATE` toccava zero righe e **il resto della
+  transazione proseguiva lo stesso**: la nave si spostava, il registro segnava
+  il viaggio, il settore risultava visitato. Due warp simultanei con un turno in
+  cassa davano `turni 1 → 0`, due righe in `move_log`, `total_warps = 1`, e il
+  comandante nel settore 2 con la **nave nel settore 3**. Non era solo un turno
+  regalato: su quella coppia di righe girano «navi qui», il combattimento e gli
+  attracchi. Ora l'esito viene letto e, se l'addebito non passa, si annulla
+  tutto.
+- **[src/Game/Combat.php](src/Game/Combat.php)**,
+  **[src/Game/Crew.php](src/Game/Crew.php)**,
+  **[src/Game/Industry.php](src/Game/Industry.php)**,
+  **[src/Game/PowerGrid.php](src/Game/PowerGrid.php)**,
+  **[src/Game/AwayMissions.php](src/Game/AwayMissions.php)**,
+  **[src/Game/SectorFeatures.php](src/Game/SectorFeatures.php)** — *reperto 02,
+  alto.* Quattordici addebiti senza alcun vincolo: controllo preventivo, poi
+  `turns = turns - ?` secco. Quattro ritarature EPS simultanee con un turno in
+  cassa lasciavano il comandante a **−1**. Tutti convertiti a
+  `Wallet::charge(['turns' => N])` con il ramo di rifiuto. In `PowerGrid`, che
+  non ha transazione, si paga **prima** di ritarare: pagare dopo lasciava la
+  griglia cambiata a cassa vuota.
+- **[src/Game/SectorFeatures.php](src/Game/SectorFeatures.php)** — *reperto 03,
+  alto.* Le risorse a colpo singolo (relitto, deposito, anomalia) leggevano
+  `depleted = 0`, pagavano, e **poi** scrivevano `depleted = 1` senza vincolo.
+  Tre raccolte fatte partire insieme su un solo deposito hanno fruttato
+  **10.177 crediti, 270 Leghe e 110 minerale** al posto di una raccolta sola da
+  circa 3.400. Ora la feature si reclama *prima* di pagare, con
+  `AND depleted = 0` e l'esito controllato; il giacimento di minerale, che
+  invece è ripetibile, scala il residuo con un confronto-e-scambio sul valore
+  letto, così due estrazioni simultanee non portano via lo stesso minerale due
+  volte. L'anomalia usa `AND resolved = 0` sullo stato del singolo comandante,
+  che è dove la sua ricompensa è per definizione una sola.
+- **[src/Controllers/AuthController.php](src/Controllers/AuthController.php)** —
+  *reperto 04, alto.* Il pannello mostra `registration.open` e lascia metterlo a
+  `closed`. **Non chiudeva niente**: la chiave vive in `game_config`, ma il
+  codice la leggeva con `config()`, che pesca dal file di configurazione, dove
+  non c'è mai stata — il valore ricadeva sempre sul default. Provato: con
+  l'interruttore su `closed`, `/registrati` rispondeva 200 e mostrava il modulo.
+  Sotto c'era un secondo guasto indipendente: il controllo stava **solo sulla
+  GET**, quindi anche funzionante avrebbe nascosto il modulo lasciando passare
+  l'invio diretto. Ora la chiave si legge da `GameConfig` e il controllo è su
+  entrambi i verbi.
+- **[db/migrations/0040_allineamento_regole.sql](db/migrations/0040_allineamento_regole.sql)**
+  *(nuovo)* — *reperto 05, medio.* `default_value` non è mai stato un valore di
+  progetto: le migrazioni `0012` e `0013` fotografarono `default_value = cvalue`
+  per tutte le chiavi che ne erano prive. Dove il valore era stato ritoccato
+  prima di quella fotografia, il pulsante «↺» del pannello riporta a una
+  taratura **abbandonata**. Due casi reali: `events.interval_min` (90 invece di
+  240) e `events.chance_pct` (100 invece di 40) — un clic e gli eventi
+  diventano quasi tre volte più frequenti e sempre certi. Allineati qui, assieme
+  al valore di `registration.open`, rimasto `approval` dal tempo in cui era
+  l'amministratore ad ammettere gli iscritti. Le chiavi con default `NULL` non
+  sono toccate dal pulsante: quel guard regge, verificato.
+- **[src/Core/Posta.php](src/Core/Posta.php)**,
+  **[src/Controllers/ModuleController.php](src/Controllers/ModuleController.php)**,
+  **[src/Game/Loot.php](src/Game/Loot.php)**,
+  **[src/Game/Economy.php](src/Game/Economy.php)** — *reperto 06, basso.* Il
+  secondo argomento di `GameConfig::` è la regola che vale il giorno in cui la
+  riga non c'è. Quattro non corrispondevano al valore voluto: `mail.tetto_24h`
+  (280, il numero di Atlantik, contro i 140 voluti perché l'account SMTP è
+  condiviso), `craft.refine_equ_per_component` (la vista diceva «2
+  equipaggiamento», il motore ne applicava 3 — una ricetta sbagliata sotto gli
+  occhi del giocatore), `loot.drop_chance_*` e `economy.haggle.walk_band`.
+- **[tests/concorrenza.php](tests/concorrenza.php)** e
+  **[tests/_corsa_deposito.php](tests/_corsa_deposito.php)** *(nuovi, 18
+  verifiche)* — quasi tutte deterministiche: invece di rincorrere una corsa si
+  passa alla funzione una fotografia **vecchia** del comandante, che è
+  esattamente ciò che la concorrenza produce, e si guarda se il codice se ne
+  accorge. La prova sul deposito lancia tre processi separati con una barriera
+  comune, perché lì servono connessioni distinte al database: con una sola non
+  c'è nessuna corsa da osservare. Verificato che discriminano — rimesso il
+  codice di prima, la prova sul warp fallisce in quattro punti e riproduce la
+  separazione fra comandante e nave.
+
+**Verificato e trovato corretto**, senza reperto: l'occultamento. La guida
+promette «+1 turno per warp» e il motore li addebita davvero (misurato 1 → 2).
+
+Suite completa: **243 verifiche, 0 fallite**. Il clock è rimasto regolare per
+tutta la durata del lavoro (1.442 corse in 24 ore, 0 fallimenti, 34 ms di
+media).
+
 ## 2026-09-19 — Inquadratura dell'avatar nel browser + approvazione automatica
 
 Due cose che l'amministratore faceva al posto del giocatore. Il server sa

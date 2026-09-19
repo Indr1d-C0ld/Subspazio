@@ -173,11 +173,26 @@ final class Navigation
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
-            Database::run(
+            // La guardia `turns >= ?` impedisce il saldo negativo, ma da sola
+            // non basta: se non morde, l'UPDATE tocca zero righe e tutto il
+            // resto — la nave che si sposta, il registro, il settore visitato —
+            // prosegue come se il warp fosse stato pagato. Risultato: un warp
+            // gratis, e il comandante in un settore diverso da quello della sua
+            // nave. Va quindi verificato che abbia davvero morso.
+            $pagato = Database::run(
                 'UPDATE players SET turns = turns - ?, sector_id = ?, total_warps = total_warps + 1, last_move_at = NOW()
                  WHERE id = ? AND turns >= ?',
                 [$cost, $toSector, (int) $player['id'], $cost]
-            );
+            )->rowCount() > 0;
+            if (!$pagato) {
+                $pdo->rollBack();
+                return [
+                    'ok' => false,
+                    'code' => 'no_turns',
+                    'error' => "Turni insufficienti: servono {$cost}.",
+                    'turns_left' => (int) (Database::first('SELECT turns FROM players WHERE id = ?', [(int) $player['id']])['turns'] ?? 0),
+                ];
+            }
             Database::run('UPDATE ships SET sector_id = ? WHERE id = ?', [$toSector, (int) $ship['id']]);
             $regen = (int) ($ship['mod_shield_regen'] ?? 0);
             if ($regen > 0) {
@@ -254,11 +269,26 @@ final class Navigation
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
-            Database::run(
+            // La guardia `turns >= ?` impedisce il saldo negativo, ma da sola
+            // non basta: se non morde, l'UPDATE tocca zero righe e tutto il
+            // resto — la nave che si sposta, il registro, il settore visitato —
+            // prosegue come se il warp fosse stato pagato. Risultato: un warp
+            // gratis, e il comandante in un settore diverso da quello della sua
+            // nave. Va quindi verificato che abbia davvero morso.
+            $pagato = Database::run(
                 'UPDATE players SET turns = turns - ?, sector_id = ?, total_warps = total_warps + 1, last_move_at = NOW()
                  WHERE id = ? AND turns >= ?',
                 [$cost, $toSector, (int) $player['id'], $cost]
-            );
+            )->rowCount() > 0;
+            if (!$pagato) {
+                $pdo->rollBack();
+                return [
+                    'ok' => false,
+                    'code' => 'no_turns',
+                    'error' => "Turni insufficienti: servono {$cost}.",
+                    'turns_left' => (int) (Database::first('SELECT turns FROM players WHERE id = ?', [(int) $player['id']])['turns'] ?? 0),
+                ];
+            }
             Database::run('UPDATE ships SET sector_id = ? WHERE id = ?', [$toSector, (int) $ship['id']]);
             Database::run(
                 'INSERT INTO player_visited_sectors (player_id, sector_id) VALUES (?, ?)

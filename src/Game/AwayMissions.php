@@ -168,7 +168,10 @@ final class AwayMissions
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
-            Database::run('UPDATE players SET turns = turns - ? WHERE id = ?', [$turnCost, (int) $player['id']]);
+            if (!Wallet::charge((int) $player['id'], ['turns' => $turnCost])) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Turni insufficienti (servono {$turnCost})."];
+            }
 
             if ($credits > 0) {
                 Database::run('UPDATE players SET credits = credits + ? WHERE id = ?', [$credits, (int) $player['id']]);

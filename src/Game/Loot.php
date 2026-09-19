@@ -57,7 +57,16 @@ final class Loot
 
         // --- eventuale drop di modulo ---------------------------------------
         try {
-            $chance = GameConfig::float("loot.drop_chance_{$source}", $source === 'npc' ? 0.35 : 0.15);
+            // I ripieghi rispecchiano i valori di bilanciamento in tabella: un
+            // default diverso da quello voluto e' una regola che cambia da sola
+            // il giorno in cui la riga non c'e'.
+            $chance = GameConfig::float("loot.drop_chance_{$source}", match ($source) {
+                'npc'    => 0.22,
+                'pvp'    => 0.40,
+                'port'   => 0.15,
+                'planet' => 0.10,
+                default  => 0.15,
+            });
             $chance *= self::regionMult($sectorId);
             $chance *= self::eventLuck();
             $chance *= 1 + $dropLuckPct / 100;

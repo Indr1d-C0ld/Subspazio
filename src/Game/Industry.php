@@ -47,8 +47,11 @@ final class Industry
                 'UPDATE ships SET hold_ore = hold_ore - ?, hold_equipment = hold_equipment - ? WHERE id = ?',
                 [$qty * $orePer, $qty * $equPer, (int) $ship['id']]
             );
-            Database::run('UPDATE players SET turns = turns - ?, components = components + ? WHERE id = ?',
-                [$cost, $qty, (int) $player['id']]);
+            if (!Wallet::charge((int) $player['id'], ['turns' => $cost])) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Turni insufficienti (servono {$cost})."];
+            }
+            Wallet::credit((int) $player['id'], ['components' => $qty]);
             Codex::unlock((int) $player['id'], 'production_chain');
             $pdo->commit();
         } catch (\Throwable $e) {

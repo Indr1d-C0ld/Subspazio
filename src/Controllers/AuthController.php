@@ -11,6 +11,7 @@ use App\Core\RateLimiter;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Game\GameConfig;
 
 final class AuthController
 {
@@ -60,9 +61,22 @@ final class AuthController
         return redirect('/login');
     }
 
+    /**
+     * Iscrizioni aperte o chiuse.
+     *
+     * La chiave vive in `game_config` — e' li' che l'amministratore la trova
+     * nel pannello — mentre prima veniva letta da `config()`, che pesca dal
+     * file di configurazione: quella chiave li' non c'e' mai stata, quindi il
+     * valore ricadeva sempre sul default e l'interruttore non chiudeva niente.
+     */
+    private static function iscrizioniChiuse(): bool
+    {
+        return GameConfig::str('registration.open', 'verify') === 'closed';
+    }
+
     public function showRegister(Request $request): Response
     {
-        if ((string) config('registration.open', 'verify') === 'closed') {
+        if (self::iscrizioniChiuse()) {
             Session::flash('error', 'Le registrazioni sono momentaneamente chiuse.');
             return redirect('/login');
         }
@@ -71,6 +85,12 @@ final class AuthController
 
     public function register(Request $request): Response
     {
+        // Nascondere il modulo non chiude niente: la domanda si puo' inviare
+        // lo stesso. Il controllo che conta e' questo.
+        if (self::iscrizioniChiuse()) {
+            Session::flash('error', 'Le registrazioni sono momentaneamente chiuse.');
+            return redirect('/login');
+        }
         if (!RateLimiter::hit('register:ip:' . $request->ip(), 5, 3600)) {
             Session::flash('error', 'Troppe registrazioni da questo indirizzo. Riprova piu' . "'" . ' tardi.');
             return redirect('/registrati');

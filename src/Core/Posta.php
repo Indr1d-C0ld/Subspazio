@@ -166,7 +166,7 @@ final class Posta
 
     public static function tettoRaggiunto(): bool
     {
-        $tetto = \App\Game\GameConfig::int('mail.tetto_24h', 280);
+        $tetto = \App\Game\GameConfig::int('mail.tetto_24h', 140);
         return $tetto > 0 && self::inviate24h() >= $tetto;
     }
 
@@ -179,7 +179,7 @@ final class Posta
             'in_coda'     => $coda === null ? 0 : (int) $coda['n'],
             'inviate_24h' => self::inviate24h(),
             'rinunciate'  => $rin === null ? 0 : (int) $rin['n'],
-            'tetto'       => \App\Game\GameConfig::int('mail.tetto_24h', 280),
+            'tetto'       => \App\Game\GameConfig::int('mail.tetto_24h', 140),
         ];
     }
 

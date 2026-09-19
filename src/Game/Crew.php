@@ -322,8 +322,9 @@ final class Crew
                     $msg = 'Negoziato preparato: nessun ingaggio al prossimo ingresso ostile.';
                     break;
             }
-            if ($o['role'] !== 'medic') {
-                Database::run('UPDATE players SET turns = turns - ? WHERE id = ?', [$turnCost, (int) $player['id']]);
+            if ($o['role'] !== 'medic' && !Wallet::charge((int) $player['id'], ['turns' => $turnCost])) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Turni insufficienti (servono {$turnCost})."];
             }
             Database::run(
                 'UPDATE officers SET ready_at = ? WHERE id = ?',
