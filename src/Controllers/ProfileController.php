@@ -54,12 +54,15 @@ final class ProfileController
             return redirect('/gioco/profilo');
         }
 
-        $res = MediaAsset::storeUpload('player', (int) Ctx::$player['id'], $kind, $file, Auth::isAdmin());
+        // L'amministratore non fa piu' da cancello: l'immagine entra in linea
+        // subito, e resta rimuovibile dopo se non va bene.
+        $auto = MediaAsset::autoApprove() || Auth::isAdmin();
+        $res = MediaAsset::storeUpload('player', (int) Ctx::$player['id'], $kind, $file, $auto);
 
         if ($res['ok']) {
             $label = MediaAsset::KINDS[$kind]['label'] ?? 'Immagine';
             Session::flash('success', !empty($res['auto_approved'])
-                ? $label . ' caricata e approvata.'
+                ? $label . ' caricata: ora la vedono anche gli altri comandanti.'
                 : $label . ' caricata: in attesa di approvazione dell\'amministratore.');
         } else {
             Session::flash('errors', $res['errors'] ?? ['Caricamento non riuscito.']);

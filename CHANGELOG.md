@@ -4,6 +4,165 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-19 — Inquadratura dell'avatar nel browser + approvazione automatica
+
+Due cose che l'amministratore faceva al posto del giocatore. Il server sa
+ritagliare un quadrato centrato, alzato del diciotto per cento perché in un
+ritratto la testa sta in alto: indovina bene quasi sempre, ma è pur sempre un
+indovinare — su una foto di gruppo, o su una inquadrata storta, taglia la
+persona sbagliata. E l'immagine, una volta caricata, restava `pending` finché
+qualcuno non la guardava: chi caricava una foto non la vedeva comparire e non
+sapeva se fosse arrivata.
+
+- **[assets/js/ritaglio.js](assets/js/ritaglio.js)** *(nuovo)* — portato da
+  Atlantik, senza il suo filtro d'epoca. Apre l'immagine scelta dentro un
+  riquadro delle misure esatte dell'avatar; si trascina (mouse e touch) e si
+  ingrandisce fino al 300%, e al `submit` la tela prende il posto del file
+  scelto via `DataTransfer`: quello che parte è già ritagliato. Il vincolo
+  fisso è che l'immagine copra **sempre** tutto il riquadro — `limita()` blocca
+  gli scostamenti, quindi nessun bordo vuoto a nessuno zoom. La misura non è
+  scritta a mano: arriva dall'attributo `data-ritaglio`, che la vista popola da
+  `MediaAsset::KINDS`. Si aggancia solo ai tipi quadrati (l'avatar), non al
+  logo, che mantiene le proporzioni. **Senza JavaScript non cambia niente**:
+  parte il file com'è e il server fa il suo ritaglio centrato, come ha sempre
+  fatto — e lo stesso vale per i browser senza `canvas` o senza `DataTransfer`,
+  che escono alla prima riga.
+- **[views/game/profilo.php](views/game/profilo.php)** — l'`input[type=file]`
+  dell'avatar porta ora `data-ritaglio="<lato>"` letto da `MediaAsset::KINDS`
+  (così se un giorno cambia il lato, cambia anche il riquadro); aggiunto lo
+  `<script>` del ritagliatore; il testo di sezione non parla più di controllo
+  dell'amministratore ma dell'inquadratura, e avverte che l'immagine è subito
+  pubblica. Il paragrafo si adatta alla chiave: a `media.auto_approve` spento
+  torna il testo di prima.
+- **[assets/css/app.css](assets/css/app.css)** — stili `.ritaglio*`: riquadro
+  quadrato con `aspect-ratio`, tela al 100%, barra dello zoom e bottone
+  «Ricentra». `touch-action: none` sulla tela, altrimenti su telefono il
+  trascinamento lo intercetta lo scorrimento della pagina.
+- **[src/Game/MediaAsset.php](src/Game/MediaAsset.php)** — nuovo
+  `autoApprove()`, che legge `media.auto_approve`: è una chiave e non una
+  costante proprio perché si possa cambiare idea dal pannello. `promote()`
+  accetta ora `?int $reviewerId`, e l'approvazione d'ufficio passa `null` con
+  nota `approvazione automatica`: **nessuno ha guardato quell'immagine**, e
+  attribuire la decisione a qualcuno sarebbe una bugia in tabella, proprio nel
+  registro che serve a distinguere chi ha deciso cosa.
+- **[src/Controllers/ProfileController.php](src/Controllers/ProfileController.php)**
+  — `uploadMedia()` non passa più `Auth::isAdmin()` come unico criterio di
+  auto-approvazione, ma `MediaAsset::autoApprove() || Auth::isAdmin()`; il
+  messaggio di conferma dice cosa è appena successo («ora la vedono anche gli
+  altri comandanti») invece di annunciare un'attesa che non c'è più.
+- **[db/migrations/0039_media_auto_approve.sql](db/migrations/0039_media_auto_approve.sql)**
+  *(nuovo)* — la sola chiave `media.auto_approve` (bool, default `1`). **Non si
+  butta via nulla**: lo stato `pending`, la coda di moderazione e il pulsante
+  di rimozione restano al loro posto, e spegnendo la chiave si torna esattamente
+  al comportamento precedente senza una riga di codice nuova.
+- **[views/admin/dashboard.php](views/admin/dashboard.php)** — quando la coda
+  «Immagini in attesa» è vuota e la chiave è accesa, una riga spiega *perché*
+  resterà vuota e dove si interviene dopo (dal profilo del giocatore). Senza,
+  una coda perennemente vuota sembra un guasto.
+- **[src/Game/Help.php](src/Game/Help.php)** — l'aiuto contestuale
+  `profilo.immagini` descrive l'inquadratura e la pubblicazione immediata al
+  posto del controllo dell'amministratore.
+- **[sw.js](sw.js)** — `VERSION` a `subspazio-v45` e `ritaglio.js` nel guscio
+  precaricato, così chi ha la PWA installata non resta con gli asset vecchi.
+- **[tests/immagini.php](tests/immagini.php)** *(nuovo)* — 31 verifiche:
+  l'avatar che esce quadrato comunque entri, il logo che invece mantiene le
+  proporzioni, il WebP che manda il ritagliatore (se il server lo rifiutasse,
+  il ritaglio lato client non arriverebbe mai a destinazione), ciò che non è
+  un'immagine, la sostituzione che ritira la precedente lasciandone una sola
+  approvata, e **la vecchia coda ancora funzionante a chiave spenta**. Nessun
+  file reale viene toccato: proprietario sintetico fuori intervallo, immagini
+  generate sul momento, file e righe rimossi in `finally` con verifica che non
+  resti nulla. Include anche il controllo che il riquadro prenda la misura da
+  `KINDS` e non da un numero scritto a mano.
+- **[docs/roadmap.md](docs/roadmap.md)** — la voce «Avatar + logo caricati» del
+  tema A passa a fatta, con la data dell'inquadratura.
+
+Oltre alla suite: giro HTTP reale con un comandante usa-e-getta (registrazione,
+accesso, upload multipart, riga `approved`, immagine servita) — verificato che
+lo stesso controllo **fallisce** contro il codice precedente, quindi discrimina
+davvero. E banco di prova del ritagliatore in un browser vero: una 900×300 esce
+512×512 con tutti e quattro gli angoli coperti, e resta coperta al 300% di zoom
+e dopo un trascinamento di 9000 px.
+
+## 2026-09-19 — L'iscrizione si autovalida: l'admin esce dalla porta d'ingresso
+
+Ogni account nasceva `pending` e restava lì finché l'amministratore non lo
+attivava a mano: chi si iscriveva di notte aspettava il mattino, e chi non
+riceveva risposta non sapeva se la domanda fosse arrivata. Ora chi si iscrive
+conferma da sé il proprio indirizzo — stesso schema di Atlantik e CthulhuMUD —
+e nasce anche il recupero della password, che sulla stessa meccanica costa
+poco.
+
+- **[src/Core/Posta.php](src/Core/Posta.php)** *(nuovo)* — coda di posta
+  portata da Atlantik. Ogni messaggio entra in coda **prima** di essere
+  tentato: se l'SMTP non risponde il messaggio non si perde e riparte da solo,
+  con attese crescenti (1, 5, 15, 60, 180, 360 minuti). Il tetto giornaliero si
+  fa contando gli invii riusciti nelle ultime 24 ore. `trasportoDiProva()`
+  permette ai test di sostituire il trasporto senza spedire niente davvero.
+- **[db/migrations/0037_coda_posta.sql](db/migrations/0037_coda_posta.sql)**
+  *(nuovo)* — tabella `mail_queue` e chiavi `mail.*`. Il tetto è **140** invii
+  al giorno e non 280: chi fa girare più di un gioco sullo stesso account SMTP
+  conta solo i propri invii, quindi il limite va ripartito a mano perché la
+  somma resti sotto la soglia del fornitore anche nel giorno peggiore.
+- **[db/migrations/0038_verifica_email.sql](db/migrations/0038_verifica_email.sql)**
+  *(nuovo)* — `users.email_verified_at`, `verify_sent_at`, `verify_count`, e la
+  tabella `user_tokens`. In tabella finisce **solo l'impronta `sha256`** del
+  gettone: chi legge il database non può usarlo per entrare al posto di
+  qualcuno. Gettone monouso, con scadenza, `ON DELETE CASCADE` sull'utente. Gli
+  account già attivi non si ritrovano fuori: la migrazione li segna come
+  verificati con la data di approvazione (o di creazione).
+- **[src/Auth/Auth.php](src/Auth/Auth.php)** — `issueToken()` (emetterne uno
+  nuovo invalida il precedente, così non restano più porte aperte del
+  necessario), `readToken()`, `verifyEmail()`, `consumeToken()`, `isVerified()`,
+  `gcTokens()`. `setPassword()` incrementa `session_epoch`: se la password è
+  stata cambiata perché qualcun altro se l'era presa, lasciargli la sessione
+  aperta vanificherebbe il cambio.
+- **[src/Auth/AuthMail.php](src/Auth/AuthMail.php)** *(nuovo)* — i tre
+  messaggi (verifica, recupero, avviso all'amministratore), solo testo semplice,
+  nel tono della Rete Comm della Flotta. Tutti passano dalla coda: la verifica a
+  priorità 1 perché è l'unica porta d'ingresso al gioco, l'avviso
+  all'amministratore a 7 perché ormai è una notizia, non una richiesta. Il
+  contatore dei rinvii si muove alla **presa in carico**, non all'invio, così il
+  freno funziona anche se l'SMTP è momentaneamente giù. **Nota di
+  installazione**: i collegamenti sono costruiti su `app.public_url`, che deve
+  essere in `https` — ci viaggia un gettone monouso, e in chiaro chi ascolta la
+  rete entra al posto del giocatore.
+- **[src/Controllers/AuthController.php](src/Controllers/AuthController.php)** —
+  la registrazione emette il gettone, spedisce e porta a `/verifica-inviata`
+  invece di lasciare l'utente in attesa di un umano. Aggiunti `verify()`,
+  `resend()`, `showForgot()`, `forgot()`, `showReset()`, `reset()`. Rinvio e
+  recupero rispondono **allo stesso modo** che l'indirizzo esista o no:
+  altrimenti la pagina diventa un modo per sapere chi è iscritto.
+- **[src/routes.php](src/routes.php)** — `/verifica-inviata`, `/verifica`,
+  `/rinvia-verifica`, `/password-dimenticata` (GET+POST), `/reimposta`
+  (GET+POST).
+- **[views/auth/verifica_inviata.php](views/auth/verifica_inviata.php)**,
+  **[views/auth/password_dimenticata.php](views/auth/password_dimenticata.php)**,
+  **[views/auth/reimposta.php](views/auth/reimposta.php)** *(nuove)* — le tre
+  pagine del percorso, nello stile delle altre schermate di accesso.
+- **[views/auth/pending.php](views/auth/pending.php)** — non annuncia più
+  un'approvazione che non arriverà: dice che manca solo la conferma
+  dell'indirizzo, suggerisce la posta indesiderata e offre il bottone per
+  farsi rispedire il collegamento.
+- **[views/auth/register.php](views/auth/register.php)**,
+  **[views/home.php](views/home.php)**,
+  **[views/auth/login.php](views/auth/login.php)** — non si «richiede un
+  accesso» a nessuno: ci si iscrive. Titolo e bottone d'invito aggiornati di
+  conseguenza, e la pagina d'accesso porta ora il collegamento «Password
+  dimenticata?».
+- **[bin/tick.php](bin/tick.php)** — tre lavori nuovi prima della potatura del
+  diario: `posta` (smista la coda), `tokens_gc` (i gettoni consumati o scaduti
+  non restano per sempre), `posta_gc` (pota i messaggi vecchi).
+- **[tests/posta.php](tests/posta.php)** *(nuovo, 22 verifiche)* e
+  **[tests/iscrizione.php](tests/iscrizione.php)** *(nuovo, 33 verifiche)* — la
+  coda con i suoi ritentativi e il suo tetto; l'account che nasce chiuso, il
+  gettone di cui resta solo l'impronta, il doppio clic sullo stesso collegamento
+  (chi lo fa ha fatto la cosa giusta: non merita una schermata d'errore), i
+  gettoni inventati e scaduti, il collegamento in `https`, e le sessioni chiuse
+  al cambio password. Nessuna prova spedisce davvero: il trasporto viene
+  sostituito.
+- **[docs/roadmap.md](docs/roadmap.md)** — nuova voce nello Stato.
+
 ## 2026-09-11 — Stemma di flotta casuale ai nuovi comandanti
 
 Ogni nuovo giocatore aveva `players.crest = NULL`, che `Identity::crest()`

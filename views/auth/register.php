@@ -1,6 +1,7 @@
 <section class="panel narrow">
-  <h1>Richiedi un accesso</h1>
-  <p class="hint">La registrazione crea una richiesta: un amministratore la approvera' prima del primo accesso.</p>
+  <h1>Iscriviti</h1>
+  <p class="hint">Ti arriverà un collegamento per confermare l'indirizzo: aprilo e sei
+     subito a bordo. Nessuno deve approvare la tua domanda.</p>
   <form method="post" action="<?= e(url('/registrati')) ?>" class="stack">
     <?= csrf_field() ?>
     <label>

@@ -10,8 +10,15 @@ use App\Core\Database;
 /**
  * Immagini caricate dagli utenti (avatar del comandante, logo di flotta).
  * Pipeline: upload -> validazione -> ricodifica GD (spoglia EXIF/payload) ->
- * file in storage/uploads/ -> riga `pending` -> approvazione admin.
+ * file in storage/uploads/ -> riga `pending` -> approvazione.
  * Solo gli asset `approved` sono serviti agli altri giocatori.
+ *
+ * Con `media.auto_approve` (impostazione predefinita) l'approvazione e'
+ * automatica e il giocatore vede subito la propria immagine: l'amministratore
+ * non e' piu' un cancello da attraversare, ma resta l'ultima parola — puo'
+ * rimuovere in qualunque momento cio' che non va. Spegnendo la chiave si torna
+ * alla coda di moderazione senza toccare una riga di codice: la macchina del
+ * `pending` e' rimasta tutta al suo posto.
  */
 final class MediaAsset
 {
@@ -36,6 +43,15 @@ final class MediaAsset
     public static function flushCache(): void
     {
         self::$cache = [];
+    }
+
+    /**
+     * Le immagini entrano in linea da sole, senza passare dall'amministratore.
+     * Chiave di configurazione, non costante: si cambia idea dal pannello.
+     */
+    public static function autoApprove(): bool
+    {
+        return GameConfig::bool('media.auto_approve', true);
     }
 
     /** Limite effettivo: il minimo fra config e limiti del php.ini (onesto verso l'utente). */
@@ -193,9 +209,8 @@ final class MediaAsset
 
     /**
      * Valida + ricodifica + registra un upload. Di norma entra come `pending`
-     * e sostituisce l'eventuale pending precedente; con $autoApprove (upload
-     * fatto da un admin) entra direttamente come `approved`, ritirando quello
-     * approvato prima.
+     * e sostituisce l'eventuale pending precedente; con $autoApprove entra
+     * direttamente come `approved`, ritirando quello approvato prima.
      *
      * @param array{name?:string,type?:string,tmp_name?:string,error?:int,size?:int} $file  voce di $_FILES
      * @return array{ok:bool, errors?:list<string>, asset?:array<string,mixed>, auto_approved?:bool}
@@ -288,7 +303,9 @@ final class MediaAsset
         }
 
         if ($autoApprove) {
-            self::promote($id, $ownerId, 'auto-approvato (admin)');
+            // Nessuno ha guardato questa immagine: `reviewed_by` resta vuoto
+            // invece di attribuire a qualcuno una decisione che non ha preso.
+            self::promote($id, null, 'approvazione automatica');
         }
 
         return ['ok' => true, 'asset' => self::get($id) ?? [], 'auto_approved' => $autoApprove];
@@ -308,7 +325,7 @@ final class MediaAsset
     }
 
     /** Porta un asset a `approved`, ritirando quello approvato prima per lo stesso (owner, kind). */
-    private static function promote(int $id, int $reviewerId, ?string $note): void
+    private static function promote(int $id, ?int $reviewerId, ?string $note): void
     {
         $a = self::get($id);
         if ($a === null) {

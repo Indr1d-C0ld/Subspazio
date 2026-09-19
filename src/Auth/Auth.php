@@ -9,8 +9,12 @@ use App\Core\Session;
 
 /**
  * Autenticazione: registrazione, login, stato utente.
- * Il modello di registrazione e' "approvazione admin": ogni nuovo
- * account nasce in stato 'pending' e va attivato dalla dashboard.
+ *
+ * Il modello di registrazione e' "autovalidazione": ogni account nasce
+ * 'pending' e diventa 'active' quando l'interessato conferma il proprio
+ * indirizzo aprendo il collegamento ricevuto. L'amministratore non deve
+ * vagliare nulla, ma conserva la possibilita' di attivare a mano dal
+ * pannello nel caso un'e-mail non arrivi mai.
  */
 final class Auth
 {
@@ -37,7 +41,8 @@ final class Auth
 
         try {
             $user = Database::first(
-                'SELECT id, username, email, display_name, status, role, created_at, approved_at, last_login_at, session_epoch
+                'SELECT id, username, email, display_name, status, role, created_at, approved_at,
+                        email_verified_at, last_login_at, session_epoch
                  FROM users WHERE id = ?',
                 [(int) $uid]
             );
@@ -86,6 +91,132 @@ final class Auth
     {
         $u = self::user();
         return $u !== null && in_array($u['role'], ['admin', 'moderator'], true) && $u['status'] === 'active';
+    }
+
+    public static function isVerified(): bool
+    {
+        $u = self::user();
+        return $u !== null && !empty($u['email_verified_at']);
+    }
+
+    // --- Gettoni monouso --------------------------------------------------
+
+    /**
+     * Genera un gettone monouso, ne salva soltanto l'hash e restituisce il
+     * valore in chiaro (che esiste quindi solo dentro l'e-mail spedita).
+     *
+     * Un solo gettone vivo per tipo: chiederne uno nuovo invalida il
+     * precedente, cosi' un collegamento vecchio finito in mani altrui non
+     * serve piu' a nulla.
+     */
+    public static function issueToken(int $userId, string $kind, ?string $ip = null): string
+    {
+        $token = bin2hex(random_bytes(32));
+        $ore = $kind === 'reset_password'
+            ? max(1, \App\Game\GameConfig::int('auth.reset_ttl_hours', 2))
+            : max(1, \App\Game\GameConfig::int('auth.verify_ttl_hours', 48));
+
+        Database::run(
+            'UPDATE user_tokens SET used_at = NOW() WHERE user_id = ? AND kind = ? AND used_at IS NULL',
+            [$userId, $kind]
+        );
+        Database::run(
+            'INSERT INTO user_tokens (user_id, kind, token_hash, expires_at, created_ip)
+             VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL ? HOUR), ?)',
+            [$userId, $kind, hash('sha256', $token), $ore, $ip !== null ? @inet_pton($ip) ?: null : null]
+        );
+        return $token;
+    }
+
+    /**
+     * Legge un gettone senza consumarlo. Separata da consumeToken() perche' il
+     * recupero password ha bisogno di validare il collegamento per mostrare il
+     * modulo, e di bruciarlo solo quando la nuova password viene salvata.
+     *
+     * @return array{ok:bool, error?:string, row?:array<string,mixed>}
+     */
+    public static function readToken(string $token, string $kind): array
+    {
+        $token = trim($token);
+        if ($token === '' || !ctype_xdigit($token)) {
+            return ['ok' => false, 'error' => 'Collegamento non valido.'];
+        }
+        $row = Database::first(
+            'SELECT t.id, t.user_id, t.used_at, t.expires_at, u.status, u.username, u.email
+             FROM user_tokens t JOIN users u ON u.id = t.user_id
+             WHERE t.token_hash = ? AND t.kind = ?',
+            [hash('sha256', $token), $kind]
+        );
+        if ($row === null) {
+            return ['ok' => false, 'error' => 'Collegamento non valido.'];
+        }
+        if ($row['used_at'] !== null) {
+            return ['ok' => false, 'error' => 'Questo collegamento e\' gia\' stato utilizzato.', 'row' => $row];
+        }
+        if (strtotime((string) $row['expires_at']) < time()) {
+            return ['ok' => false, 'error' => 'Il collegamento e\' scaduto.', 'row' => $row];
+        }
+        return ['ok' => true, 'row' => $row];
+    }
+
+    /**
+     * Consuma il gettone di verifica e attiva l'account.
+     *
+     * @return array{ok:bool, error?:string, user?:array<string,mixed>}
+     */
+    public static function verifyEmail(string $token, ?string $ip = null): array
+    {
+        $letto = self::readToken($token, 'verify_email');
+
+        if (!$letto['ok']) {
+            // Gia' usato ma l'account e' attivo: e' un doppio clic sullo stesso
+            // collegamento, non un errore da mostrare in faccia a qualcuno che
+            // ha appena fatto la cosa giusta.
+            if (isset($letto['row']) && (string) $letto['row']['status'] === 'active' && $letto['row']['used_at'] !== null) {
+                return ['ok' => true, 'user' => $letto['row'], 'gia_attivo' => true];
+            }
+            return $letto;
+        }
+        $row = $letto['row'];
+
+        Database::run('UPDATE user_tokens SET used_at = NOW() WHERE id = ?', [(int) $row['id']]);
+        Database::run(
+            "UPDATE users SET status = 'active', email_verified_at = NOW() WHERE id = ? AND status = 'pending'",
+            [(int) $row['user_id']]
+        );
+        return ['ok' => true, 'user' => $row];
+    }
+
+    /**
+     * Imposta una nuova password e chiude le sessioni aperte di quell'utente.
+     *
+     * L'incremento di session_epoch e' la parte che conta: se la password e'
+     * stata cambiata perche' qualcuno se l'era presa, lasciargli la sessione
+     * aperta vanificherebbe il cambio.
+     */
+    public static function setPassword(int $userId, string $password): void
+    {
+        Database::run(
+            'UPDATE users SET password_hash = ?, session_epoch = session_epoch + 1 WHERE id = ?',
+            [password_hash($password, self::algo(), self::algoOptions()), $userId]
+        );
+    }
+
+    /** Brucia un gettone gia' validato con readToken(). */
+    public static function consumeToken(int $tokenId): void
+    {
+        Database::run('UPDATE user_tokens SET used_at = NOW() WHERE id = ?', [$tokenId]);
+    }
+
+    /** Potatura dei gettoni scaduti o consumati da un pezzo. */
+    public static function gcTokens(int $giorni = 7): int
+    {
+        return Database::run(
+            'DELETE FROM user_tokens
+              WHERE (used_at IS NOT NULL OR expires_at < NOW())
+                AND created_at < DATE_SUB(NOW(), INTERVAL ? DAY) LIMIT 500',
+            [max(1, $giorni)]
+        )->rowCount();
     }
 
     // --- Azioni ---------------------------------------------------------------
@@ -162,7 +293,7 @@ final class Auth
      * @param array<string,mixed> $input
      * @return array{ok:bool, errors:array<string,string>, user_id?:int}
      */
-    public static function register(array $input): array
+    public static function register(array $input, ?string $ip = null): array
     {
         $username = trim((string) ($input['username'] ?? ''));
         $email    = mb_strtolower(trim((string) ($input['email'] ?? '')));
@@ -216,7 +347,10 @@ final class Auth
             ]
         );
 
-        return ['ok' => true, 'errors' => [], 'user_id' => Database::lastInsertId()];
+        $userId = Database::lastInsertId();
+        $token = self::issueToken($userId, 'verify_email', $ip);
+
+        return ['ok' => true, 'errors' => [], 'user_id' => $userId, 'token' => $token];
     }
 
     /**

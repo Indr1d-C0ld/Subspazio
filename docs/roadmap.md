@@ -26,7 +26,7 @@ sé.
 | Titoli/onorificenze **derivati** da grado, tier di fazione, traguardi | S | `Ranks`, `Faction`, `Achievements` |
 | Nome + **registro** nave (stile NCC-…) + livrea scafo | S | `ships.name` (già presente) |
 | Callsign / motto sull'hail | S | radio |
-| Avatar + logo **caricati** (limiti dimensione/tipo + approvazione admin) | M | riusa la coda di approvazione iscrizioni |
+| Avatar + logo **caricati** ✅ fatto — 2026-09-10, inquadratura e approvazione automatica il 2026-09-19 | M | `MediaAsset`, `assets/js/ritaglio.js` |
 
 ## B · Profondità tattica del combattimento
 
@@ -124,6 +124,8 @@ dopo ogni cluster.
 | **Flash e refill turni** (reperti 07+08) — il ciclo dei flash non avanza più a ogni avvio di sessione ma al primo consumo reale (il polling non li mangia più); `TurnManager::sync()` vincola la data nella WHERE e rilegge se non applica. Corretta anche un'intermittenza nei test NPC, che ora prendono il flock del tick | fatto — 2026-09-15 |
 | **Ultime difese** (reperti 09–12) — scudo novizio esteso a cannoni/mine/caccia altrui (**non** a NPC e pericoli ambientali) con messaggio esplicito e aiuto allineato; oracolo sui tempi di login chiuso con hash di riferimento costante (234 vs 233 ms su HTTP reale); `back` del redirect vagliato; freno di 120 azioni/min sul middleware `player`, regolabile | fatto — 2026-09-15 |
 | **Audit chiuso** — 12 reperti su 12. Nessuna SQL injection, nessun XSS. Suite di 132 verifiche (`php tests/run.php`) | chiuso — 2026-09-15 |
+| **Autovalidazione dell'iscrizione** — l'admin esce dalla porta d'ingresso: chi si iscrive conferma il proprio indirizzo e si attiva da solo (gettone monouso, in tabella solo l'impronta `sha256`). Con recupero password e coda di posta con ritentativi, portata da Atlantik | fatto — 2026-09-19 |
+| **Inquadratura dell'avatar** — riquadro 512×512 nel browser: si sposta e si ingrandisce, e parte esattamente quello che si vede (`assets/js/ritaglio.js`, portato da Atlantik). Senza JavaScript resta il ritaglio centrato del server. Le immagini sono approvate d'ufficio (`media.auto_approve`), la coda di moderazione resta al suo posto per un ripensamento | fatto — 2026-09-19 |
 | **C — resta** | NPC nominati ricorrenti · operazioni a tempo · anomalia della stagione |
 | **Coerenza distanze/tempi** — discussa 2026-09-11 (analisi sotto). **Accantonata su decisione dell'utente**: nessuna delle leve A/B/C/E viene perseguita. |
 | **#2 — Combattimento B1: tipi d'arma con profilo** | ~~scartato~~ — non si fa: snatura il combattimento (nessuna agency nel momento, morra cinese a info nascosta con pochi giocatori, superficie di bilanciamento enorme). In alternativa, se in futuro si vuole texture d'arma: un solo asse «penetrazione scudi» (S). I tipi d'arma veri hanno senso solo con le classi di nave (tema D). |

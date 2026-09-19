@@ -90,11 +90,18 @@ $isPod    = ($ship['type_key'] ?? '') === 'escape_pod';
 
 <section class="panel">
   <h2><span class="sec-ic">🖼️</span> Immagini caricate<?= partial('help', ['key' => 'profilo.immagini']) ?></h2>
-  <p class="hint">Avatar personale e logo di flotta. Ogni immagine passa da un
-     <strong>controllo dell'amministratore</strong> prima di diventare visibile agli
-     altri comandanti (stessa coda delle iscrizioni). PNG, JPEG, WebP o GIF, max
-     <?= number_format(MediaAsset::maxBytes() / (1024 * 1024), 1, ',', '.') ?> MB; l'immagine
-     viene ritagliata e ricodificata (l'avatar in quadrato).</p>
+  <p class="hint">Avatar personale e logo di flotta. PNG, JPEG, WebP o GIF, max
+     <?= number_format(MediaAsset::maxBytes() / (1024 * 1024), 1, ',', '.') ?> MB;
+     l'immagine viene ricodificata sul server (l'avatar in quadrato, <?= (int) MediaAsset::KINDS['avatar']['box'] ?>&times;<?= (int) MediaAsset::KINDS['avatar']['box'] ?>).
+     Scelto il file puoi <strong>spostarlo e ingrandirlo</strong> nel riquadro per decidere
+     tu l'inquadratura.
+     <?php if (MediaAsset::autoApprove()): ?>
+       Compare subito agli altri comandanti: tieni presente che &egrave; pubblica, e
+       l'amministratore pu&ograve; rimuoverla se non &egrave; adatta.
+     <?php else: ?>
+       Ogni immagine passa da un <strong>controllo dell'amministratore</strong> prima di
+       diventare visibile agli altri comandanti.
+     <?php endif; ?></p>
 
   <div class="media-slots">
     <?php foreach (MediaAsset::KINDS as $kind => $meta):
@@ -143,7 +150,8 @@ $isPod    = ($ship['type_key'] ?? '') === 'escape_pod';
       <form method="post" action="<?= e(url('/gioco/profilo/media')) ?>" enctype="multipart/form-data" class="media-up">
         <?= csrf_field() ?>
         <input type="hidden" name="kind" value="<?= e($kind) ?>">
-        <input type="file" name="file" accept="image/png,image/jpeg,image/webp,image/gif" required>
+        <input type="file" name="file" accept="image/png,image/jpeg,image/webp,image/gif" required
+               <?= !empty($meta['square']) ? 'data-ritaglio="' . (int) $meta['box'] . '"' : '' ?>>
         <button type="submit" class="btn xs"><?= $pe !== null ? 'Sostituisci' : 'Carica' ?></button>
       </form>
 
@@ -161,3 +169,4 @@ $isPod    = ($ship['type_key'] ?? '') === 'escape_pod';
 </section>
 
 <script src="<?= e(asset('js/profile.js')) ?>" defer></script>
+<script src="<?= e(asset('js/ritaglio.js')) ?>" defer></script>

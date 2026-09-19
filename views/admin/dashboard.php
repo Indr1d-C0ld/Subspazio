@@ -52,7 +52,11 @@ $badge = static fn (string $s): string => match ($s) {
 <section class="panel">
   <h2>Immagini in attesa <?php if ($media_pending !== []): ?><span class="pill warn"><?= count($media_pending) ?></span><?php endif; ?></h2>
   <?php if ($media_pending === []): ?>
-    <p class="hint">Nessuna immagine da moderare.</p>
+    <p class="hint">Nessuna immagine da moderare.
+      <?php if (App\Game\MediaAsset::autoApprove()): ?>
+        Le immagini entrano in linea da sole (<code>media.auto_approve</code>): questa coda
+        resta vuota, e si interviene dopo, dal profilo del giocatore.
+      <?php endif; ?></p>
   <?php else: ?>
     <div class="media-review">
       <?php foreach ($media_pending as $m): ?>

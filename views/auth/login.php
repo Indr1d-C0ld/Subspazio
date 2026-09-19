@@ -17,5 +17,7 @@
     </label>
     <button type="submit" class="btn">Entra</button>
   </form>
-  <p class="hint">Non hai un accesso? <a href="<?= e(url('/registrati')) ?>">Richiedilo qui</a>.</p>
+  <p class="hint">Non hai un accesso? <a href="<?= e(url('/registrati')) ?>">Iscriviti qui</a> —
+     ti bastano un minuto e un indirizzo e-mail valido.</p>
+  <p class="hint"><a href="<?= e(url('/password-dimenticata')) ?>">Password dimenticata?</a></p>
 </section>

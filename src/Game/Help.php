@@ -81,7 +81,7 @@ final class Help
 
         // --- Identità -------------------------------------------
         'profilo.identita'      => 'Colore d\'accento, marca di flotta, motto e registro della nave: compaiono in plancia, classifica e liste.',
-        'profilo.immagini'      => 'Avatar e logo di flotta. Ogni immagine passa da un controllo dell\'amministratore prima di diventare pubblica.',
+        'profilo.immagini'      => 'Avatar e logo di flotta. Scegli il file, poi sposta e ingrandisci nel riquadro per decidere l\'inquadratura: viene caricato quello che vedi. L\'immagine e\' subito pubblica.',
     ];
 
     public static function get(string $key): ?string

@@ -5,10 +5,17 @@
     <p>Il tuo account (<strong>@<?= e($user['username']) ?></strong>) risulta <strong>sospeso</strong>.
        Contatta un amministratore per il ripristino.</p>
   <?php else: ?>
-    <p>Grazie per la registrazione, <strong>@<?= e($user['username']) ?></strong>.</p>
-    <p>Il tuo accesso e' in attesa di approvazione. Riceverai conferma appena un
-       amministratore avra' validato l'account; nel frattempo l'accesso al gioco
-       resta bloccato.</p>
+    <p>Ci sei quasi, <strong>@<?= e($user['username']) ?></strong>.</p>
+    <p>Manca solo la conferma dell'indirizzo e-mail: apri il collegamento che ti
+       abbiamo spedito e il tuo account si attiva da sé. Nessuno deve approvarlo.</p>
+    <p class="hint">Non lo trovi? Controlla la posta indesiderata, oppure fattelo
+       rispedire qui sotto.</p>
+
+    <form method="post" action="<?= e(url('/rinvia-verifica')) ?>" class="stack">
+      <?= csrf_field() ?>
+      <input type="hidden" name="email" value="<?= e($user['email'] ?? '') ?>">
+      <button type="submit" class="btn">Rispedisci il collegamento</button>
+    </form>
   <?php endif; ?>
   <form method="post" action="<?= e(url('/logout')) ?>" class="stack">
     <?= csrf_field() ?>

@@ -12,7 +12,7 @@
 
   <?php if ($user === null): ?>
     <p class="actions">
-      <a class="btn" href="<?= e(url('/registrati')) ?>">Richiedi un accesso</a>
+      <a class="btn" href="<?= e(url('/registrati')) ?>">Iscriviti</a>
       <a class="btn ghost" href="<?= e(url('/login')) ?>">Accedi</a>
     </p>
     <p class="hint">In <strong>beta testing</strong>. Gli account vengono attivati manualmente da un amministratore.</p>

@@ -92,7 +92,18 @@ $jobs = [
         return $out;
     },
 
-    // 7) Potatura del diario del clock: senza, tick_runs cresce all'infinito.
+    // 7) Coda della posta: tenta i messaggi in attesa e pota i vecchi.
+    'posta'          => static fn () => \App\Core\Posta::smista(),
+    'tokens_gc'      => static function () {
+        $n = \App\Auth\Auth::gcTokens(7);
+        return $n > 0 ? ['removed' => $n] : null;
+    },
+    'posta_gc'       => static function () {
+        $n = \App\Core\Posta::pota(GameConfig::int('mail.keep_days', 30));
+        return $n > 0 ? ['removed' => $n] : null;
+    },
+
+    // 8) Potatura del diario del clock: senza, tick_runs cresce all'infinito.
     'tick_runs_gc'   => static fn () => TickHealth::gc(),
 ];
 

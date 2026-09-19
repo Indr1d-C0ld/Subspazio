@@ -44,6 +44,18 @@ $router->post('/registrati', [AuthController::class, 'register'], ['guest']);
 $router->post('/logout', [AuthController::class, 'logout'], ['auth']);
 $router->get('/attesa', [AuthController::class, 'pending'], ['auth']);
 
+// Autovalidazione dell'indirizzo: e' la porta d'ingresso, non c'e' piu'
+// l'amministratore a vagliare le domande.
+$router->get('/verifica-inviata', [AuthController::class, 'verificationSent'], ['guest']);
+$router->get('/verifica', [AuthController::class, 'verify']);
+$router->post('/rinvia-verifica', [AuthController::class, 'resend']);
+
+// Recupero della password, sulla stessa meccanica di gettoni monouso.
+$router->get('/password-dimenticata', [AuthController::class, 'showForgot'], ['guest']);
+$router->post('/password-dimenticata', [AuthController::class, 'forgot'], ['guest']);
+$router->get('/reimposta', [AuthController::class, 'showReset'], ['guest']);
+$router->post('/reimposta', [AuthController::class, 'reset'], ['guest']);
+
 // Gioco (HTML)
 $game = ['auth', 'active', 'player'];
 $router->get('/gioco', [GameController::class, 'index'], $game);
