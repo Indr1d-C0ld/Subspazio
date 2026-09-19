@@ -4,6 +4,61 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-19 — Manopole scollegate: la soglia dei buoni, e sei chiavi in meno
+
+Coda dell'audit. Erano rimaste otto chiavi di `game_config` che il codice non
+legge da nessuna parte, segnalate ma non toccate. Aperte una per una, e la
+risposta è più interessante di «non servono»: **nessuna nominava una funzione
+inesistente**. Sei erano state superate da un meccanismo diverso — in cinque
+casi su sei più preciso dell'originale — e due erano manopole vere, mai
+collegate al numero che già esisteva scritto a mano nel codice.
+
+- **[src/Game/Ranks.php](src/Game/Ranks.php)** — il guasto vero, che non era
+  fra le otto: è saltato fuori cercando cosa facesse `ranks.good_threshold`.
+  `alignmentLabel()` aveva le quattro soglie scritte a mano (−500, −100, 100,
+  500), mentre `isEvil()` leggeva `ranks.evil_threshold` dalla configurazione.
+  Le due cose possono divergere, e divergono al primo tocco della manopola:
+  con `ranks.evil_threshold = -300`, un comandante a −150 è **chiamato
+  «Fuorilegge»** su plancia, classifica e mercato nero, ma i cannoni planetari
+  in assetto difensivo lo lasciano passare e i Ferrengi non lo aggrediscono.
+  Al valore attuale (−100) le due soglie coincidono, quindi oggi non si vede: è
+  latente finché nessuno gira la manopola, che però è esposta nel pannello.
+  Ora le quattro soglie escono da `alignmentBands()`, che legge **entrambe** le
+  chiavi. I due gradini esterni restano fissi ma vengono schiacciati contro
+  quelli interni: una manopola messa male può al massimo svuotare una fascia —
+  mai invertirne due, che è il modo in cui una scala smette di voler dire
+  qualcosa.
+- **[db/migrations/0041_manopole_scollegate.sql](db/migrations/0041_manopole_scollegate.sql)**
+  *(nuovo)* — via le sei superate, ciascuna con scritto chi ha preso il suo
+  posto: `crew.mission_refresh_hours` (spezzata in
+  `crew.mission_cooldown_min` + `crew.mission_expire_hours`, entrambe lette),
+  `season.regen_universe` (la casella «rigenera anche l'universo» nel modulo di
+  chiusura stagione), `craft.industry_last_run` (la colonna
+  `planets.last_industry_at`: ogni pianeta matura per conto suo invece che a un
+  battito globale), `map.node_radius` (residuo della mappa 2D — nella mappa 3D
+  il raggio è derivato dal tipo di nodo e scalato dalla prospettiva),
+  `game.name` e `game.tagline` (duplicati di `app.name` e della descrizione nel
+  manifest). Alle due soglie di allineamento viene dato un `default_value`
+  esplicito, così il pulsante di ripristino sa dove tornare.
+- **[tests/configurazione.php](tests/configurazione.php)** *(nuovo, 18
+  verifiche)* — non è un elenco da tenere aggiornato a mano: rilegge tutto il
+  codice e lo confronta con la tabella, quindi cresce da sola col progetto.
+  Sorveglia i tre modi in cui una manopola mente — scollegata, con un ripiego
+  diverso dal valore voluto, o letta con ripieghi discordi in punti diversi —
+  più l'accordo fra etichetta e trattamento su quattro tarature diverse, estremi
+  compresi. Verificato che discrimina: rimesse le soglie a mano e reinserita una
+  delle sei chiavi, fallisce in otto punti e riproduce la divergenza.
+
+**Non toccata:** `universe.region_bands`. Le tre fasce esistono davvero
+(`federation`, `frontier`, `deep`), ma il nome non descrive ciò che il
+generatore fa — quel `$i % 3` produce *una regione profonda ogni tre*, non «tre
+bande». Collegarla vorrebbe dire prima decidere cosa debba significare, ed è una
+scelta di disegno, non una correzione. Resta, dichiarata come eccezione motivata
+dentro la prova.
+
+Suite completa: **261 verifiche, 0 fallite**. Ai valori attuali nessuna
+etichetta cambia per i giocatori reali.
+
 ## 2026-09-19 — Audit delle meccaniche: turni, giacimenti e warp sotto concorrenza
 
 Non un audit di sicurezza — quello è di settembre — ma la domanda «le regole
