@@ -4,6 +4,47 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-20 — README esaustivo, e la coppia di repo che mancava
+
+SubSpazio era l'unico progetto senza il repository privato di riscontro. La
+prassi è una coppia: `Subspazio` pubblico in GPL-3, **factory default**,
+ripulito da accessi e account; `My_Subspazio` privato, mirror integrale del
+deployment. Da oggi c'è anche il secondo — qui si vede solo il primo.
+
+- **[README.md](README.md)** — riscritto nelle parti scadute e ampliato dove
+  mancava. Le parti scadute: l'iscrizione non passa più da un amministratore
+  (autovalidazione dell'indirizzo), il pannello admin non vaglia più le
+  domande, la lunghezza minima della password è 9 e non 10. Le parti nuove:
+  **account e posta** (gettoni monouso, recupero password, coda con
+  ritentativi), **profilo e immagini** (l'inquadratura dell'avatar nel
+  browser), e soprattutto un capitolo **Configurazione** che prima non
+  esisteva.
+- **Il capitolo «Configurazione»** distingue i due livelli, che è la cosa che
+  serve sapere per davvero: il *file* fuori dal DocumentRoot (segreti,
+  database, SMTP, percorsi — tabella chiave per chiave, con l'avvertenza che
+  `app.public_url` deve essere in `https` perché ci viaggia un gettone
+  monouso) e la tabella `game_config` (**257 chiavi** di bilanciamento,
+  modificabili a caldo dal pannello o da console). Le 257 sono elencate per
+  famiglia con quello che regolano, più una tabella delle otto che conviene
+  conoscere subito. Chiude con la nota sul pulsante «↺», che riporta al valore
+  *di progetto* e non a quello che avevi prima.
+- **Nuova sezione «Prove»** — come si lancia la suite, e l'avvertenza che non
+  esiste un database di prova separato: le prove girano su quello configurato,
+  creano e distruggono solo righe col prefisso `__test_`, e non vanno lanciate
+  mentre è in corso una sessione affollata.
+- **Sezione «Sicurezza» riscritta** — non più un elenco di parole ma cosa fa
+  ciascuna cosa: Argon2id con tempi di risposta uguali per utenti esistenti e
+  no, gettoni di cui resta solo l'impronta, nessuna enumerazione degli iscritti,
+  e il principio che l'audit ha reso esplicito — i vincoli su crediti, turni,
+  stive e risorse a colpo singolo stanno nella `WHERE` dell'`UPDATE`, non su una
+  copia in memoria.
+- **[config/config.example.php](config/config.example.php)** — `paths.root`
+  valeva `/data/html/subspazio`, il percorso della macchina di sviluppo: chi
+  installa altrove lo copia e si ritrova una radice che non esiste.
+  L'applicazione sa dedurla da sola, quindi l'esempio ora parte vuoto e dice
+  quando valorizzarlo. È esattamente il motivo per cui la copia pubblica esiste
+  separata: dev'essere installabile da chiunque.
+
 ## 2026-09-19 — Manopole scollegate: la soglia dei buoni, e sei chiavi in meno
 
 Coda dell'audit. Erano rimaste otto chiavi di `game_config` che il codice non

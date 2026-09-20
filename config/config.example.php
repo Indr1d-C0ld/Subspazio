@@ -39,7 +39,12 @@ return [
     ],
 
     'paths' => [
-        'root' => '/data/html/subspazio',
+        // Radice del progetto. Se vuota, l'applicazione la deduce da sola: e'
+        // quasi sempre la cosa giusta, e un percorso scritto a mano qui e'
+        // il primo motivo per cui un'installazione altrove non parte.
+        // Valorizzala solo se il progetto vive in un posto che il bootstrap
+        // non sa dedurre (es. '/var/www/html/subspazio').
+        'root' => '',
         // Radice dei file caricati dagli utenti. TIENILA FUORI dall'albero di
         // git (come questo file di config): un redeploy o un `git clean` non
         // deve poter cancellare i contenuti degli utenti. La dir va creata a
