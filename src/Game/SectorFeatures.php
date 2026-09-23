@@ -108,10 +108,28 @@ final class SectorFeatures
             'cache'   => [['minerale', 'equipaggiamento', 'organico', 'misto'][array_rand(['minerale', 'equipaggiamento', 'organico', 'misto'])], null, null],
             'anomaly' => [['gravitazionale', 'spaziale', 'temporale'][array_rand(['gravitazionale', 'spaziale', 'temporale'])], ['need' => $rich * 55], null],
             'asteroid' => [['ferro', 'silicati', 'metalli rari', 'ghiaccio'][array_rand(['ferro', 'silicati', 'metalli rari', 'ghiaccio'])], ['ore_left' => $rich * ($deep ? 90 : 55)], null],
-            'hazard'  => (function () use ($deep) {
+            'hazard'  => (function () use ($deep, $sectorId) {
                 $st = $deep
                     ? ['radiation', 'gravity', 'ion_storm'][array_rand(['radiation', 'gravity', 'ion_storm'])]
                     : ['radiation', 'ion_storm'][array_rand(['radiation', 'ion_storm'])];
+                // Solo le tempeste ioniche scadono. Estraendo il tipo a caso, ogni
+                // tempesta che si dissolveva veniva rimpiazzata da un pericolo
+                // permanente una volta su due (o due su tre nel profondo): in un
+                // giorno la regione era fatta di soli pericoli fissi, e le
+                // tempeste — che il Codex descrive come fronti ricorrenti — non
+                // tornavano piu'. I permanenti restano, ma al massimo meta'.
+                if ($st !== 'ion_storm') {
+                    $c = Database::first(
+                        "SELECT COUNT(*) tot, SUM(sf.expires_at IS NULL) perm
+                           FROM sector_features sf JOIN sectors s ON s.id = sf.sector_id
+                          WHERE sf.kind = 'hazard' AND sf.depleted = 0
+                            AND s.region_id = (SELECT region_id FROM sectors WHERE id = ?)",
+                        [$sectorId]
+                    );
+                    if ((int) ($c['perm'] ?? 0) * 2 >= (int) ($c['tot'] ?? 0) + 1) {
+                        $st = 'ion_storm';
+                    }
+                }
                 $exp = $st === 'ion_storm' ? date('Y-m-d H:i:s', time() + mt_rand(2, 6) * 3600) : null;
                 return [$st, null, $exp];
             })(),
@@ -234,8 +252,26 @@ final class SectorFeatures
         if ((int) $player['turns'] < $cost) {
             return ['ok' => false, 'error' => "Turni insufficienti (servono {$cost})."];
         }
-        if (!self::spendiTurni($player, $cost)) {
-            return ['ok' => false, 'error' => "Turni insufficienti (servono {$cost})."];
+        // La sonda si consuma per prima e con vincolo, insieme ai turni: prima
+        // il contatore veniva scalato alla fine e senza guardia, e due sonde
+        // lanciate insieme con una sola a bordo facevano due rilevamenti.
+        $pdo = Database::pdo();
+        $pdo->beginTransaction();
+        try {
+            if (Database::run('UPDATE ships SET probes = probes - 1 WHERE id = ? AND probes >= 1', [(int) $ship['id']])->rowCount() === 0) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'Nessuna sonda a bordo (compra dal Cantiere).'];
+            }
+            if (!self::spendiTurni($player, $cost)) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Turni insufficienti (servono {$cost})."];
+            }
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
         }
         $feats = Database::all('SELECT id, sector_id, kind, subtype, richness FROM sector_features WHERE depleted = 0 AND sector_id = ?', [$targetSector]);
         $found = 0;
@@ -246,7 +282,6 @@ final class SectorFeatures
                 self::codexForFeature((int) $player['id'], $f);
             }
         }
-        Database::run('UPDATE ships SET probes = probes - 1 WHERE id = ?', [(int) $ship['id']]);
         Database::run('INSERT IGNORE INTO player_visited_sectors (player_id, sector_id) VALUES (?, ?)', [(int) $player['id'], $targetSector]);
         return ['ok' => true, 'found' => $found, 'sector' => $targetSector];
     }
@@ -317,10 +352,11 @@ final class SectorFeatures
                 $name = ['Ash', 'Wren', 'Corin', 'Vess', 'Dain', 'Prya', 'Lex', 'Soren'][array_rand(range(0, 7))] . ' '
                     . ['Marr', 'Osei', 'Blane', 'Toma', 'Reyes', 'Vane', 'Sund', 'Cai'][array_rand(range(0, 7))];
                 Database::run(
-                    "INSERT INTO officers (player_id, name, role, archetype, level, skills, assigned, status, origin)
-                     VALUES (?, ?, ?, ?, ?, ?, 0, 'injured', 'wreck')",
+                    "INSERT INTO officers (player_id, name, role, archetype, level, skills, assigned, status, origin, ready_at)
+                     VALUES (?, ?, ?, ?, ?, ?, 0, 'injured', 'wreck', DATE_ADD(NOW(), INTERVAL ? HOUR))",
                     [(int) $player['id'], $name, $role, $arch['ckey'] ?? null, $lvl,
-                     json_encode(Crew::rollSkills($role, $lvl, ShipStats::decode($arch['weights'] ?? null)), JSON_UNESCAPED_UNICODE)]
+                     json_encode(Crew::rollSkills($role, $lvl, ShipStats::decode($arch['weights'] ?? null)), JSON_UNESCAPED_UNICODE),
+                     GameConfig::int('crew.injury_heal_hours', 6)]
                 );
                 $officer = $name;
                 $parts[] = "sopravvissuto recuperato: {$name} (" . Crew::roleLabel($role) . ", ferito)";
@@ -483,7 +519,17 @@ final class SectorFeatures
     {
         $f = self::owned((int) $player['id'], $featureId, 'anomaly');
         if ($f === null || (int) $f['sector_id'] !== (int) $player['sector_id']) {
-            return ['ok' => false, 'error' => 'Nessuna anomalia scansionata con quell\'id qui.'];
+            // Se l'aveva studiata ed e' sparita, l'ha risolta qualcun altro: lo si
+            // dice, invece di un «non trovata» che faceva pensare a un errore dopo
+            // decine di turni spesi.
+            $persa = Database::first(
+                "SELECT 1 x FROM sector_features sf JOIN player_feature_state pfs ON pfs.feature_id = sf.id AND pfs.player_id = ?
+                  WHERE sf.id = ? AND sf.kind = 'anomaly' AND sf.depleted = 1 AND pfs.progress > 0 AND pfs.resolved = 0",
+                [(int) $player['id'], $featureId]
+            );
+            return ['ok' => false, 'error' => $persa !== null
+                ? 'Un altro comandante ha risolto questa anomalia prima di te: e\' esaurita.'
+                : 'Nessuna anomalia scansionata con quell\'id qui.'];
         }
         if ((int) $f['resolved'] === 1) {
             return ['ok' => false, 'error' => 'Anomalia già risolta.'];
@@ -518,9 +564,12 @@ final class SectorFeatures
                 return ['ok' => true, 'done' => false, 'text' => "Analisi in corso: {$prog}/{$need}" . ($hasSci ? ' (Scienziato: +bonus)' : '')];
             }
             // risolta
-            // La ricompensa dell'anomalia si paga una volta per comandante:
-            // il vincolo `resolved = 0` e' l'unico punto in cui due analisi
-            // simultanee si escludono a vicenda.
+            // L'anomalia e' una sola per tutti: chi la risolve per primo la
+            // esaurisce, e la ricompensa si paga una volta. Servono entrambi i
+            // vincoli — `resolved = 0` sullo stato del comandante ed `esaurisci`
+            // sulla feature — e va controllato l'esito di tutti e due: prima il
+            // secondo veniva ignorato, e due risolutori simultanei erano pagati
+            // entrambi.
             $risolta = Database::run(
                 'UPDATE player_feature_state SET progress = ?, resolved = 1
                   WHERE player_id = ? AND feature_id = ? AND resolved = 0',
@@ -530,7 +579,10 @@ final class SectorFeatures
                 $pdo->rollBack();
                 return ['ok' => false, 'error' => 'Anomalia già risolta.'];
             }
-            self::esaurisci($featureId);
+            if (!self::esaurisci($featureId)) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'Un altro comandante ha risolto questa anomalia prima di te: e\' esaurita.'];
+            }
             $deep = self::regionKind((int) $f['sector_id']) === 'deep';
             $cr = (int) round(1200 * (int) $f['richness'] * ($deep ? 1.6 : 1.0));
             Wallet::credit((int) $player['id'], ['credits' => $cr]);
@@ -622,7 +674,10 @@ final class SectorFeatures
             return 0;
         }
         $base = GameConfig::int('scan.hazard_gravity_turns', 1);
-        return $h['known'] ? (int) ceil($base * GameConfig::float('scan.hazard_known_mitigation', 0.5)) : $base;
+        // Per difetto, non per eccesso: con il valore di serie (1 turno, meta'
+        // se noto) ceil(0,5) dava ancora 1, e conoscere il pozzo non serviva a
+        // niente — mentre la guida promette che i pericoli noti colpiscono meno.
+        return $h['known'] ? (int) floor($base * GameConfig::float('scan.hazard_known_mitigation', 0.5)) : $base;
     }
 
     // --- interni --------------------------------------------------

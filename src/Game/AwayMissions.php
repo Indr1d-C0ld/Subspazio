@@ -112,7 +112,7 @@ final class AwayMissions
         }
         $in = implode(',', array_fill(0, count($officerIds), '?'));
         $offs = Database::all(
-            "SELECT * FROM officers WHERE id IN ($in) AND player_id = ? AND status = 'active'
+            "SELECT * FROM officers WHERE id IN ($in) AND player_id = ? AND status = 'active' AND assigned = 1
              AND (ready_at IS NULL OR ready_at <= NOW())",
             [...$officerIds, (int) $player['id']]
         );
@@ -168,6 +168,12 @@ final class AwayMissions
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
+            // Prima si reclama la missione, poi si paga: due invii paralleli della
+            // stessa missione ne incassavano due volte la ricompensa.
+            if (Database::run("UPDATE away_missions SET status = 'done' WHERE id = ? AND status = 'open'", [$missionId])->rowCount() === 0) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'Missione non disponibile.'];
+            }
             if (!Wallet::charge((int) $player['id'], ['turns' => $turnCost])) {
                 $pdo->rollBack();
                 return ['ok' => false, 'error' => "Turni insufficienti (servono {$turnCost})."];
@@ -182,12 +188,11 @@ final class AwayMissions
                 $parts[] = "+{$salvage} Leghe";
             }
             if (in_array($outcome, ['triumph', 'success'], true) && mt_rand(1, 100) <= (int) ($rw['module_pct'] ?? 0)) {
-                $item = Database::first('SELECT ckey, name, rarity, effects FROM item_types ORDER BY RAND() LIMIT 1');
+                // Stessa estrazione di relitti e incontri, con i pesi di rarita'.
+                // Prima si pescava a caso fra tutti i tipi: un Precursore usciva
+                // una volta su sei invece che una su centosessanta.
+                $item = Loot::grant((int) $player['id'], 'mission');
                 if ($item !== null) {
-                    Database::run(
-                        "INSERT INTO player_items (player_id, item_key, rolled, source) VALUES (?, ?, ?, 'mission')",
-                        [(int) $player['id'], $item['ckey'], $item['effects']]
-                    );
                     $gotModule = true;
                     $parts[] = "modulo: {$item['name']}";
                 }
@@ -223,7 +228,11 @@ final class AwayMissions
                 );
                 if (in_array($outcome, ['triumph', 'success'], true)
                     && (int) $o['level'] >= $loyLvl && (int) $o['loyalty_done'] === 0) {
-                    $sk = ShipStats::decode($o['skills']) ?? [];
+                    // Si rileggono le skill: grantXp() qui sopra puo' averle appena
+                    // alzate con un passaggio di livello, e partendo dalla copia
+                    // vecchia quel guadagno andava perso per sempre.
+                    $fresco = Database::first('SELECT skills FROM officers WHERE id = ?', [(int) $o['id']]);
+                    $sk = ShipStats::decode($fresco['skills'] ?? $o['skills']) ?? [];
                     $sk[Crew::PRIMARY[$o['role']]] = (int) ($sk[Crew::PRIMARY[$o['role']]] ?? 5) + 3;
                     Database::run(
                         'UPDATE officers SET loyalty_done = 1, ability_tier = 2, skills = ? WHERE id = ?',
@@ -242,7 +251,6 @@ final class AwayMissions
                 Database::run('UPDATE ships SET shields = GREATEST(0, shields - ?) WHERE id = ?', [$dmg, (int) $player['ship_id']]);
             }
 
-            Database::run("UPDATE away_missions SET status = 'done' WHERE id = ?", [$missionId]);
             $rewardText = $parts === [] ? 'nessuna ricompensa' : implode(' · ', $parts);
             Database::run(
                 'INSERT INTO away_mission_log (player_id, mission_kind, title, officers, outcome, margin, reward_text)

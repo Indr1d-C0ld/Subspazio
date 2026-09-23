@@ -195,6 +195,58 @@ final class Finti
         return $n;
     }
 
+    /**
+     * Tracce che le prove lasciano in tabelle senza vincolo verso players.
+     *
+     * Cancellare comandanti, navi e utenti non basta: il registro battaglie, il
+     * giornale di bordo e il codex non hanno chiavi esterne, e le prove ci
+     * scrivevano dentro a ogni esecuzione. Al 23/09/2026 erano 205 righe su 220
+     * del registro battaglie reale: battaglie di comandanti che non esistevano.
+     *
+     * Si toglie solo cio' che e' nato DURANTE questa esecuzione (id oltre la
+     * soglia presa all'inizio, o data dopo l'inizio) e punta a comandanti che
+     * non esistono piu': la storia dei giocatori veri non viene sfiorata.
+     *
+     * @param array{combat_log:int, ship_log:int, inizio:string} $soglia
+     */
+    public static function spazzaTracce(array $soglia): int
+    {
+        $n = 0;
+        try {
+            $n += Database::run(
+                'DELETE c FROM combat_log c
+                   LEFT JOIN players pa ON pa.id = c.attacker_player_id
+                   LEFT JOIN players pd ON pd.id = c.defender_player_id
+                  WHERE c.id > ?
+                    AND (c.attacker_player_id IS NULL OR pa.id IS NULL)
+                    AND (c.defender_player_id IS NULL OR pd.id IS NULL)',
+                [$soglia['combat_log']]
+            )->rowCount();
+            $n += Database::run(
+                'DELETE l FROM ship_log l LEFT JOIN players p ON p.id = l.player_id
+                  WHERE l.id > ? AND p.id IS NULL',
+                [$soglia['ship_log']]
+            )->rowCount();
+            $n += Database::run(
+                'DELETE c FROM player_codex c LEFT JOIN players p ON p.id = c.player_id
+                  WHERE c.unlocked_at >= ? AND p.id IS NULL',
+                [$soglia['inizio']]
+            )->rowCount();
+        } catch (\Throwable) {
+        }
+        return $n;
+    }
+
+    /** @return array{combat_log:int, ship_log:int, inizio:string} */
+    public static function sogliaTracce(): array
+    {
+        return [
+            'combat_log' => (int) (Database::first('SELECT COALESCE(MAX(id), 0) m FROM combat_log')['m'] ?? 0),
+            'ship_log'   => (int) (Database::first('SELECT COALESCE(MAX(id), 0) m FROM ship_log')['m'] ?? 0),
+            'inizio'     => (string) Database::first('SELECT NOW() t')['t'],
+        ];
+    }
+
     /** Quante righe sintetiche risultano ancora presenti. */
     public static function residui(): int
     {

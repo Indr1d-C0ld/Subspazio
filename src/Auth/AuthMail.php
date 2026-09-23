@@ -38,6 +38,7 @@ final class AuthMail
     {
         $link = self::publicUrl('/verifica?token=' . $token);
         $ore  = GameConfig::int('auth.verify_ttl_hours', 48);
+        $giorni = Auth::pendingTtlDays();
         $gioco = self::nomeGioco();
 
         $corpo = <<<TXT
@@ -55,7 +56,7 @@ final class AuthMail
         altro dalla pagina di accesso.
 
         Se non hai richiesto nulla, ignora questo messaggio: senza conferma
-        l'account non viene attivato e sparisce da solo.
+        l'account non viene attivato, e dopo {$giorni} giorni sparisce da solo.
 
         --
         {$gioco} — la door BBS TradeWars reimmaginata per il web

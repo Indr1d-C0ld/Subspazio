@@ -16,6 +16,7 @@ declare(strict_types=1);
  * richiede di orchestrare processi concorrenti per riprodurre la corsa.
  */
 
+use App\Core\Database;
 use App\Game\BlackMarket;
 use App\Game\GameConfig;
 use App\Game\Wallet;
@@ -50,7 +51,9 @@ return static function (): void {
 
     Esito::sezione('Reperto 02 — scambi a metà');
 
-    [$p2, $s2] = Finti::comandante(0, ['hold_ore' => 50]);
+    // Il mercato nero ritira solo la merce che il porto locale NON vende:
+    // si vende dove il porto compra minerale.
+    [$p2, $s2] = Finti::comandante(0, ['hold_ore' => 50], (int) Database::first("SELECT p.sector_id s FROM ports p JOIN sectors x ON x.id = p.sector_id WHERE p.ore_mode = 'buy' AND p.destroyed = 0 AND x.is_fedspace = 0 LIMIT 1")['s']);
     Esito::scenario('50 unità di minerale a bordo, rivendute tre volte di fila');
 
     $vendite = 0;

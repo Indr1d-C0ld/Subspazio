@@ -55,12 +55,21 @@ final class Season
         $season = self::current();
         $sid = (int) $season['id'];
 
+        // Si reclama la chiusura prima di tutto: un doppio invio del modulo
+        // chiudeva due stagioni, e la seconda premiava col «top 10» comandanti
+        // appena azzerati, cioe' a caso.
+        if (Database::run("UPDATE seasons SET status = 'ended', ended_at = NOW() WHERE id = ? AND status = 'active'", [$sid])->rowCount() === 0) {
+            return ['ok' => false, 'error' => 'La stagione e\' gia\' stata chiusa.'];
+        }
+
         Leaderboard::recalcAll();
         $topN = GameConfig::int('season.snapshot_top', 25);
         $top = Database::all(
             "SELECT p.id, p.handle, p.rating, p.experience, p.kills,
                     (SELECT COUNT(*) FROM planets pl WHERE pl.owner_player_id = p.id AND pl.destroyed = 0) AS planets
-             FROM players p ORDER BY p.rating DESC, p.experience DESC LIMIT ?",
+             FROM players p JOIN users u ON u.id = p.user_id
+             WHERE u.status = 'active'
+             ORDER BY p.rating DESC, p.experience DESC LIMIT ?",
             [$topN]
         );
 
@@ -78,12 +87,13 @@ final class Season
         }
         $winner = $top[0]['handle'] ?? '(nessuno)';
 
-        Database::run("UPDATE seasons SET status = 'ended', ended_at = NOW() WHERE id = ?", [$sid]);
         $nextNum = (int) $season['number'] + 1;
         Database::run('INSERT INTO seasons (number, name) VALUES (?, ?)', [$nextNum, "Stagione {$nextNum}"]);
         GameConfig::set('season.number', (string) $nextNum);
 
-        Radio::system("FINE STAGIONE {$season['number']} — vince {$winner}. Comincia la Stagione {$nextNum}: tutti i comandanti ripartono da zero.");
+        Radio::system("FINE STAGIONE {$season['number']} — vince {$winner}. Comincia la Stagione {$nextNum}: "
+            . 'crediti, navi, pianeti, materiali, tesori di corporazione e reputazione ripartono da zero; '
+            . 'restano traguardi, esperienza degli ufficiali e moduli, che tornano in inventario.');
 
         // reset
         $wipePlanets = GameConfig::bool('season.wipe_planets', true) || $regenUniverse;
@@ -139,11 +149,36 @@ final class Season
             "UPDATE ships SET type_key = ?, sector_id = ?, holds_total = ?,
              hold_ore = 0, hold_organics = 0, hold_equipment = 0, hold_colonists = 0,
              fighters = ?, shields = ?, mines_armid = 0, mines_limpet = 0, probes = 0, genesis = 0,
-             escape_pod = 1, dev_scanner = 'none', dev_transwarp = 0, dev_cloak = 0",
+             escape_pod = 1, dev_scanner = 'none', dev_transwarp = 0, dev_cloak = 0, cloaked = 0, mining_laser = 0",
             [$startShip, $dock, max($startHolds, (int) $type['base_holds']), (int) $type['base_fighters'], (int) $type['base_shields']]
         );
         Database::run('INSERT IGNORE INTO player_visited_sectors (player_id, sector_id) SELECT id, ? FROM players', [$dock]);
         Database::run('DELETE FROM events');
+
+        // La ricchezza riparte da zero per tutti. Prima sopravvivevano i tesori
+        // delle corporazioni, i materiali e i lavori d'Officina — che si potevano
+        // annullare nella stagione nuova per farsi rimborsare crediti e materiali
+        // — mentre la radio annunciava che tutti ripartivano da zero.
+        Database::run('UPDATE players SET components = 0, crystals = 0, salvage = 0');
+        if (!$wipeCorps) {
+            Database::run('UPDATE corporations SET treasury = 0');
+        }
+        $pdo->exec('TRUNCATE TABLE craft_jobs');
+        $pdo->exec('TRUNCATE TABLE player_reputation');
+
+        // Moduli e ufficiali restano, come progresso del comandante. I moduli
+        // tornano in inventario (guasti compresi): la nave ridiventa lo scafo
+        // iniziale e quelli montati ne sforerebbero gli slot. Gli ufficiali oltre
+        // i posti del nuovo scafo vanno in panchina.
+        Database::run(
+            "INSERT INTO player_items (player_id, item_key, rolled, broken_at, source)
+             SELECT s.player_id, sm.item_key, sm.rolled, sm.broken_at, 'shop'
+               FROM ship_modules sm JOIN ships s ON s.id = sm.ship_id"
+        );
+        Database::run('DELETE FROM ship_modules');
+        foreach (Database::all('SELECT id FROM players') as $pl) {
+            Crew::adattaAlloScafo((int) $pl['id']);
+        }
         GameConfig::set('combat.bounty_mult', '1');
         GameConfig::forget();
 

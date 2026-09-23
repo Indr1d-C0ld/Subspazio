@@ -35,7 +35,7 @@ final class Help
         'porto.commercio'       => 'Il porto compra e vende tre merci. Il prezzo si muove con le sue scorte: ogni scambio sposta il mercato.',
         'porto.contratta'       => 'Tratta il prezzo con una controproposta invece di accettare quello «veloce»: banda stretta, poche battute.',
         'banca.conto'           => 'Deposita crediti per metterli al sicuro dai furti e maturare interesse composto; preleva quando vuoi.',
-        'mercatonero.merce'     => 'Vendi merci sopra il prezzo equo, senza domande: ogni affare qui ti costa allineamento.',
+        'mercatonero.merce'     => 'Vendi merci sopra il prezzo equo del porto locale, senza domande: ogni affare qui ti costa allineamento. Non ritira la merce che il porto del settore vende.',
         'mercatonero.hardware'  => 'Hardware scontato di provenienza dubbia. Sconto in cambio di allineamento.',
         'mercatonero.taglia'    => 'Paga per farti togliere una taglia dalla testa.',
         'contratti.bacheca'     => 'Incarichi pubblicati dai comandanti: taglie su un bersaglio o consegne di merce a un settore, con ricompensa.',
@@ -45,8 +45,8 @@ final class Help
         'cantiere.riparazioni'  => 'Rimette in linea i moduli messi fuori uso dai colpi incassati. Costo fisso per modulo, solo allo StarDock.',
         'cantiere.potenziamenti' => 'Compra stive, caccia e scudi per la nave attuale entro i limiti dello scafo.',
         'cantiere.hardware'     => 'Dispositivi permanenti: scanner, transwarp, occultamento, laser minerario, sonde, mine, capsula, Genesi.',
-        'cantiere.navi'         => 'Cambia scafo: il prezzo è al netto della permuta. Caccia, scudi e hardware non passano alla nuova nave.',
-        'eps.griglia'           => '8 tacche di reattore su 4 canali (Scudi/Armi/Motori/Sensori). Più tacche = quel sistema più forte, gli altri più deboli. Ritarare costa 1 turno.',
+        'cantiere.navi'         => 'Cambia scafo: il prezzo è al netto della permuta. Passano alla nuova nave carico, coloni, sonde, mine, siluri Genesi, capsula di salvataggio, laser minerario e ufficiali (fino ai posti del nuovo scafo). I moduli tornano in inventario, guasti compresi. Ripartono da zero caccia e scudi (dotazione del nuovo scafo), stive acquistate, scanner, transwarp, occultamento e mine limpet agganciate.',
+        'eps.griglia'           => '8 tacche di reattore su 4 canali (Scudi/Armi/Motori/Sensori). Più tacche = quel sistema più forte, gli altri più deboli. Ritarare costa {turni:eps.realloc_turn_cost}.',
         'moduli.slot'           => 'I moduli installati negli slot dello scafo ne modificano le statistiche. Un modulo «fuori uso» non conta finché non lo ripari.',
         'moduli.inventario'     => 'I moduli che possiedi ma non hai installato. Montali in uno slot libero della categoria giusta.',
         'moduli.officina'       => 'Smonta un modulo per recuperarne Leghe, oppure potenzialo di fascia. Al banco, allo StarDock.',
@@ -63,7 +63,7 @@ final class Help
         'pianeti.settore'       => 'I pianeti nel settore: chi li possiede, il livello di Citadel e se hanno un cannone Quasar.',
         'pianeta.produzione'    => 'I coloni divisi per specialità producono minerale, organico ed equipaggiamento; gli inattivi non rendono.',
         'pianeta.citadel'       => 'La fortezza del pianeta: ogni livello aumenta difesa, capienza e bonus. Sale con crediti e tempo sul tick.',
-        'pianeta.assalto'       => 'Attacca il pianeta con i caccia: superata la guarnigione puoi bombardarlo o prenderne il controllo. Crolla l\'allineamento.',
+        'pianeta.assalto'       => 'Attacca il pianeta con i caccia: superata la guarnigione ne saccheggi la tesoreria, e puoi bombardarlo. Il pianeta resta al suo proprietario. Crolla l\'allineamento.',
         'corp.home'             => 'La tua corporazione: cassa condivisa, membri e possesso comune di pianeti e strutture.',
         'corp.alleanze'         => 'Patti di non aggressione fra corporazioni: gli alleati non fanno scattare le difese a vicenda.',
 
@@ -86,6 +86,16 @@ final class Help
 
     public static function get(string $key): ?string
     {
-        return self::TEXT[$key] ?? null;
+        $t = self::TEXT[$key] ?? null;
+        if ($t === null) {
+            return null;
+        }
+        // I numeri che dipendono dalla configurazione non si scrivono a mano:
+        // {turni:chiave} diventa «1 turno» / «3 turni» col valore attuale. Prima
+        // l'aiuto diceva «1 turno» qualunque cosa l'amministratore impostasse.
+        return (string) preg_replace_callback('/\{turni:([a-z0-9_.]+)\}/', static function (array $m): string {
+            $n = GameConfig::int($m[1], 1);
+            return $n . ($n === 1 ? ' turno' : ' turni');
+        }, $t);
     }
 }

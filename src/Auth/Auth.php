@@ -219,6 +219,48 @@ final class Auth
         )->rowCount();
     }
 
+    /**
+     * Giorni dopo i quali un'iscrizione mai confermata decade.
+     *
+     * Si conta dall'ULTIMO collegamento spedito, non dall'iscrizione: chi ha
+     * chiesto un rinvio ha diritto al suo tempo intero, altrimenti la pagina
+     * che dice "puoi chiederne un altro" gli offrirebbe un collegamento che
+     * scade insieme al suo account.
+     */
+    public static function pendingTtlDays(): int
+    {
+        return max(1, \App\Game\GameConfig::int('auth.pending_ttl_days', 7));
+    }
+
+    /**
+     * Cancella le iscrizioni mai confermate e scadute.
+     *
+     * L'e-mail di verifica promette che senza conferma l'account «sparisce da
+     * solo»: finche' nessuno lo cancellava, era falso, e con una conseguenza
+     * concreta. Chi sbaglia a scrivere l'indirizzo non puo' farsi rispedire il
+     * collegamento — partirebbe verso l'indirizzo sbagliato — e restava con il
+     * proprio nome utente occupato per sempre.
+     *
+     * Solo `pending` mai verificati: un account attivato a mano da un
+     * amministratore resta, anche se l'indirizzo non e' mai stato confermato.
+     * Gli amministratori non si toccano, e chi ha gia' un comandante nemmeno —
+     * non dovrebbe esistere, ma se esiste e' un caso da guardare, non da
+     * cancellare in silenzio.
+     */
+    public static function gcPending(?int $giorni = null): int
+    {
+        return Database::run(
+            "DELETE FROM users
+              WHERE status = 'pending'
+                AND email_verified_at IS NULL
+                AND role <> 'admin'
+                AND COALESCE(verify_sent_at, created_at) < DATE_SUB(NOW(), INTERVAL ? DAY)
+                AND NOT EXISTS (SELECT 1 FROM players p WHERE p.user_id = users.id)
+              LIMIT 200",
+            [$giorni ?? self::pendingTtlDays()]
+        )->rowCount();
+    }
+
     // --- Azioni ---------------------------------------------------------------
 
     /**

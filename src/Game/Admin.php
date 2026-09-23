@@ -137,6 +137,14 @@ final class Admin
             'warp_density'    => GameConfig::float('universe.warp_density', 3.2),
         ];
         Radio::system('BIG BANG — la galassia collassa e si riforma. Tutti i comandanti sono riportati allo StarDock.');
+        // Le consegne aperte puntano a settori che stanno per cambiare: si
+        // annullano restituendo la cauzione, una volta sola.
+        foreach (Database::all("SELECT id, issuer_player_id, reward FROM contracts WHERE kind = 'delivery' AND status = 'open'") as $c) {
+            if (Database::run("UPDATE contracts SET status = 'cancelled' WHERE id = ? AND status = 'open'", [(int) $c['id']])->rowCount() > 0) {
+                Wallet::credit((int) $c['issuer_player_id'], ['credits' => (int) $c['reward']]);
+            }
+        }
+        Database::run("UPDATE player_encounters SET status = 'expired' WHERE status = 'pending'");
         $u = (new UniverseGenerator($cfg))->generate(true);
         $p = PortGenerator::generate(true);
         Database::run('DELETE FROM npcs');
@@ -216,6 +224,27 @@ final class Admin
     public static function resetPlayer(int $actor, int $playerId): array
     {
         $row = Database::first('SELECT handle FROM players WHERE id = ?', [$playerId]);
+
+        // Cancellare il comandante e basta lasciava dietro di se' una
+        // corporazione con un CEO inesistente (tesoro e alleanze congelati) e
+        // pianeti di nessuno — che continuavano a produrre, saccheggiabili da
+        // chiunque, occupando per sempre un posto nel settore.
+        foreach (Database::all('SELECT id FROM corporations WHERE ceo_player_id = ?', [$playerId]) as $c) {
+            $erede = Database::first(
+                'SELECT m.player_id FROM corp_members m JOIN players p ON p.id = m.player_id
+                  WHERE m.corp_id = ? AND m.player_id <> ? ORDER BY p.rating DESC, p.id ASC LIMIT 1',
+                [(int) $c['id'], $playerId]
+            );
+            if ($erede !== null) {
+                Database::run('UPDATE corporations SET ceo_player_id = ? WHERE id = ?', [(int) $erede['player_id'], (int) $c['id']]);
+                Database::run("UPDATE corp_members SET role = 'ceo' WHERE corp_id = ? AND player_id = ?", [(int) $c['id'], (int) $erede['player_id']]);
+            } else {
+                Database::run('DELETE FROM corporations WHERE id = ?', [(int) $c['id']]);
+            }
+        }
+        // i pianeti di corporazione restano alla corporazione; gli altri si spengono
+        Database::run('UPDATE planets SET destroyed = 1 WHERE owner_player_id = ? AND corp_id IS NULL', [$playerId]);
+        Database::run('DELETE FROM craft_jobs WHERE player_id = ?', [$playerId]);
         Database::run('DELETE FROM players WHERE id = ?', [$playerId]);
         self::audit($actor, 'player.reset', ['player_id' => $playerId, 'handle' => $row['handle'] ?? null]);
         return ['ok' => true];

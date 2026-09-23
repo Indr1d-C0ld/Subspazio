@@ -82,6 +82,7 @@ final class Leaderboard
                     ma.path AS avatar_path, ml.path AS logo_path,
                     (SELECT COUNT(*) FROM planets pl WHERE pl.owner_player_id = p.id AND pl.destroyed = 0) AS planet_count
              FROM players p
+             JOIN users u ON u.id = p.user_id AND u.status = 'active'
              LEFT JOIN corp_members m ON m.player_id = p.id
              LEFT JOIN corporations c ON c.id = m.corp_id
              LEFT JOIN ships s ON s.id = p.ship_id
@@ -113,7 +114,8 @@ final class Leaderboard
                     (SELECT COUNT(*) FROM corp_members m WHERE m.corp_id = c.id) AS members,
                     (SELECT COALESCE(SUM(p.rating),0) FROM corp_members m JOIN players p ON p.id = m.player_id WHERE m.corp_id = c.id)
                       + FLOOR(c.treasury/1000)
-                      + (SELECT COUNT(*) FROM planets pl WHERE pl.corp_id = c.id AND pl.destroyed = 0) * 500 AS crating,
+                      + (SELECT COUNT(*) FROM planets pl WHERE pl.corp_id = c.id AND pl.destroyed = 0
+                   AND NOT EXISTS (SELECT 1 FROM corp_members mm WHERE mm.corp_id = c.id AND mm.player_id = pl.owner_player_id)) * 500 AS crating,
                     (SELECT COUNT(*) FROM planets pl WHERE pl.corp_id = c.id AND pl.destroyed = 0) AS planets
              FROM corporations c
              ORDER BY crating DESC

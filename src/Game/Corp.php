@@ -16,10 +16,17 @@ final class Corp
     /** @return array<string,mixed>|null */
     public static function of(int $playerId): ?array
     {
-        return Database::first(
+        $c = Database::first(
             'SELECT c.*, m.role FROM corp_members m JOIN corporations c ON c.id = m.corp_id WHERE m.player_id = ?',
             [$playerId]
         );
+        // L'impronta della password d'ingresso non esce da qui: finiva nella
+        // risposta di /api/corp a ogni socio. La verifica dell'ingresso la
+        // legge per conto suo.
+        if ($c !== null) {
+            unset($c['password_hash']);
+        }
+        return $c;
     }
 
     public static function corpIdOf(int $playerId): ?int

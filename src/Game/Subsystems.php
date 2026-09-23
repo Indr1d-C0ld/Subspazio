@@ -125,7 +125,12 @@ final class Subsystems
                 array_merge([$shipId], $preferSlots)
             );
         }
-        if ($pick === null) {
+        // Un colpo in combattimento puo' guastare qualunque modulo; un
+        // sovraccarico solo quelli del comparto sotto sforzo (e' la regola
+        // dichiarata in SLOT_FOR_CHANNEL). Prima, se quel comparto era vuoto, si
+        // ripiegava su un modulo qualsiasi: armi al massimo senza moduli d'arma,
+        // e si guastava il motore.
+        if ($pick === null && $preferSlots === null) {
             $pick = Database::first(
                 "SELECT sm.id, it.name FROM ship_modules sm JOIN item_types it ON it.ckey = sm.item_key
                  WHERE sm.ship_id = ? AND sm.broken_at IS NULL
@@ -137,6 +142,17 @@ final class Subsystems
             return null;
         }
         Database::run('UPDATE ship_modules SET broken_at = NOW() WHERE id = ?', [(int) $pick['id']]);
+
+        // Se il guasto spegne l'occultamento che un modulo forniva, la nave non
+        // puo' restare invisibile: prima restava occultata senza poter piu'
+        // disattivare, pagando il turno in piu' a ogni warp.
+        $st = Database::first('SELECT cloaked, dev_cloak FROM ships WHERE id = ?', [$shipId]);
+        if ($st !== null && (int) $st['cloaked'] === 1 && (int) $st['dev_cloak'] === 0) {
+            $eff = PlayerService::ship($shipId);
+            if ($eff !== null && !Cloak::has($eff)) {
+                Cloak::drop($shipId, 'modulo di occultamento fuori uso');
+            }
+        }
 
         if ($log) {
             $pid = (int) (Database::first('SELECT player_id FROM ships WHERE id = ?', [$shipId])['player_id'] ?? 0);

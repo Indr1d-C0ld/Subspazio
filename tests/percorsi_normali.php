@@ -36,7 +36,12 @@ return static function (): void {
 
     Esito::sezione('Mercato nero');
 
-    Database::run('UPDATE ships SET hold_ore = 40 WHERE id = ?', [$sid]);
+    // Il mercato nero ritira solo la merce che il porto locale NON vende (allo
+    // StarDock, che vende tutto, non ritira nulla): ci si sposta dove il porto
+    // compra minerale.
+    $compraOre = (int) Database::first("SELECT p.sector_id s FROM ports p JOIN sectors x ON x.id = p.sector_id WHERE p.ore_mode = 'buy' AND p.destroyed = 0 AND x.is_fedspace = 0 LIMIT 1")['s'];
+    Database::run('UPDATE players SET sector_id = ? WHERE id = ?', [$compraOre, $pid]);
+    Database::run('UPDATE ships SET hold_ore = 40, sector_id = ? WHERE id = ?', [$compraOre, $sid]);
     [$p, $s] = Finti::ricarica($pid);
 
     Esito::scenario('vendita di 20 unità di minerale');

@@ -100,30 +100,60 @@ final class Planets
         $total = (int) $p['col_ore'] + (int) $p['col_org'] + (int) $p['col_equ'] + (int) $p['col_idle'];
         $max = (int) $p['max_col'];
 
-        // crescita coloni -> vanno negli "inattivi"
+        // Si calcolano incrementi e si scrivono come tali, con l'arrotondamento
+        // imparziale dei porti. Prima: arrotondamento per difetto a ogni passaggio
+        // del clock (ogni minuto) con l'orologio che ripartiva da capo — una
+        // colonia M sotto i ~1.500 coloni non cresceva mai, 100 coloni al
+        // minerale producevano 60 unita' l'ora invece di 90. E valori assoluti
+        // scritti da una lettura senza lucchetto: un carico o un richiamo
+        // concluso nel frattempo veniva annullato.
+        $crescita = 0;
         if ($total > 0 && $total < $max) {
-            $grown = min($max, (int) floor($total * ((1.0 + (float) $p['breed_rate']) ** $hours)));
-            $delta = $grown - $total;
-            if ($delta > 0) {
-                $p['col_idle'] = (int) $p['col_idle'] + $delta;
-            }
+            $crescita = Economy::arrotonda($total * (((1.0 + (float) $p['breed_rate']) ** $hours) - 1.0));
         }
-
-        // produzione
         $capMult = GameConfig::int('planet.stock_cap_mult', 20);
         $cap = $max * $capMult;
+        $prod = [];
         foreach ([['col_ore', 'prod_ore', 'stock_ore'], ['col_org', 'prod_org', 'stock_org'], ['col_equ', 'prod_equ', 'stock_equ']] as [$colc, $prodc, $stockc]) {
-            $add = (int) floor((int) $p[$colc] * (float) $p[$prodc] * $hours);
-            if ($add > 0) {
-                $p[$stockc] = min($cap, (int) $p[$stockc] + $add);
-            }
+            $prod[$stockc] = Economy::arrotonda((int) $p[$colc] * (float) $p[$prodc] * $hours);
         }
 
-        Database::run(
-            'UPDATE planets SET col_idle = ?, stock_ore = ?, stock_org = ?, stock_equ = ?, last_prod_at = NOW() WHERE id = ?',
-            [$p['col_idle'], $p['stock_ore'], $p['stock_org'], $p['stock_equ'], $p['id']]
-        );
+        // I tetti stanno nella query e valgono solo per cio' che si produce:
+        // la merce scaricata a mano oltre il tetto resta (prima il passaggio
+        // successivo la tagliava). E si scrive solo se nessun altro passaggio
+        // ha gia' avanzato questo pianeta nel frattempo.
+        $scritto = Database::run(
+            'UPDATE planets SET
+                col_idle  = col_idle + LEAST(?, GREATEST(0, ? - (col_ore + col_org + col_equ + col_idle))),
+                stock_ore = stock_ore + LEAST(?, GREATEST(0, ? - stock_ore)),
+                stock_org = stock_org + LEAST(?, GREATEST(0, ? - stock_org)),
+                stock_equ = stock_equ + LEAST(?, GREATEST(0, ? - stock_equ)),
+                last_prod_at = NOW()
+              WHERE id = ? AND last_prod_at = ?',
+            [$crescita, $max, $prod['stock_ore'], $cap, $prod['stock_org'], $cap, $prod['stock_equ'], $cap,
+             $p['id'], $p['last_prod_at']]
+        )->rowCount() > 0;
+
+        $fresco = Database::first('SELECT * FROM planets WHERE id = ?', [$p['id']]);
+        if ($fresco !== null) {
+            $p = array_merge($p, $fresco);   // restano i campi del tipo e del proprietario
+        }
         return $p;
+    }
+
+    /**
+     * Chi puo' vedere la scheda completa di un pianeta: il proprietario (o la
+     * sua corporazione) da ovunque, gli altri solo stando nel settore. Prima la
+     * scheda — guarnigione, tesoreria, scorte, Quasar — si leggeva per numero da
+     * qualunque punto dell'universo: bastava scorrere gli id per trovare il
+     * pianeta piu' ricco e meno difeso senza muoversi.
+     *
+     * @param array<string,mixed> $p
+     * @param array<string,mixed> $player
+     */
+    public static function visibleTo(array $p, array $player): bool
+    {
+        return self::isOwn($p, $player) || (int) $player['sector_id'] === (int) $p['sector_id'];
     }
 
     public static function isOwn(array $p, array $player): bool
@@ -147,6 +177,11 @@ final class Planets
             return ['ok' => false, 'error' => 'Nessun siluro Genesi a bordo.'];
         }
         $sectorId = (int) $player['sector_id'];
+        // In Fedspace non si combatte: un pianeta creato li' diventava una
+        // cassaforte inattaccabile, con tesoreria e scorte mai saccheggiabili.
+        if ((bool) (Universe::sector($sectorId)['is_fedspace'] ?? false)) {
+            return ['ok' => false, 'error' => 'La Federazione non consente di creare pianeti nel suo spazio.'];
+        }
         $max = GameConfig::int('planet.max_per_sector', 5);
         $here = (int) (Database::first('SELECT COUNT(*) c FROM planets WHERE sector_id = ? AND destroyed = 0', [$sectorId])['c'] ?? 0);
         if ($here >= $max) {
@@ -157,7 +192,9 @@ final class Planets
         $name = self::NAME_ROOTS[array_rand(self::NAME_ROOTS)] . ' ' . chr(mt_rand(65, 90)) . mt_rand(1, 9);
         $corpId = Corp::corpIdOf((int) $player['id']);
 
-        Database::run('UPDATE ships SET genesis = genesis - 1 WHERE id = ?', [$ship['id']]);
+        if (Database::run('UPDATE ships SET genesis = genesis - 1 WHERE id = ? AND genesis >= 1', [$ship['id']])->rowCount() === 0) {
+            return ['ok' => false, 'error' => 'Nessun siluro Genesi a bordo.'];
+        }
         Database::run(
             'INSERT INTO planets (sector_id, name, type_key, owner_player_id, corp_id, created_by, col_idle, last_prod_at)
              VALUES (?, ?, ?, ?, ?, ?, 0, NOW())',
@@ -217,8 +254,12 @@ final class Planets
             if ($total + $qty > (int) $p['max_col']) {
                 return ['ok' => false, 'error' => 'Capacita\' del pianeta superata (max ' . (int) $p['max_col'] . ').'];
             }
-            Database::run('UPDATE ships SET hold_colonists = hold_colonists - ? WHERE id = ?', [$qty, $ship['id']]);
-            Database::run("UPDATE planets SET {$col} = {$col} + ? WHERE id = ?", [$qty, $planetId]);
+            if (!self::trasferisci([
+                ['UPDATE ships SET hold_colonists = hold_colonists - ? WHERE id = ? AND hold_colonists >= ?', [$qty, $ship['id'], $qty]],
+                ["UPDATE planets SET {$col} = {$col} + ? WHERE id = ? AND col_ore + col_org + col_equ + col_idle + ? <= ?", [$qty, $planetId, $qty, (int) $p['max_col']]],
+            ])) {
+                return ['ok' => false, 'error' => 'Coloni a bordo insufficienti o pianeta pieno.'];
+            }
         } else {
             if ($qty > (int) $p[$col]) {
                 return ['ok' => false, 'error' => 'Coloni nella categoria insufficienti.'];
@@ -227,8 +268,12 @@ final class Planets
             if ($qty > $room) {
                 return ['ok' => false, 'error' => 'Stive insufficienti.'];
             }
-            Database::run("UPDATE planets SET {$col} = {$col} - ? WHERE id = ?", [$qty, $planetId]);
-            Database::run('UPDATE ships SET hold_colonists = hold_colonists + ? WHERE id = ?', [$qty, $ship['id']]);
+            if (!self::trasferisci([
+                ["UPDATE planets SET {$col} = {$col} - ? WHERE id = ? AND {$col} >= ?", [$qty, $planetId, $qty]],
+                ['UPDATE ships SET hold_colonists = hold_colonists + ? WHERE id = ? AND ' . self::STIVE_LIBERE, [$qty, $ship['id'], $qty]],
+            ])) {
+                return ['ok' => false, 'error' => 'Coloni insufficienti o stive piene.'];
+            }
         }
         return ['ok' => true, 'moved' => $qty, 'bucket' => $bucket, 'dir' => $dir];
     }
@@ -247,7 +292,12 @@ final class Planets
         if ($qty > (int) $p[$map[$from]]) {
             return ['ok' => false, 'error' => 'Coloni insufficienti nella categoria di partenza.'];
         }
-        Database::run("UPDATE planets SET {$map[$from]} = {$map[$from]} - ?, {$map[$to]} = {$map[$to]} + ? WHERE id = ?", [$qty, $qty, $planetId]);
+        if (Database::run(
+            "UPDATE planets SET {$map[$from]} = {$map[$from]} - ?, {$map[$to]} = {$map[$to]} + ? WHERE id = ? AND {$map[$from]} >= ?",
+            [$qty, $qty, $planetId, $qty]
+        )->rowCount() === 0) {
+            return ['ok' => false, 'error' => 'Coloni insufficienti nella categoria di partenza.'];
+        }
         return ['ok' => true, 'moved' => $qty];
     }
 
@@ -281,14 +331,22 @@ final class Planets
             if ($qty > $room) {
                 return ['ok' => false, 'error' => 'Stive insufficienti.'];
             }
-            Database::run("UPDATE planets SET {$stockCol} = {$stockCol} - ? WHERE id = ?", [$qty, $planetId]);
-            Database::run("UPDATE ships SET {$shipCol} = {$shipCol} + ? WHERE id = ?", [$qty, $ship['id']]);
+            if (!self::trasferisci([
+                ["UPDATE planets SET {$stockCol} = {$stockCol} - ? WHERE id = ? AND {$stockCol} >= ?", [$qty, $planetId, $qty]],
+                ["UPDATE ships SET {$shipCol} = {$shipCol} + ? WHERE id = ? AND " . self::STIVE_LIBERE, [$qty, $ship['id'], $qty]],
+            ])) {
+                return ['ok' => false, 'error' => 'Scorte del pianeta insufficienti o stive piene.'];
+            }
         } else {
             if ($qty > (int) $ship[$shipCol]) {
                 return ['ok' => false, 'error' => 'Carico insufficiente.'];
             }
-            Database::run("UPDATE ships SET {$shipCol} = {$shipCol} - ? WHERE id = ?", [$qty, $ship['id']]);
-            Database::run("UPDATE planets SET {$stockCol} = {$stockCol} + ? WHERE id = ?", [$qty, $planetId]);
+            if (!self::trasferisci([
+                ["UPDATE ships SET {$shipCol} = {$shipCol} - ? WHERE id = ? AND {$shipCol} >= ?", [$qty, $ship['id'], $qty]],
+                ["UPDATE planets SET {$stockCol} = {$stockCol} + ? WHERE id = ?", [$qty, $planetId]],
+            ])) {
+                return ['ok' => false, 'error' => 'Carico insufficiente.'];
+            }
         }
         return ['ok' => true, 'moved' => $qty];
     }
@@ -393,8 +451,21 @@ final class Planets
                 $pdo->rollBack();
                 return ['ok' => false, 'error' => "Servono {$fromShip} cr di tasca tua oltre alla tesoreria."];
             }
-            Database::run('UPDATE planets SET stock_ore = stock_ore - ?, stock_equ = stock_equ - ?, credits = GREATEST(0, credits - ?), citadel_upgrade_to = ?, citadel_ready_at = DATE_ADD(NOW(), INTERVAL ? HOUR) WHERE id = ?',
-                [$c['ore'], $c['equ'], min($treasury, $c['cr']), $nx['level'], $c['hours'], $planetId]);
+            // Scorte e tesoreria con vincolo: prima la tesoreria si scalava con
+            // GREATEST(0, ...), e se un prelievo parallelo l'aveva gia' svuotata la
+            // Citadel veniva pagata con soldi che non c'erano piu'. E un solo
+            // cantiere per volta: citadel_upgrade_to deve essere libero.
+            $pagato = Database::run(
+                'UPDATE planets SET stock_ore = stock_ore - ?, stock_equ = stock_equ - ?, credits = credits - ?,
+                        citadel_upgrade_to = ?, citadel_ready_at = DATE_ADD(NOW(), INTERVAL ? HOUR)
+                  WHERE id = ? AND stock_ore >= ? AND stock_equ >= ? AND credits >= ? AND citadel_upgrade_to IS NULL',
+                [$c['ore'], $c['equ'], min($treasury, $c['cr']), $nx['level'], $c['hours'], $planetId,
+                 $c['ore'], $c['equ'], min($treasury, $c['cr'])]
+            )->rowCount() > 0;
+            if (!$pagato) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'Le scorte o la tesoreria del pianeta sono cambiate: riprova.'];
+            }
             $pdo->commit();
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) {
@@ -411,8 +482,18 @@ final class Planets
         if (!is_array($p)) {
             return $p;
         }
+        // Come per la Citadel, si costruisce sul posto.
+        if ((int) $player['sector_id'] !== (int) $p['sector_id']) {
+            return ['ok' => false, 'error' => 'Non sei nel settore del pianeta.'];
+        }
         if ((int) $p['citadel_level'] < 3) {
             return ['ok' => false, 'error' => 'Serve una Citadel di livello 3.'];
+        }
+        // Senza tetto il danno (livello x 2.200) cresceva senza limite, e al
+        // livello 256 la colonna traboccava con un errore.
+        $maxQ = max(1, GameConfig::int('planet.quasar_max_level', 10));
+        if ((int) $p['quasar_level'] >= $maxQ) {
+            return ['ok' => false, 'error' => "Il Quasar e' gia' al livello massimo ({$maxQ})."];
         }
         $cr = GameConfig::int('planet.quasar_cost_credits', 250000);
         $equ = GameConfig::int('planet.quasar_cost_equ', 4000);
@@ -431,7 +512,15 @@ final class Planets
                 $pdo->rollBack();
                 return ['ok' => false, 'error' => "Servono {$fromS} cr di tasca tua oltre alla tesoreria."];
             }
-            Database::run('UPDATE planets SET stock_equ = stock_equ - ?, credits = credits - ?, quasar_level = quasar_level + 1 WHERE id = ?', [$equ, $fromT, $planetId]);
+            $fatto = Database::run(
+                'UPDATE planets SET stock_equ = stock_equ - ?, credits = credits - ?, quasar_level = quasar_level + 1
+                  WHERE id = ? AND stock_equ >= ? AND credits >= ? AND quasar_level < ?',
+                [$equ, $fromT, $planetId, $equ, $fromT, $maxQ]
+            )->rowCount() > 0;
+            if (!$fatto) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'Le scorte o la tesoreria del pianeta sono cambiate: riprova.'];
+            }
             $pdo->commit();
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) {
@@ -460,14 +549,27 @@ final class Planets
             if ((int) $p['fighters'] + $qty > $maxG) {
                 return ['ok' => false, 'error' => "Guarnigione massima {$maxG} (dipende dalla Citadel)."];
             }
-            Database::run('UPDATE ships SET fighters = fighters - ? WHERE id = ?', [$qty, $ship['id']]);
-            Database::run('UPDATE planets SET fighters = fighters + ? WHERE id = ?', [$qty, $planetId]);
+            if (!self::trasferisci([
+                ['UPDATE ships SET fighters = fighters - ? WHERE id = ? AND fighters >= ?', [$qty, $ship['id'], $qty]],
+                ['UPDATE planets SET fighters = fighters + ? WHERE id = ? AND fighters + ? <= ?', [$qty, $planetId, $qty, $maxG]],
+            ])) {
+                return ['ok' => false, 'error' => 'Caccia a bordo insufficienti o guarnigione piena.'];
+            }
         } else {
             if ($qty > (int) $p['fighters']) {
                 return ['ok' => false, 'error' => 'Guarnigione insufficiente.'];
             }
-            Database::run('UPDATE planets SET fighters = fighters - ? WHERE id = ?', [$qty, $planetId]);
-            Database::run('UPDATE ships SET fighters = fighters + ? WHERE id = ?', [$qty, $ship['id']]);
+            // Il richiamo rispetta il massimo di caccia dello scafo, come il ritiro
+            // dei caccia schierati. Prima no: si comprava il massimo, lo si
+            // parcheggiava in guarnigione, si ricomprava, e alla fine si
+            // richiamava tutto su uno scout con decine di migliaia di caccia.
+            $maxNave = (int) (Database::first('SELECT t.max_fighters m FROM ships s JOIN ship_types t ON t.ckey = s.type_key WHERE s.id = ?', [$ship['id']])['m'] ?? 0);
+            if (!self::trasferisci([
+                ['UPDATE planets SET fighters = fighters - ? WHERE id = ? AND fighters >= ?', [$qty, $planetId, $qty]],
+                ['UPDATE ships SET fighters = fighters + ? WHERE id = ? AND fighters + ? <= ?', [$qty, $ship['id'], $qty, $maxNave]],
+            ])) {
+                return ['ok' => false, 'error' => "Guarnigione insufficiente o nave piena (massimo {$maxNave} caccia)."];
+            }
         }
         return ['ok' => true, 'moved' => $qty, 'dir' => $dir];
     }
@@ -484,10 +586,13 @@ final class Planets
             return ['ok' => false, 'error' => 'Quantita\' non valida.'];
         }
         $perDay = GameConfig::int('planet.colonist_pickup_per_day', 5000);
-        $day = TurnManager::gameDay();
+        // La quota si conta dall'inizio del giorno di gioco (il reset delle 03:00).
+        // Prima si confrontava la data di calendario del ritiro con la data del
+        // giorno di gioco: fra mezzanotte e le 03:00 le due non coincidono mai,
+        // quindi nessun ritiro contava e la quota era illimitata.
         $taken = (int) (Database::first(
-            "SELECT COALESCE(SUM(qty),0) s FROM trade_log WHERE player_id = ? AND commodity = 'organics' AND action = 'buy' AND port_id = 0 AND DATE(created_at) = ?",
-            [$player['id'], $day]
+            "SELECT COALESCE(SUM(qty),0) s FROM trade_log WHERE player_id = ? AND commodity = 'organics' AND action = 'buy' AND port_id = 0 AND created_at >= ?",
+            [$player['id'], TurnManager::gameDayStart()]
         )['s'] ?? 0);
         // usa un marcatore semplice: righe trade_log con port_id=0 = ritiri coloni
         $room = (int) $ship['holds_total'] - Economy::holdsUsed($ship);
@@ -495,7 +600,9 @@ final class Planets
         if ($qty <= 0) {
             return ['ok' => false, 'error' => 'Nessuno spazio o quota giornaliera coloni esaurita.'];
         }
-        Database::run('UPDATE ships SET hold_colonists = hold_colonists + ? WHERE id = ?', [$qty, $ship['id']]);
+        if (Database::run('UPDATE ships SET hold_colonists = hold_colonists + ? WHERE id = ? AND ' . self::STIVE_LIBERE, [$qty, $ship['id'], $qty])->rowCount() === 0) {
+            return ['ok' => false, 'error' => 'Stive piene.'];
+        }
         Database::run(
             "INSERT INTO trade_log (player_id, port_id, sector_id, commodity, action, qty, unit_price, total, fair_total)
              VALUES (?, 0, ?, 'organics', 'buy', ?, 0, 0, 0)",
@@ -505,6 +612,42 @@ final class Planets
     }
 
     // --- helper ---------------------------------------------------
+
+    /**
+     * Le due meta' di un trasferimento come operazione unica. Ogni meta' porta
+     * il suo vincolo nella WHERE (scorta sufficiente, capienza libera); se una
+     * delle due non morde, non si fa nulla.
+     *
+     * Prima i controlli guardavano la fotografia del pianeta letta a inizio
+     * richiesta e le scritture erano secche: due «carica 10.000» paralleli
+     * portavano il pianeta a -10.000 e la nave a +20.000; due richiami della
+     * guarnigione raddoppiavano i caccia.
+     *
+     * @param list<array{0:string,1:list<mixed>}> $passi
+     */
+    private static function trasferisci(array $passi): bool
+    {
+        $pdo = Database::pdo();
+        $pdo->beginTransaction();
+        try {
+            foreach ($passi as [$sql, $par]) {
+                if (Database::run($sql, $par)->rowCount() === 0) {
+                    $pdo->rollBack();
+                    return false;
+                }
+            }
+            $pdo->commit();
+            return true;
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    /** Condizione SQL: la nave ha almeno ? stive libere. */
+    private const STIVE_LIBERE = 'holds_total - (hold_ore + hold_organics + hold_equipment + hold_colonists) >= ?';
 
     /**
      * @param array<string,mixed> $player

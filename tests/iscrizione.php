@@ -155,6 +155,51 @@ return static function (): void {
         Esito::verifica('le sessioni aperte vengono chiuse', $epocaDopo > $epocaPrima, "epoca {$epocaPrima} → {$epocaDopo}");
         Esito::verifica('il gettone è bruciato', empty(Auth::readToken($tokenR, 'reset_password')['ok']));
 
+        // --- iscrizioni mai confermate ---------------------------------------
+
+        Esito::sezione('Iscrizioni mai confermate — decadono davvero');
+
+        // L'e-mail lo prometteva e nessuno lo faceva: chi sbagliava a scrivere
+        // l'indirizzo restava con il nome utente occupato per sempre.
+        $vecchia = static function (int $id, int $giorni): void {
+            Database::run(
+                'UPDATE users SET created_at = DATE_SUB(NOW(), INTERVAL ? DAY),
+                                  verify_sent_at = DATE_SUB(NOW(), INTERVAL ? DAY) WHERE id = ?',
+                [$giorni, $giorni, $id]
+            );
+        };
+        $esiste = static fn (int $id): bool => Database::first('SELECT 1 x FROM users WHERE id = ?', [$id]) !== null;
+
+        [$uScaduta]   = $iscrivi('s1');  $vecchia($uScaduta, 8);
+        [$uFresca]    = $iscrivi('s2');  $vecchia($uFresca, 6);
+        [$uRinviata]  = $iscrivi('s3');  $vecchia($uRinviata, 30);
+        Database::run('UPDATE users SET verify_sent_at = DATE_SUB(NOW(), INTERVAL 1 DAY) WHERE id = ?', [$uRinviata]);
+        [$uAMano]     = $iscrivi('s4');  $vecchia($uAMano, 30);
+        Database::run("UPDATE users SET status = 'active' WHERE id = ?", [$uAMano]);   // attivata dall'admin
+        [$uAdmin]     = $iscrivi('s5');  $vecchia($uAdmin, 30);
+        Database::run("UPDATE users SET role = 'admin' WHERE id = ?", [$uAdmin]);
+
+        Auth::gcPending(7);
+
+        Esito::scenario('chi non ha mai confermato, oltre il termine, se ne va');
+        Esito::verifica('l\'iscrizione di 8 giorni fa e\' cancellata', !$esiste($uScaduta));
+        Esito::scenario('ma nessun altro');
+        Esito::verifica('quella di 6 giorni fa resta', $esiste($uFresca));
+        Esito::verifica('chi ha chiesto un rinvio ieri ha il suo tempo intero', $esiste($uRinviata));
+        Esito::verifica('un account attivato a mano dall\'amministratore resta', $esiste($uAMano));
+        Esito::verifica('un amministratore non si tocca mai', $esiste($uAdmin));
+
+        Esito::scenario('l\'e-mail dice il termine vero');
+        $spedite = [];
+        [$uMsg, $tMsg] = $iscrivi('s6');
+        AuthMail::sendVerification($uMsg, '__test_is6@invalid.test', '__test_is6', $tMsg);
+        $corpo = (string) (end($spedite)['corpo'] ?? '');
+        Esito::verifica(
+            'e cita i giorni che il clock applica',
+            str_contains($corpo, Auth::pendingTtlDays() . ' giorni sparisce da solo'),
+            'termine: ' . Auth::pendingTtlDays() . ' giorni'
+        );
+
         // --- potatura -------------------------------------------------------
 
         Esito::sezione('Potatura dei gettoni');

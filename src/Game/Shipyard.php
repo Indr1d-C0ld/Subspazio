@@ -53,6 +53,11 @@ final class Shipyard
         if (!self::atShipyard((int) $player['sector_id'])) {
             return ['ok' => false, 'error' => 'Il cantiere e\' solo allo StarDock.'];
         }
+        // Il bando federale sta nel motore, non solo nel controller: prima le
+        // pagine lo applicavano e le rotte /api no, e il bando si aggirava.
+        if (($ship['type_key'] ?? '') !== 'escape_pod' && ($bando = Faction::stardockBlocked((int) $player['id']))) {
+            return ['ok' => false, 'error' => $bando];
+        }
         $type = Database::first("SELECT * FROM ship_types WHERE ckey = ? AND ckey <> 'escape_pod'", [$typeKey]);
         if ($type === null) {
             return ['ok' => false, 'error' => 'Modello sconosciuto.'];
@@ -82,7 +87,7 @@ final class Shipyard
             // caccia/scudi/scanner/transwarp/cloak NON si trasferiscono; sonde/mine/genesis si'.
             Database::run(
                 "UPDATE ships SET type_key = ?, name = ?, holds_total = ?, fighters = ?, shields = ?,
-                 dev_scanner = 'none', dev_transwarp = 0, dev_cloak = 0
+                 dev_scanner = 'none', dev_transwarp = 0, dev_cloak = 0, cloaked = 0
                  WHERE id = ?",
                 [
                     $type['ckey'],
@@ -103,6 +108,7 @@ final class Shipyard
             throw $e;
         }
 
+        Crew::adattaAlloScafo((int) $player['id']);
         return ['ok' => true, 'cost' => $cost, 'trade_in' => $tradeIn, 'type' => $type['ckey'], 'name' => $type['name']];
     }
 
@@ -129,14 +135,17 @@ final class Shipyard
         if ($type === null) {
             return ['ok' => false, 'error' => 'Nessun modello disponibile.'];
         }
-        if ((int) $player['credits'] >= (int) $type['base_cost']) {
+        // "Al verde" conta anche la banca, che sta nello stesso StarDock: prima
+        // bastava versare tutto, farsi dare lo scafo gratis e ritirare.
+        $inBanca = (int) (Database::first('SELECT balance FROM bank_accounts WHERE player_id = ?', [(int) $player['id']])['balance'] ?? 0);
+        if ((int) $player['credits'] + $inBanca >= (int) $type['base_cost']) {
             return ['ok' => false, 'error' => 'Puoi permetterti una nave dal catalogo: la nave di soccorso e\' solo per chi e\' a secco.'];
         }
 
         Database::run(
             "UPDATE ships SET type_key = ?, name = ?, holds_total = ?, fighters = ?, shields = ?,
              hold_ore = 0, hold_organics = 0, hold_equipment = 0, hold_colonists = 0,
-             dev_scanner = 'none', dev_transwarp = 0, dev_cloak = 0
+             dev_scanner = 'none', dev_transwarp = 0, dev_cloak = 0, cloaked = 0
              WHERE id = ?",
             [
                 $type['ckey'],
@@ -150,6 +159,7 @@ final class Shipyard
         Database::run('DELETE FROM ship_limpets WHERE ship_id = ?', [$ship['id']]);
         self::unshipModules((int) $ship['id'], (int) $player['id']);
 
+        Crew::adattaAlloScafo((int) $player['id']);
         return ['ok' => true, 'type' => $type['ckey'], 'name' => $type['name']];
     }
 
@@ -158,10 +168,11 @@ final class Shipyard
     {
         try {
             if (GameConfig::int('loot.keep_modules_on_refit', 1) === 1) {
-                foreach (Database::all('SELECT item_key, rolled FROM ship_modules WHERE ship_id = ?', [$shipId]) as $m) {
+                foreach (Database::all('SELECT item_key, rolled, broken_at FROM ship_modules WHERE ship_id = ?', [$shipId]) as $m) {
+                    // il guasto resta: cambiare nave non e' una riparazione
                     Database::run(
-                        'INSERT INTO player_items (player_id, item_key, rolled, source) VALUES (?, ?, ?, ?)',
-                        [$playerId, $m['item_key'], $m['rolled'], 'shop']
+                        'INSERT INTO player_items (player_id, item_key, rolled, broken_at, source) VALUES (?, ?, ?, ?, ?)',
+                        [$playerId, $m['item_key'], $m['rolled'], $m['broken_at'], 'shop']
                     );
                 }
             }
@@ -181,6 +192,9 @@ final class Shipyard
         if (!self::atShipyard((int) $player['sector_id'])) {
             return ['ok' => false, 'error' => 'Il cantiere e\' solo allo StarDock.'];
         }
+        if (($ship['type_key'] ?? '') !== 'escape_pod' && ($bando = Faction::stardockBlocked((int) $player['id']))) {
+            return ['ok' => false, 'error' => $bando];
+        }
         if ($qty <= 0) {
             return ['ok' => false, 'error' => 'Quantita\' non valida.'];
         }
@@ -197,7 +211,15 @@ final class Shipyard
             return ['ok' => false, 'error' => 'Potenziamento sconosciuto.'];
         }
 
-        $room = $max - (int) $ship[$col];
+        // $ship e' la nave EFFETTIVA (moduli, EPS): per le stive e i caccia conta
+        // quel che si e' comprato davvero, cioe' la riga grezza; per gli scudi il
+        // tetto e' quello effettivo — un modulo che lo alza va potuto riempire,
+        // una griglia che lo abbassa non va aggirata comprando scudi.
+        $grezza = Database::first('SELECT * FROM ships WHERE id = ?', [(int) $ship['id']]);
+        if ($kind === 'shields') {
+            $max = (int) ($ship['max_shields'] ?? $max);
+        }
+        $room = $max - (int) $grezza[$col];
         if ($room <= 0) {
             return ['ok' => false, 'error' => 'Gia\' al massimo per questo scafo.'];
         }
@@ -215,7 +237,15 @@ final class Shipyard
                 $pdo->rollBack();
                 return ['ok' => false, 'error' => "Servono {$cost} cr."];
             }
-            Database::run("UPDATE ships SET {$col} = {$col} + ? WHERE id = ?", [$qty, $ship['id']]);
+            // il tetto sta anche nella WHERE: due acquisti paralleli non lo superano
+            $consegnato = Database::run(
+                "UPDATE ships SET {$col} = {$col} + ? WHERE id = ? AND {$col} + ? <= ?",
+                [$qty, $ship['id'], $qty, $max]
+            )->rowCount() > 0;
+            if (!$consegnato) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'Gia\' al massimo per questo scafo.'];
+            }
             $pdo->commit();
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) {
@@ -235,41 +265,47 @@ final class Shipyard
         if (!self::atShipyard((int) $player['sector_id'])) {
             return ['ok' => false, 'error' => 'Il cantiere e\' solo allo StarDock.'];
         }
+        if (($ship['type_key'] ?? '') !== 'escape_pod' && ($bando = Faction::stardockBlocked((int) $player['id']))) {
+            return ['ok' => false, 'error' => $bando];
+        }
         $spec = self::HARDWARE[$item] ?? null;
         if ($spec === null) {
             return ['ok' => false, 'error' => 'Articolo sconosciuto.'];
         }
         $unit = GameConfig::int($spec['price'], 0);
+        // Cosa c'e' davvero installato lo dice la riga grezza: quella effettiva
+        // puo' mostrare uno scanner alzato o abbassato da moduli o EPS, e allora
+        // si pagava un olografico che c'era gia', o se ne rifiutava uno che non c'era.
+        $grezza = Database::first('SELECT * FROM ships WHERE id = ?', [(int) $ship['id']]);
+        $col = $spec['col'];
 
         if (!empty($spec['flag'])) {
-            if ((int) $ship[$spec['col']] === 1) {
+            if ((int) $grezza[$col] === 1) {
                 return ['ok' => false, 'error' => 'Gia\' installato.'];
             }
             if ((int) $player['credits'] < $unit) {
                 return ['ok' => false, 'error' => "Servono {$unit} cr."];
             }
-            if (!self::payAndApply((int) $player['id'], $unit, "UPDATE ships SET {$spec['col']} = 1 WHERE id = ?", [$ship['id']])) {
-                return ['ok' => false, 'error' => "Servono {$unit} cr."];
-            }
-            return ['ok' => true, 'item' => $item, 'cost' => $unit];
+            $esito = self::payAndApply((int) $player['id'], $unit, "UPDATE ships SET {$col} = 1 WHERE id = ? AND {$col} = 0", [$ship['id']]);
+            return $esito === 'ok' ? ['ok' => true, 'item' => $item, 'cost' => $unit]
+                : ['ok' => false, 'error' => $esito === 'crediti' ? "Servono {$unit} cr." : 'Gia\' installato.'];
         }
 
         if (!empty($spec['enum'])) {
-            if ($ship[$spec['col']] === $spec['enum']) {
+            if ($grezza[$col] === $spec['enum']) {
                 return ['ok' => false, 'error' => 'Gia\' installato.'];
             }
             if ((int) $player['credits'] < $unit) {
                 return ['ok' => false, 'error' => "Servono {$unit} cr."];
             }
-            if (!self::payAndApply((int) $player['id'], $unit, "UPDATE ships SET {$spec['col']} = ? WHERE id = ?", [$spec['enum'], $ship['id']])) {
-                return ['ok' => false, 'error' => "Servono {$unit} cr."];
-            }
-            return ['ok' => true, 'item' => $item, 'cost' => $unit];
+            $esito = self::payAndApply((int) $player['id'], $unit, "UPDATE ships SET {$col} = ? WHERE id = ? AND {$col} <> ?", [$spec['enum'], $ship['id'], $spec['enum']]);
+            return $esito === 'ok' ? ['ok' => true, 'item' => $item, 'cost' => $unit]
+                : ['ok' => false, 'error' => $esito === 'crediti' ? "Servono {$unit} cr." : 'Gia\' installato.'];
         }
 
         // articolo a quantita' (sonde, mine)
         $cap = GameConfig::int($spec['cap'], 9999);
-        $room = $cap - (int) $ship[$spec['col']];
+        $room = $cap - (int) $grezza[$col];
         if ($room <= 0) {
             return ['ok' => false, 'error' => "Capacita\' massima ({$cap}) raggiunta."];
         }
@@ -279,10 +315,10 @@ final class Shipyard
             $aff = $unit > 0 ? intdiv((int) $player['credits'], $unit) : 0;
             return ['ok' => false, 'error' => "Servono {$cost} cr; puoi permetterti {$aff}."];
         }
-        if (!self::payAndApply((int) $player['id'], $cost, "UPDATE ships SET {$spec['col']} = {$spec['col']} + ? WHERE id = ?", [$qty, $ship['id']])) {
-            return ['ok' => false, 'error' => "Servono {$cost} cr."];
-        }
-        return ['ok' => true, 'item' => $item, 'qty' => $qty, 'cost' => $cost];
+        $esito = self::payAndApply((int) $player['id'], $cost,
+            "UPDATE ships SET {$col} = {$col} + ? WHERE id = ? AND {$col} + ? <= ?", [$qty, $ship['id'], $qty, $cap]);
+        return $esito === 'ok' ? ['ok' => true, 'item' => $item, 'qty' => $qty, 'cost' => $cost]
+            : ['ok' => false, 'error' => $esito === 'crediti' ? "Servono {$cost} cr." : "Capacita\' massima ({$cap}) raggiunta."];
     }
 
     /**
@@ -291,18 +327,24 @@ final class Shipyard
      *
      * @param list<mixed> $params parametri della query di consegna
      */
-    private static function payAndApply(int $playerId, int $cost, string $applySql, array $params): bool
+    private static function payAndApply(int $playerId, int $cost, string $applySql, array $params): string
     {
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
             if (!Wallet::charge($playerId, ['credits' => $cost])) {
                 $pdo->rollBack();
-                return false;
+                return 'crediti';
             }
-            Database::run($applySql, $params);
+            // La consegna porta il suo vincolo nella WHERE: se non morde (gia'
+            // installato, tetto raggiunto da un acquisto parallelo) l'addebito
+            // rientra. Prima si pagava due volte lo stesso dispositivo.
+            if (Database::run($applySql, $params)->rowCount() === 0) {
+                $pdo->rollBack();
+                return 'capienza';
+            }
             $pdo->commit();
-            return true;
+            return 'ok';
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();

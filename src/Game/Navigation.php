@@ -149,7 +149,14 @@ final class Navigation
 
         $cost = max(1, (int) ($ship['turns_per_warp'] ?? 1));
         $warpNote = null;
-        if (\App\Game\Crew::consumePending((int) $player['id'], 'free_warp') !== null) {
+        // «Rotta rapida» si guarda qui e si spende solo quando il warp parte
+        // davvero: prima veniva consumata per prima cosa, e un warp poi rifiutato
+        // (turni insufficienti per un pozzo gravitazionale) la bruciava.
+        $rottaRapida = Database::first(
+            "SELECT 1 x FROM crew_pending WHERE player_id = ? AND effect = 'free_warp' AND expires_at > NOW() LIMIT 1",
+            [(int) $player['id']]
+        ) !== null;
+        if ($rottaRapida) {
             $cost = 0;
             $warpNote = 'Rotta rapida: salto gratuito.';
         } elseif ($cost > 1 && ($wd = (float) ($ship['crew_warp_discount_pct'] ?? 0)) > 0 && mt_rand(1, 100) <= $wd) {
@@ -168,6 +175,9 @@ final class Navigation
                 'error' => "Turni insufficienti: servono {$cost}, disponibili " . (int) $player['turns'] . '.',
                 'turns_left' => (int) $player['turns'],
             ];
+        }
+        if ($rottaRapida) {
+            \App\Game\Crew::consumePending((int) $player['id'], 'free_warp');
         }
 
         $pdo = Database::pdo();
@@ -261,11 +271,6 @@ final class Navigation
             return ['ok' => false, 'error' => "Turni insufficienti: servono {$cost}."];
         }
 
-        $decloaked = Cloak::drop((int) $ship['id'], 'salto Transwarp');
-        if ($decloaked) {
-            $ship['cloaked'] = 0;
-        }
-
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
@@ -288,6 +293,12 @@ final class Navigation
                     'error' => "Turni insufficienti: servono {$cost}.",
                     'turns_left' => (int) (Database::first('SELECT turns FROM players WHERE id = ?', [(int) $player['id']])['turns'] ?? 0),
                 ];
+            }
+            // Il salto e' pagato: solo adesso l'occultamento cade. Prima cadeva
+            // anche quando il salto veniva poi rifiutato per mancanza di turni.
+            $decloaked = Cloak::drop((int) $ship['id'], 'salto Transwarp');
+            if ($decloaked) {
+                $ship['cloaked'] = 0;
             }
             Database::run('UPDATE ships SET sector_id = ? WHERE id = ?', [$toSector, (int) $ship['id']]);
             Database::run(
@@ -325,8 +336,13 @@ final class Navigation
     private static function arrive(array $player, array $ship, int $from, int $toSector, int $cost, ?string $warpNote): array
     {
         $handle = (string) $player['handle'];
-        Live::sector($from, 'move_out', null, "{$handle} ha lasciato il settore", ['handle' => $handle]);
-        Live::sector($toSector, 'move_in', null, "{$handle} e' entrato nel settore", ['handle' => $handle, 'ship' => $ship['type_name'] ?? null]);
+        // Una nave occultata non si annuncia. La scheda del settore la nascondeva
+        // gia', ma questi due eventi dicevano a tutti chi era entrato e con quale
+        // nave: l'occultamento non serviva contro chi teneva aperta la plancia.
+        if (empty($ship['cloaked'])) {
+            Live::sector($from, 'move_out', null, "{$handle} ha lasciato il settore", ['handle' => $handle]);
+            Live::sector($toSector, 'move_in', null, "{$handle} e' entrato nel settore", ['handle' => $handle, 'ship' => $ship['type_name'] ?? null]);
+        }
 
         // intercettazioni: mine, caccia dispiegati (chi entra occultato le salta in parte)
         $enc = Combat::onEnterSector($player, $ship);
@@ -337,7 +353,7 @@ final class Navigation
         if (empty($enc['destroyed']) && ($ship['type_key'] ?? '') !== 'escape_pod') {
             $engSkill = (int) (Database::first(
                 "SELECT JSON_EXTRACT(skills, '$.engineering') AS e FROM officers
-                 WHERE player_id = ? AND role = 'engineer' AND assigned = 1 AND status <> 'dead'
+                 WHERE player_id = ? AND role = 'engineer' AND assigned = 1 AND status = 'active'
                  ORDER BY level DESC LIMIT 1",
                 [(int) $player['id']]
             )['e'] ?? 0);
@@ -373,6 +389,7 @@ final class Navigation
             'cost'        => $cost,
             'turns_left'  => (int) $player['turns'],
             'entry_events' => $enc['events'],
+            'warp_note'   => $warpNote,
             'destroyed'   => $enc['destroyed'],
             'sector'      => self::look($player),
             'player'      => $player,
@@ -440,6 +457,7 @@ final class Navigation
 
         $moved = [];
         $stopped = 'arrived';
+        $eventi = [];
         foreach ($path as $i => $next) {
             if ($i >= $maxHops) {
                 $stopped = 'max_hops';
@@ -453,12 +471,21 @@ final class Navigation
             $moved[] = (int) $next;
             $player = $step['player'];
             $ship = $step['ship'] ?? $ship;
-            if (!empty($step['entry_events'])) {
-                $stopped = 'contact';
-                break;
-            }
+            // Prima la distruzione, poi il contatto: nell'ordine opposto una nave
+            // distrutta a meta' rotta risultava un semplice «contatto». E la nota
+            // del warp (Navigatore, Rotta rapida) non e' un contatto: fermava
+            // l'autopilota a ogni salto scontato.
+            $reali = array_values(array_filter(
+                (array) ($step['entry_events'] ?? []),
+                static fn ($e) => $e !== ($step['warp_note'] ?? null)
+            ));
+            array_push($eventi, ...$reali);
             if (!empty($step['destroyed'])) {
                 $stopped = 'destroyed';
+                break;
+            }
+            if ($reali !== []) {
+                $stopped = 'contact';
                 break;
             }
         }
@@ -467,6 +494,7 @@ final class Navigation
             'ok'      => true,
             'moved'   => $moved,
             'stopped' => $stopped,
+            'events'  => $eventi,
             'sector'  => self::look($player),
             'player'  => $player,
         ];

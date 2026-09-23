@@ -10,6 +10,10 @@
        abbiamo spedito e il tuo account si attiva da sé. Nessuno deve approvarlo.</p>
     <p class="hint">Non lo trovi? Controlla la posta indesiderata, oppure fattelo
        rispedire qui sotto.</p>
+    <p class="hint">Hai sbagliato a scrivere l'indirizzo? Non devi fare niente:
+       un'iscrizione non confermata decade da sola dopo
+       <?= (int) \App\Auth\Auth::pendingTtlDays() ?> giorni dall'ultimo collegamento
+       spedito, e il nome utente torna libero. A quel punto puoi iscriverti di nuovo.</p>
 
     <form method="post" action="<?= e(url('/rinvia-verifica')) ?>" class="stack">
       <?= csrf_field() ?>

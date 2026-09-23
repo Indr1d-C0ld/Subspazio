@@ -138,12 +138,54 @@ final class Crew
         return (int) (Database::first('SELECT crew_slots FROM ship_types WHERE ckey = ?', [$shipTypeKey])['crew_slots'] ?? 0);
     }
 
+    /**
+     * Manda in panchina gli ufficiali che il nuovo scafo non puo' ospitare.
+     *
+     * Chiamata quando lo scafo cambia (acquisto, soccorso, distruzione). Prima
+     * nessuno li toglieva: otto ufficiali passati da un Imperial Starship a uno
+     * scout da due posti — o a una capsula da zero — restavano assegnati, e i
+     * loro otto bonus continuavano a valere. Restano i piu' esperti.
+     */
+    public static function adattaAlloScafo(int $playerId): int
+    {
+        $tipo = (string) (Database::first(
+            'SELECT s.type_key FROM players p JOIN ships s ON s.id = p.ship_id WHERE p.id = ?', [$playerId]
+        )['type_key'] ?? '');
+        $posti = self::slots($tipo);
+        $assegnati = Database::all(
+            "SELECT id FROM officers WHERE player_id = ? AND assigned = 1 ORDER BY level DESC, id ASC",
+            [$playerId]
+        );
+        $n = 0;
+        foreach (array_slice($assegnati, $posti) as $o) {
+            Database::run('UPDATE officers SET assigned = 0 WHERE id = ?', [(int) $o['id']]);
+            $n++;
+        }
+        return $n;
+    }
+
+    /**
+     * Gli ufficiali feriti guariscono all'ora indicata. La scheda mostrava gia'
+     * «ferito · fino alle …» e la configurazione ne fissava le ore, ma nessuno
+     * li rimetteva in servizio: restavano feriti per sempre, salvo pagare
+     * l'infermeria o usare il Triage. Passaggio dal clock.
+     */
+    public static function healDue(): int
+    {
+        return Database::run(
+            "UPDATE officers SET status = 'active' WHERE status = 'injured' AND ready_at IS NOT NULL AND ready_at <= NOW()"
+        )->rowCount();
+    }
+
     // --- azioni -------------------------------------------------------
 
     public static function hire(array $player, string $shipTypeKey, int $candidateId): array
     {
         if (!Shipyard::atShipyard((int) $player['sector_id'])) {
             return ['ok' => false, 'error' => 'Il reclutamento avviene solo allo StarDock.'];
+        }
+        if ($bando = Faction::stardockBlocked((int) $player['id'])) {
+            return ['ok' => false, 'error' => $bando];
         }
         $c = Database::first('SELECT * FROM recruit_candidates WHERE id = ? AND player_id = ?', [$candidateId, (int) $player['id']]);
         if ($c === null) {
@@ -220,6 +262,9 @@ final class Crew
     {
         if (!Shipyard::atShipyard((int) $player['sector_id'])) {
             return ['ok' => false, 'error' => 'L\'infermeria completa è allo StarDock (in volo serve il Triage del Medico).'];
+        }
+        if ($bando = Faction::stardockBlocked((int) $player['id'])) {
+            return ['ok' => false, 'error' => $bando];
         }
         $o = self::own($player, $officerId);
         if ($o === null || $o['status'] !== 'injured') {
@@ -378,10 +423,16 @@ final class Crew
             'warp_discount_pct' => 0.0, 'align_shield_pct' => 0.0, 'away_medicine' => 0.0, 'count' => 0,
         ];
         try {
-            $offs = Database::all(
-                "SELECT role, skills, level FROM officers WHERE player_id = ? AND assigned = 1 AND status = 'active'",
+            // Contano solo quanti lo scafo ne ospita: difesa in piu' oltre alla
+            // panchina automatica, se mai qualcuno restasse assegnato in eccesso.
+            $posti = self::slots((string) (Database::first(
+                'SELECT s.type_key FROM players p JOIN ships s ON s.id = p.ship_id WHERE p.id = ?', [$playerId]
+            )['type_key'] ?? ''));
+            $offs = array_slice(Database::all(
+                "SELECT role, skills, level FROM officers WHERE player_id = ? AND assigned = 1 AND status = 'active'
+                  ORDER BY level DESC, id ASC",
                 [$playerId]
-            );
+            ), 0, $posti);
         } catch (\Throwable) {
             return $out;
         }

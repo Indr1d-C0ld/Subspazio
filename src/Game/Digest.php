@@ -25,18 +25,26 @@ final class Digest
         $pid = (int) $player['id'];
         $minAway = max(5, GameConfig::int('digest.min_away_min', 20));
 
-        $ref = $player['last_digest_at'] ?? null;
-        if ($ref === null) {
-            $ref = $player['last_seen_at'] ?? null;
-        }
-        if ($ref === null) {
+        // L'assenza si misura dall'ultima ATTIVITA', non dall'ultimo rapporto
+        // mostrato. Prima si usava il secondo: un giocatore che giocava senza
+        // sosta si vedeva ricomparire il «rapporto di rientro» ogni venti minuti,
+        // e chi possedeva un pianeta non lo vedeva mai vuoto.
+        //
+        // $player e' la fotografia letta a inizio richiesta, prima che il router
+        // aggiornasse last_seen_at: vi resta l'ora dell'attivita' precedente,
+        // cioe' proprio l'inizio dell'assenza.
+        $visto = $player['last_seen_at'] ?? null;
+        if ($visto === null) {
             return null; // primo ingresso in assoluto: niente rientro
         }
-        $cutoffTs = strtotime((string) $ref);
-        $awaySec = time() - $cutoffTs;
+        $awaySec = time() - strtotime((string) $visto);
         if ($awaySec < $minAway * 60) {
             return null;
         }
+        // Si racconta cio' che e' successo dall'ultima attivita' — o dall'ultimo
+        // rapporto, se piu' recente: quel che si e' gia' letto non si ripete.
+        $ref = max((string) $visto, (string) ($player['last_digest_at'] ?? ''));
+        $cutoffTs = strtotime($ref);
         $cutoff = date('Y-m-d H:i:s', $cutoffTs);
 
         $lines = [];
@@ -63,7 +71,10 @@ final class Digest
         }
 
         // turni ricaricati (il ciclo giornaliero e' passato durante l'assenza)
-        if (date('Y-m-d', $cutoffTs) !== TurnManager::gameDay()) {
+        // Giorno di GIOCO contro giorno di gioco: prima si confrontava la data di
+        // calendario dell'uscita, e fra mezzanotte e le 03:00 il rapporto
+        // annunciava un rifornimento che non c'era stato (o ne taceva uno vero).
+        if (TurnManager::gameDayAt($cutoffTs) !== TurnManager::gameDay()) {
             $lines[] = ['icon' => '⟳', 'text' => 'Il ciclo giornaliero ha ricaricato i turni.', 'link' => null];
         }
 

@@ -100,11 +100,16 @@ final class GameController
         } else {
             $n = count($res['moved']);
             $reason = [
-                'arrived' => 'arrivato a destinazione',
-                'no_turns' => 'turni esauriti',
-                'max_hops' => 'limite salti raggiunto',
+                'arrived'   => 'arrivato a destinazione',
+                'no_turns'  => 'turni esauriti',
+                'max_hops'  => 'limite salti raggiunto',
+                'contact'   => 'fermato da un contatto',
+                'destroyed' => 'nave distrutta',
             ][$res['stopped']] ?? $res['stopped'];
-            Session::flash($n > 0 ? 'success' : 'error', "Autopilota: {$n} warp ({$reason}).");
+            $ok = $n > 0 && $res['stopped'] !== 'destroyed';
+            // gli eventi incontrati lungo la rotta si vedono: prima restavano muti
+            $dettaglio = ($res['events'] ?? []) !== [] ? ' ' . implode(' ', $res['events']) : '';
+            Session::flash($ok ? 'success' : 'error', "Autopilota: {$n} warp ({$reason}).{$dettaglio}");
         }
         return redirect('/gioco');
     }

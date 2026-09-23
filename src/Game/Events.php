@@ -140,7 +140,11 @@ final class Events
                 GameConfig::set('combat.bounty_mult', '1');
             }
             Database::run('UPDATE events SET reverted = 1 WHERE id = ?', [$e['id']]);
-            Radio::system("EVENTO concluso — {$e['title']}.");
+            // Lo shock di mercato non si annulla d'un colpo: la deriva dei prezzi
+            // lo riassorbe nelle ore seguenti. Prima l'annuncio diceva «concluso»
+            // mentre a quel punto restava ancora circa meta' dello scostamento.
+            Radio::system("EVENTO concluso — {$e['title']}."
+                . ($e['kind'] === 'market_shock' ? ' I prezzi tornano alla normalità nelle prossime ore.' : ''));
         }
     }
 }

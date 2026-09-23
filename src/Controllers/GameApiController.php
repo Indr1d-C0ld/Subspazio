@@ -64,7 +64,22 @@ final class GameApiController
         }
         $probe = $player;
         $probe['sector_id'] = $sid;
-        return Response::json(['ok' => true, 'sector' => Navigation::look($probe, Ctx::$ship)]);
+        $vista = Navigation::look($probe, Ctx::$ship);
+        // Un settore lontano si ricorda, non si osserva. Prima questa chiamata
+        // restituiva il contenuto VIVO di qualunque settore gia' visitato — chi
+        // c'e' adesso, forze schierate, NPC, difese dei pianeti — senza sonde,
+        // senza turni, da ovunque: bastava ripeterla per sapere dove fossero
+        // tutti. Restano le informazioni di mappa; il resto si vede andandoci o
+        // mandando una sonda.
+        if ($sid !== (int) $player['sector_id']) {
+            $vista['players_here'] = [];
+            $vista['forces'] = [];
+            $vista['npcs'] = [];
+            $vista['can_attack'] = false;
+            $vista['remote'] = true;
+            $vista['planets'] = array_map(static fn (array $pl): array => array_diff_key($pl, ['citadel' => 1, 'quasar' => 1]), (array) ($vista['planets'] ?? []));
+        }
+        return Response::json(['ok' => true, 'sector' => $vista]);
     }
 
     public function move(Request $request): Response
@@ -105,6 +120,7 @@ final class GameApiController
             'ok'      => true,
             'moved'   => $res['moved'],
             'stopped' => $res['stopped'],
+            'events'  => $res['events'] ?? [],
             'player'  => self::playerDto($res['player']),
             'sector'  => $res['sector'],
         ]);
@@ -375,8 +391,8 @@ final class GameApiController
     public function planet(Request $request, string $id): Response
     {
         $p = Planets::get((int) $id);
-        if ($p === null) {
-            return Response::json(['ok' => false, 'error' => 'Pianeta inesistente.'], 404);
+        if ($p === null || !Planets::visibleTo($p, Ctx::$player)) {
+            return Response::json(['ok' => false, 'error' => 'Pianeta non rilevato dai sensori.'], 404);
         }
         return Response::json([
             'ok'   => true,
@@ -443,6 +459,13 @@ final class GameApiController
         // libera SUBITO il lock di sessione: una SSE lunga bloccherebbe
         // ogni altra richiesta dello stesso utente.
         $pidForStream = (int) (Ctx::$player['id'] ?? 0);
+        // Ogni stream occupa un processo del server fino a live.stream_max_s
+        // secondi. Senza limite un solo account poteva aprirne a centinaia e
+        // lasciare gli altri senza processi. Una scheda normale ne apre uno ogni
+        // cinque minuti (e uno in piu' a ogni riconnessione): il margine e' ampio.
+        if (!\App\Core\RateLimiter::hit('stream:' . $pidForStream, GameConfig::int('live.stream_opens_per_min', 6), 60)) {
+            return Response::json(['ok' => false, 'error' => 'Troppe connessioni in tempo reale aperte.'], 429);
+        }
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_write_close();
         }
@@ -482,14 +505,25 @@ final class GameApiController
         $start = time();
         $lastBeat = time();
 
+        $consegnati = [];
         while (!connection_aborted() && (time() - $start) < $maxS) {
             $player = \App\Game\PlayerService::forUser((int) \App\Auth\Auth::id())
                 ?? ($pidForStream > 0 ? Database::first('SELECT * FROM players WHERE id = ?', [$pidForStream]) : null);
             if ($player === null) {
                 break;
             }
-            foreach (Live::since($player, $lastId) as $ev) {
-                $lastId = (int) $ev['id'];
+            // Si rilegge una finestra all'indietro e si scartano gli eventi gia'
+            // consegnati. Un evento scritto dentro una transazione riceve il suo
+            // numero subito ma diventa visibile solo al commit: se nel frattempo
+            // ne arrivava uno successivo, il cursore lo superava e il primo — per
+            // esempio «sei stato distrutto» — non veniva mai inviato.
+            foreach (Live::since($player, max(0, $lastId - 200), 500) as $ev) {
+                $eid = (int) $ev['id'];
+                if (isset($consegnati[$eid])) {
+                    continue;
+                }
+                $consegnati[$eid] = true;
+                $lastId = max($lastId, $eid);
                 $data = json_encode([
                     'kind'    => $ev['kind'],
                     'title'   => $ev['title'],
@@ -500,6 +534,10 @@ final class GameApiController
                 echo "id: {$lastId}\n";
                 echo "event: {$ev['kind']}\n";
                 echo 'data: ' . $data . "\n\n";
+            }
+            // la memoria dei consegnati resta limitata alla finestra
+            if (count($consegnati) > 2000) {
+                $consegnati = array_filter($consegnati, static fn ($v, $k) => $k > $lastId - 200, ARRAY_FILTER_USE_BOTH);
             }
             if (time() - $lastBeat >= 15) {
                 echo ": keepalive\n\n";

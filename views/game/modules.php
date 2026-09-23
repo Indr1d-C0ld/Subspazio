@@ -103,6 +103,7 @@ foreach ($installed as $m) {
           <div class="mi-head">
             <span class="rarity rarity-<?= e($it['rarity']) ?>"><?= e($RARITY[$it['rarity']] ?? $it['rarity']) ?></span>
             <strong><?= e($it['name']) ?></strong>
+            <?php if (!empty($it['broken_at'])): ?><span class="pill err" title="resta guasto una volta montato: si ripara allo StarDock">fuori uso</span><?php endif; ?>
             <span class="mut"><?= e($CATLBL[$it['category']] ?? $it['category']) ?></span>
           </div>
           <div class="mi-eff"><?= e($fmtEffects($it['rolled'], $it['effects'])) ?></div>

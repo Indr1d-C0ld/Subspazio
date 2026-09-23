@@ -32,8 +32,8 @@ final class PlanetController
     {
         $player = TurnManager::sync(Ctx::$player);
         $p = Planets::get((int) $id);
-        if ($p === null) {
-            Session::flash('error', 'Pianeta inesistente.');
+        if ($p === null || !Planets::visibleTo($p, $player)) {
+            Session::flash('error', 'Pianeta non rilevato dai sensori.');
             return redirect('/gioco');
         }
 

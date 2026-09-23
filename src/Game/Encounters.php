@@ -152,6 +152,30 @@ final class Encounters
             return ['ok' => false, 'error' => 'Scelta non valida.'];
         }
 
+        // Una scelta a pagamento si puo' prendere solo se la si puo' pagare.
+        // Prima il costo veniva «pagato» con GREATEST(0, ...): a cassa vuota la
+        // scelta «compra» dava il modulo gratis, e il riepilogo diceva -800 cr.
+        // Si guarda il costo piu' alto fra gli esiti possibili, prima di tirare
+        // i dadi: rifiutare dopo permetterebbe di ritentare finche' esce bene.
+        $pl = Database::first('SELECT credits, salvage, crystals, components FROM players WHERE id = ?', [$playerId]);
+        foreach (($choice['outcomes'] ?? []) as $o) {
+            foreach (['credits', 'salvage', 'crystals', 'components'] as $col) {
+                $d = (int) (($o['effects'] ?? [])[$col] ?? 0);
+                if ($d < 0 && (int) ($pl[$col] ?? 0) < -$d) {
+                    return ['ok' => false, 'error' => 'Non puoi permetterti questa scelta.'];
+                }
+            }
+        }
+
+        // Si reclama l'incontro prima di applicarne gli effetti: due risposte
+        // parallele allo stesso incontro li applicavano due volte.
+        if (Database::run(
+            "UPDATE player_encounters SET status = 'resolved', choice_key = ?, resolved_at = NOW() WHERE id = ? AND status = 'pending'",
+            [mb_substr($choiceKey, 0, 24), (int) $row['pe_id']]
+        )->rowCount() === 0) {
+            return ['ok' => false, 'error' => 'Nessun incontro in sospeso.'];
+        }
+
         $pass = null;
         if (!empty($choice['skill']['role'])) {
             $role  = (string) $choice['skill']['role'];
@@ -178,10 +202,7 @@ final class Encounters
         $text    = (string) ($pick['text'] ?? '');
         $summary = self::applyEffects($playerId, (array) ($pick['effects'] ?? []));
 
-        Database::run(
-            "UPDATE player_encounters SET status = 'resolved', choice_key = ?, outcome_text = ?, resolved_at = NOW() WHERE id = ?",
-            [mb_substr($choiceKey, 0, 24), mb_substr($text, 0, 255), (int) $row['pe_id']]
-        );
+        Database::run('UPDATE player_encounters SET outcome_text = ? WHERE id = ?', [mb_substr($text, 0, 255), (int) $row['pe_id']]);
 
         $eff = (array) ($pick['effects'] ?? []);
         $sev = (isset($eff['shields']) && (int) $eff['shields'] < 0) || (isset($eff['fighters']) && (int) $eff['fighters'] < 0)
@@ -288,7 +309,7 @@ final class Encounters
     {
         $o = Database::first(
             "SELECT skills, level FROM officers
-             WHERE player_id = ? AND role = ? AND assigned = 1 AND status <> 'dead'
+             WHERE player_id = ? AND role = ? AND assigned = 1 AND status = 'active'
              ORDER BY level DESC LIMIT 1",
             [$playerId, $role]
         );

@@ -21,9 +21,12 @@ $badge = static fn (string $s): string => match ($s) {
 </section>
 
 <section class="panel">
-  <h2>Richieste in attesa</h2>
+  <h2>Iscritti in attesa di conferma</h2>
+  <p class="hint">Chi si iscrive si attiva da solo aprendo il collegamento ricevuto per e-mail: qui non c'è nulla da
+     approvare. Se un'iscrizione non viene confermata decade da sola dopo
+     <?= (int) \App\Auth\Auth::pendingTtlDays() ?> giorni. «Attiva» serve solo a sbloccare a mano chi non riceve la posta.</p>
   <?php if ($pending === []): ?>
-    <p class="hint">Nessuna richiesta da valutare.</p>
+    <p class="hint">Nessun iscritto in attesa.</p>
   <?php else: ?>
     <table class="tbl">
       <thead><tr><th>Utente</th><th>Email</th><th>Richiesta</th><th class="ta-r">Azioni</th></tr></thead>
@@ -35,11 +38,11 @@ $badge = static fn (string $s): string => match ($s) {
           <td><?= e(fmt_dt($p['created_at'])) ?></td>
           <td class="ta-r nowrap">
             <form method="post" action="<?= e(url('/admin/utenti/' . $p['id'] . '/approva')) ?>" class="inline">
-              <?= csrf_field() ?><button class="btn xs">Approva</button>
+              <?= csrf_field() ?><button class="btn xs">Attiva</button>
             </form>
             <form method="post" action="<?= e(url('/admin/utenti/' . $p['id'] . '/rifiuta')) ?>" class="inline"
-                  data-confirm="Rifiutare ed eliminare la richiesta di @<?= e($p['username']) ?>?">
-              <?= csrf_field() ?><button class="btn xs danger">Rifiuta</button>
+                  data-confirm="Eliminare l'iscrizione non confermata di @<?= e($p['username']) ?>?">
+              <?= csrf_field() ?><button class="btn xs danger">Elimina</button>
             </form>
           </td>
         </tr>

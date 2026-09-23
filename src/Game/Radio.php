@@ -106,17 +106,30 @@ final class Radio
         $corpId = Corp::corpIdOf($pid) ?? 0;
         $sectorId = (int) $player['sector_id'];
 
-        $rows = Database::all(
+        // Due letture: la conversazione personale (privati, corporazione, saluti)
+        // e il canale pubblico, ciascuna con il suo limite. Prima era un solo
+        // elenco di 60: bastavano 60 messaggi pubblici arrivati dopo un privato
+        // per farlo sparire dalla radio — e aprirla lo segnava comunque come letto.
+        $personali = Database::all(
             "SELECT m.*, p.handle AS from_handle
              FROM messages m LEFT JOIN players p ON p.id = m.from_player_id
-             WHERE m.channel IN ('radio','fedcomm','system')
-                OR (m.channel = 'corp' AND m.to_corp_id = ?)
+             WHERE (m.channel = 'corp' AND m.to_corp_id = ?)
                 OR (m.channel = 'private' AND (m.to_player_id = ? OR m.from_player_id = ?))
                 OR (m.channel = 'hail' AND m.sector_id = ?)
              ORDER BY m.id DESC
              LIMIT ?",
             [$corpId, $pid, $pid, $sectorId, $limit]
         );
+        $pubblici = Database::all(
+            "SELECT m.*, p.handle AS from_handle
+             FROM messages m LEFT JOIN players p ON p.id = m.from_player_id
+             WHERE m.channel IN ('radio','fedcomm','system')
+             ORDER BY m.id DESC
+             LIMIT ?",
+            [$limit]
+        );
+        $rows = array_merge($personali, $pubblici);
+        usort($rows, static fn ($a, $b) => (int) $b['id'] <=> (int) $a['id']);
 
         return array_map(static fn ($m) => [
             'id'      => (int) $m['id'],

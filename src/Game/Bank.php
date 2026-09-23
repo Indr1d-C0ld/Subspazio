@@ -31,7 +31,8 @@ final class Bank
     {
         $row = Database::first('SELECT * FROM bank_accounts WHERE player_id = ?', [$playerId]);
         if ($row === null) {
-            Database::run('INSERT INTO bank_accounts (player_id, balance) VALUES (?, 0)', [$playerId]);
+            // IGNORE: due prime visite simultanee non fanno piu' fallire la seconda.
+            Database::run('INSERT IGNORE INTO bank_accounts (player_id, balance) VALUES (?, 0)', [$playerId]);
             return ['player_id' => $playerId, 'balance' => 0, 'last_interest_at' => date('Y-m-d H:i:s')];
         }
         return self::accrue($row);
@@ -46,11 +47,19 @@ final class Bank
             $days = $elapsed / 86400.0;
             $grown = (int) floor($bal * ((1.0 + self::dailyRate()) ** $days));
             if ($grown !== $bal) {
-                Database::run(
-                    'UPDATE bank_accounts SET balance = ?, last_interest_at = NOW() WHERE player_id = ?',
-                    [$grown, $row['player_id']]
-                );
-                $bal = $grown;
+                // Si scrive solo se il conto e' ancora quello letto. La lettura qui
+                // non ha lucchetto: senza questo confronto, un versamento o un
+                // prelievo concluso nel frattempo veniva cancellato da un saldo
+                // vecchio — un prelievo annullato crea crediti, un versamento
+                // annullato li distrugge.
+                $scritto = Database::run(
+                    'UPDATE bank_accounts SET balance = ?, last_interest_at = NOW()
+                      WHERE player_id = ? AND balance = ? AND last_interest_at = ?',
+                    [$grown, $row['player_id'], $bal, $row['last_interest_at']]
+                )->rowCount() > 0;
+                if ($scritto) {
+                    $bal = $grown;
+                }
             }
         }
         return ['player_id' => (int) $row['player_id'], 'balance' => $bal, 'last_interest_at' => (string) $row['last_interest_at']];
@@ -86,15 +95,30 @@ final class Bank
         if (!self::atBank((int) $player['sector_id'])) {
             return ['ok' => false, 'error' => 'La banca opera solo allo StarDock.'];
         }
+        // Il bando federale sta nel motore, non solo nel controller: prima le
+        // pagine lo applicavano e le rotte /api no, e il bando si aggirava.
+        if ($bando = Faction::stardockBlocked((int) $player['id'])) {
+            return ['ok' => false, 'error' => $bando];
+        }
 
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
-            self::account((int) $player['id']); // assicura riga + interessi
+            Database::run('INSERT IGNORE INTO bank_accounts (player_id, balance) VALUES (?, 0)', [$player['id']]);
             $acct = Database::first('SELECT * FROM bank_accounts WHERE player_id = ? FOR UPDATE', [$player['id']]);
             $p = Database::first('SELECT credits FROM players WHERE id = ? FOR UPDATE', [$player['id']]);
             $bal = (int) $acct['balance'];
             $cr = (int) $p['credits'];
+
+            // Prima si chiudono gli interessi sul saldo che c'era, poi il
+            // movimento parte da adesso. Prima l'orologio degli interessi non
+            // si spostava mai con i movimenti, ne' su un conto vuoto: 10 milioni
+            // versati su un conto fermo da un mese maturavano subito un mese di
+            // interessi — oltre un milione e mezzo creato dal nulla.
+            $trascorso = max(0, time() - strtotime((string) $acct['last_interest_at']));
+            if ($bal > 0 && $trascorso > 0 && self::dailyRate() > 0) {
+                $bal = (int) floor($bal * ((1.0 + self::dailyRate()) ** ($trascorso / 86400.0)));
+            }
 
             if ($dir === 'deposit') {
                 if ($cr < $amount) {
@@ -112,7 +136,7 @@ final class Bank
                 $cr += $amount;
             }
 
-            Database::run('UPDATE bank_accounts SET balance = ? WHERE player_id = ?', [$bal, $player['id']]);
+            Database::run('UPDATE bank_accounts SET balance = ?, last_interest_at = NOW() WHERE player_id = ?', [$bal, $player['id']]);
             Database::run('UPDATE players SET credits = ? WHERE id = ?', [$cr, $player['id']]);
             $pdo->commit();
 

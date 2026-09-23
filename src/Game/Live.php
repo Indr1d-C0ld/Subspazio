@@ -24,6 +24,12 @@ final class Live
         if (!self::$enabled) {
             return;
         }
+        // Si tronca alla misura della colonna. Un messaggio radio puo' essere
+        // lungo fino a 480 caratteri, la colonna ne tiene 400: in modalita'
+        // stretta l'inserimento falliva, l'errore veniva assorbito qui sotto, e
+        // il destinatario non riceveva nessun avviso in tempo reale.
+        $title = $title !== null ? mb_substr($title, 0, 120) : null;
+        $body  = $body !== null ? mb_substr($body, 0, 400) : null;
         try {
             Database::run(
                 'INSERT INTO live_events (scope, scope_id, kind, title, body, payload) VALUES (?, ?, ?, ?, ?, ?)',

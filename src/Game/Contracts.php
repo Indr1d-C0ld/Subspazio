@@ -119,14 +119,33 @@ final class Contracts
         return ['ok' => true, 'id' => $id];
     }
 
+    /**
+     * Chiude un contratto aperto, una volta sola.
+     *
+     * Ogni percorso — annullo, consegna, taglia riscossa, scadenza — leggeva
+     * «aperto» e poi scriveva il nuovo stato senza vincolo. Due percorsi che si
+     * sovrapponevano pagavano entrambi dalla stessa cauzione: due annulli
+     * rimborsavano due volte, un annullo e una consegna rimborsavano il
+     * mandante E pagavano il corriere. Ora solo chi chiude davvero paga.
+     */
+    private static function chiudi(int $id, string $stato, ?int $claimedBy = null): bool
+    {
+        return Database::run(
+            "UPDATE contracts SET status = ?, claimed_by = COALESCE(?, claimed_by) WHERE id = ? AND status = 'open'",
+            [$stato, $claimedBy, $id]
+        )->rowCount() > 0;
+    }
+
     public static function cancel(array $player, int $id): array
     {
         $c = Database::first("SELECT * FROM contracts WHERE id = ? AND issuer_player_id = ? AND status = 'open'", [$id, $player['id']]);
         if ($c === null) {
             return ['ok' => false, 'error' => 'Contratto non annullabile.'];
         }
-        Database::run("UPDATE contracts SET status = 'cancelled' WHERE id = ?", [$id]);
-        Database::run('UPDATE players SET credits = credits + ? WHERE id = ?', [(int) $c['reward'], $player['id']]);
+        if (!self::chiudi($id, 'cancelled')) {
+            return ['ok' => false, 'error' => 'Contratto non annullabile.'];
+        }
+        Wallet::credit((int) $player['id'], ['credits' => (int) $c['reward']]);
         return ['ok' => true, 'refund' => (int) $c['reward']];
     }
 
@@ -156,9 +175,15 @@ final class Contracts
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
-            Database::run("UPDATE ships SET {$col} = {$col} - ? WHERE id = ?", [(int) $c['qty'], $ship['id']]);
-            Database::run('UPDATE players SET credits = credits + ? WHERE id = ?', [(int) $c['reward'], $player['id']]);
-            Database::run("UPDATE contracts SET status = 'claimed', claimed_by = ? WHERE id = ?", [$player['id'], $id]);
+            if (!self::chiudi($id, 'claimed', (int) $player['id'])) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'Contratto gia\' chiuso.'];
+            }
+            if (!Wallet::takeFromShip((int) $ship['id'], $col, (int) $c['qty'])) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Ti servono {$c['qty']} " . Economy::label((string) $c['commodity']) . ' a bordo.'];
+            }
+            Wallet::credit((int) $player['id'], ['credits' => (int) $c['reward']]);
             $pdo->commit();
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) {
@@ -189,12 +214,15 @@ final class Contracts
         foreach ($rows as $c) {
             if ((int) $c['issuer_player_id'] === $killerPlayerId) {
                 // il mandante non puo' riscuotere la propria taglia: rimborso
-                Database::run("UPDATE contracts SET status = 'cancelled' WHERE id = ?", [$c['id']]);
-                Database::run('UPDATE players SET credits = credits + ? WHERE id = ?', [(int) $c['reward'], $c['issuer_player_id']]);
+                if (self::chiudi((int) $c['id'], 'cancelled')) {
+                    Wallet::credit((int) $c['issuer_player_id'], ['credits' => (int) $c['reward']]);
+                }
                 continue;
             }
-            Database::run("UPDATE contracts SET status = 'claimed', claimed_by = ? WHERE id = ?", [$killerPlayerId, $c['id']]);
-            Database::run('UPDATE players SET credits = credits + ? WHERE id = ?', [(int) $c['reward'], $killerPlayerId]);
+            if (!self::chiudi((int) $c['id'], 'claimed', $killerPlayerId)) {
+                continue;
+            }
+            Wallet::credit($killerPlayerId, ['credits' => (int) $c['reward']]);
             Achievements::award($killerPlayerId, 'contract_claim');
             Live::alert($killerPlayerId, 'contract', 'Taglia riscossa',
                 'Hai incassato ' . number_format((int) $c['reward'], 0, ',', '.') . ' cr per un bersaglio.', '/gioco/contratti');
@@ -210,10 +238,13 @@ final class Contracts
     public static function expireDue(): int
     {
         $rows = Database::all("SELECT * FROM contracts WHERE status = 'open' AND expires_at IS NOT NULL AND expires_at <= NOW()");
+        $n = 0;
         foreach ($rows as $c) {
-            Database::run("UPDATE contracts SET status = 'expired' WHERE id = ?", [$c['id']]);
-            Database::run('UPDATE players SET credits = credits + ? WHERE id = ?', [(int) $c['reward'], $c['issuer_player_id']]);
+            if (self::chiudi((int) $c['id'], 'expired')) {
+                Wallet::credit((int) $c['issuer_player_id'], ['credits' => (int) $c['reward']]);
+                $n++;
+            }
         }
-        return count($rows);
+        return $n;
     }
 }

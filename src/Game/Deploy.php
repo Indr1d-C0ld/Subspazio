@@ -63,10 +63,21 @@ final class Deploy
         if ((bool) $sector['is_fedspace'] && $mode !== 'defensive') {
             return ['ok' => false, 'error' => 'In spazio Federazione puoi lasciare solo caccia difensivi.'];
         }
-        $toll = $mode === 'toll' ? max(0, $toll) : 0;
+        // Il pedaggio ha un tetto. Prima si poteva chiedere qualunque cifra: un
+        // solo caccia a 5 milioni vicino allo StarDock prelevava 5 milioni da
+        // chiunque passasse e potesse pagarli. E un valore oltre il limite della
+        // colonna faceva fallire l'inserimento DOPO che i caccia erano gia'
+        // stati tolti dalla nave.
+        $tetto = max(0, GameConfig::int('deploy.toll_max', 5000));
+        if ($mode === 'toll' && ($toll < 0 || $toll > $tetto)) {
+            return ['ok' => false, 'error' => "Il pedaggio va da 0 a {$tetto} cr."];
+        }
+        $toll = $mode === 'toll' ? $toll : 0;
         Cloak::drop((int) $ship['id'], 'dispiegamento di caccia');
 
-        Database::run('UPDATE ships SET fighters = fighters - ? WHERE id = ?', [$qty, $ship['id']]);
+        if (Database::run('UPDATE ships SET fighters = fighters - ? WHERE id = ? AND fighters >= ?', [$qty, $ship['id'], $qty])->rowCount() === 0) {
+            return ['ok' => false, 'error' => 'Caccia insufficienti a bordo.'];
+        }
         Database::run(
             'INSERT INTO sector_fighters (sector_id, owner_player_id, corp_id, qty, mode, toll)
              VALUES (?, ?, ?, ?, ?, ?)

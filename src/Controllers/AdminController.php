@@ -162,7 +162,8 @@ final class AdminController
 
         if (!empty($opt['set_approved'])) {
             Database::run(
-                'UPDATE users SET status = ?, approved_at = NOW(), approved_by = ? WHERE id = ?',
+                'UPDATE users SET status = ?, approved_at = NOW(), approved_by = ?,
+                        email_verified_at = COALESCE(email_verified_at, NOW()) WHERE id = ?',
                 [$to, Auth::id(), $uid]
             );
         } else {

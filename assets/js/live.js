@@ -53,18 +53,18 @@
       try { d = JSON.parse(ev.data); } catch (e) { return; }
       const k = d.kind;
 
-      if (['move_in', 'move_out', 'combat', 'npc_spawn'].includes(k)) {
+      if (['move_in', 'move_out', 'combat', 'npc_spawn', 'planet_new'].includes(k)) {
         if (typeof window.__reloadStarmap === 'function') window.__reloadStarmap();
         showSectorPill();
         if (d.body) toast('sector', 'Settore', d.body);
         return;
       }
-      if (k === 'radio' || k === 'system') {
+      if (k === 'radio' || k === 'system' || k === 'fedcomm') {
         bump('radio-badge');
         toast(k === 'system' ? 'event' : 'radio', d.title || 'Radio', d.body || '');
         return;
       }
-      if (k === 'event') {
+      if (k === 'event' || k === 'alliance') {
         toast('event', d.title || 'Evento', d.body || '');
         return;
       }
@@ -81,8 +81,12 @@
     };
 
     es.onmessage = handle;
+    // Un evento SSE con nome arriva solo a chi lo ascolta per nome: quelli non
+    // in elenco venivano scartati in silenzio. Mancavano alleanze, pianeti
+    // appena nati nel settore e il bollettino della Federazione.
     ['move_in', 'move_out', 'combat', 'npc_spawn', 'radio', 'system', 'event', 'alert',
-     'attacked', 'npc_attack', 'entry_combat', 'planet_hit', 'destroyed', 'citadel', 'dm']
+     'attacked', 'npc_attack', 'entry_combat', 'planet_hit', 'destroyed', 'citadel', 'dm',
+     'alliance', 'planet_new', 'fedcomm']
       .forEach((t) => es.addEventListener(t, handle));
   }
 

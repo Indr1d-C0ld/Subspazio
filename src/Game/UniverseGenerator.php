@@ -76,7 +76,14 @@ final class UniverseGenerator
         $hadPlayers = (int) (Database::first('SELECT COUNT(*) AS c FROM players')['c'] ?? 0);
 
         $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
-        foreach (['move_log', 'player_visited_sectors', 'warps', 'sectors', 'regions'] as $t) {
+        // Tutto cio' che e' legato a un NUMERO di settore va via con l'universo
+        // vecchio: i numeri vengono riusati con una geografia nuova. Prima
+        // restavano pianeti, caccia e mine schierati, pericoli e note — e un muro
+        // di 5.000 caccia messo in un vicolo cieco si ritrovava accanto ai varchi
+        // della Federazione, sulla strada di ogni nuovo arrivato.
+        foreach (['move_log', 'player_visited_sectors', 'warps', 'sectors', 'regions',
+                  'planets', 'sector_fighters', 'sector_mines', 'sector_features',
+                  'player_feature_state', 'player_sector_notes'] as $t) {
             $pdo->exec("TRUNCATE TABLE {$t}");
         }
         $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');

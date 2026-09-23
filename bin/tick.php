@@ -98,6 +98,14 @@ $jobs = [
         $n = \App\Auth\Auth::gcTokens(7);
         return $n > 0 ? ['removed' => $n] : null;
     },
+    'crew_heal'      => static function () {
+        $n = \App\Game\Crew::healDue();
+        return $n > 0 ? ['healed' => $n] : null;
+    },
+    'iscrizioni_gc'  => static function () {
+        $n = \App\Auth\Auth::gcPending();
+        return $n > 0 ? ['removed' => $n] : null;
+    },
     'posta_gc'       => static function () {
         $n = \App\Core\Posta::pota(GameConfig::int('mail.keep_days', 30));
         return $n > 0 ? ['removed' => $n] : null;

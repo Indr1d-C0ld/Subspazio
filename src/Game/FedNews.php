@@ -148,7 +148,10 @@ final class FedNews
         }
 
         // 4) classifica: comandante di vertice
-        $top = Database::first("SELECT handle, rating FROM players WHERE rating > 0 ORDER BY rating DESC, experience DESC LIMIT 1");
+        // Un bandito non va in prima pagina: prima restava in classifica, poteva
+        // vincere la stagione e comparire qui come comandante di vertice.
+        $top = Database::first("SELECT p.handle, p.rating FROM players p JOIN users u ON u.id = p.user_id
+                                 WHERE p.rating > 0 AND u.status = 'active' ORDER BY p.rating DESC, p.experience DESC LIMIT 1");
         if ($top !== null) {
             $h[] = "In vetta alla classifica dei comandanti: {$top['handle']} (rating " . number_format((int) $top['rating'], 0, ',', '.') . ').';
         }
@@ -167,7 +170,7 @@ final class FedNews
         if ($h === []) {
             $h[] = "Nessun evento di rilievo nelle ultime {$hrs} ore. Rotte sgombre, mercati stabili.";
         }
-        $h[] = 'Bollettino di servizio: la protezione novizio resta attiva 48 ore dopo la registrazione. Buona rotta, comandanti.';
+        $h[] = 'Bollettino di servizio: la protezione novizio resta attiva ' . GameConfig::int('newbie.protect_hours', 48) . ' ore dopo la registrazione. Buona rotta, comandanti.';
 
         return $h;
     }

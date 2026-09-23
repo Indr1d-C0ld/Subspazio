@@ -43,10 +43,15 @@ final class Industry
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
-            Database::run(
-                'UPDATE ships SET hold_ore = hold_ore - ?, hold_equipment = hold_equipment - ? WHERE id = ?',
-                [$qty * $orePer, $qty * $equPer, (int) $ship['id']]
-            );
+            $scaricato = Database::run(
+                'UPDATE ships SET hold_ore = hold_ore - ?, hold_equipment = hold_equipment - ?
+                  WHERE id = ? AND hold_ore >= ? AND hold_equipment >= ?',
+                [$qty * $orePer, $qty * $equPer, (int) $ship['id'], $qty * $orePer, $qty * $equPer]
+            )->rowCount() > 0;
+            if (!$scaricato) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Servono {$orePer} minerale e {$equPer} equipaggiamento per Componente."];
+            }
             if (!Wallet::charge((int) $player['id'], ['turns' => $cost])) {
                 $pdo->rollBack();
                 return ['ok' => false, 'error' => "Turni insufficienti (servono {$cost})."];
@@ -231,9 +236,35 @@ final class Industry
             return ['ok' => false, 'error' => 'Lavoro inesistente.'];
         }
         $c = json_decode((string) ($j['cost'] ?? '{}'), true) ?: [];
+        $carico = (int) ($c['cargo_ore'] ?? 0) + (int) ($c['cargo_equ'] ?? 0) + (int) ($c['cargo_org'] ?? 0);
+
+        // L'Officina e' allo StarDock, e il carico torna nella stiva solo se c'e'
+        // posto. Prima si annullava da qualunque settore e la merce riappariva in
+        // stiva anche oltre la capienza: i lavori funzionavano da magazzino con
+        // teletrasporto.
+        if ($carico > 0) {
+            if (!Shipyard::atShipyard((int) $player['sector_id'])) {
+                return ['ok' => false, 'error' => 'Il carico di questo lavoro si riprende all\'Officina dello StarDock.'];
+            }
+            $nave = Database::first('SELECT * FROM ships WHERE id = ?', [(int) $player['ship_id']]);
+            $libere = (int) ($nave['holds_total'] ?? 0) - Economy::holdsUsed($nave ?? []);
+            if ($libere < $carico) {
+                return ['ok' => false, 'error' => "Servono {$carico} stive libere per riprendere il carico (ne hai {$libere})."];
+            }
+        }
+
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
+            // Prima si toglie il lavoro, e si rimborsa solo se c'era davvero.
+            // Prima il rimborso veniva pagato e poi si cancellava senza guardare:
+            // due annulli simultanei rimborsavano due volte, e un annullo durante
+            // la consegna dava il modulo E il rimborso.
+            $tolto = Database::run('DELETE FROM craft_jobs WHERE id = ? AND player_id = ?', [$jobId, (int) $player['id']])->rowCount() > 0;
+            if (!$tolto) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'Il lavoro e\' gia\' stato consegnato o annullato.'];
+            }
             Database::run(
                 'UPDATE players SET credits = credits + ?, components = components + ?, crystals = crystals + ?, salvage = salvage + ? WHERE id = ?',
                 [(int) ($c['credits'] ?? 0), (int) ($c['components'] ?? 0), (int) ($c['crystals'] ?? 0), (int) ($c['salvage'] ?? 0), (int) $player['id']]
@@ -244,7 +275,6 @@ final class Industry
                     [(int) ($c['cargo_ore'] ?? 0), (int) ($c['cargo_equ'] ?? 0), (int) ($c['cargo_org'] ?? 0), (int) $player['ship_id']]
                 );
             }
-            Database::run('DELETE FROM craft_jobs WHERE id = ?', [$jobId]);
             $pdo->commit();
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) {
@@ -263,9 +293,21 @@ final class Industry
             $jobs = Database::all('SELECT * FROM craft_jobs WHERE ready_at <= NOW() ORDER BY ready_at ASC LIMIT 200');
             foreach ($jobs as $j) {
                 $pid = (int) $j['player_id'];
+                // Un lavoro il cui comandante non esiste piu' (reset da pannello)
+                // faceva fallire l'inserimento del modulo, e l'eccezione fermava
+                // l'intero ciclo: essendo il piu' vecchio, era sempre il primo, e
+                // nessuno riceveva piu' niente. Ora si toglie e si va avanti.
+                if (Database::first('SELECT 1 x FROM players WHERE id = ?', [$pid]) === null) {
+                    Database::run('DELETE FROM craft_jobs WHERE id = ?', [(int) $j['id']]);
+                    continue;
+                }
+                // Prima si reclama il lavoro, poi si consegna: se nel frattempo e'
+                // stato annullato, il modulo non va consegnato.
+                if (Database::run('DELETE FROM craft_jobs WHERE id = ?', [(int) $j['id']])->rowCount() === 0) {
+                    continue;
+                }
                 Database::run("INSERT INTO player_items (player_id, item_key, source) VALUES (?, ?, 'shop')",
                     [$pid, (string) $j['item_key']]);
-                Database::run('DELETE FROM craft_jobs WHERE id = ?', [(int) $j['id']]);
                 ShipLog::write($pid, 'system', 'info',
                     "Officina: {$j['item_name']} completato",
                     "La fabbricazione di «{$j['item_name']}» è terminata. Il modulo è nell'inventario, pronto da installare allo StarDock.");
@@ -305,12 +347,25 @@ final class Industry
                 $elapsed = max(0, time() - $since);
                 $target = (int) floor($perDay * $elapsed / 86400);
                 $byStock = $orePer > 0 ? intdiv((int) $pl['stock_ore'], $orePer) : $target;
+                if ($target <= 0) {
+                    continue;   // non e' ancora maturato un Componente: il tempo resta
+                }
                 $made = min($target, $byStock);
+                // Si produce quel che il minerale consente, e l'orologio riparte
+                // comunque. Prima, senza minerale, il timestamp restava fermo e il
+                // diritto si accumulava: 30 giorni a vuoto, poi 3.240 minerale
+                // scaricati, e il tick convertiva 1.080 Componenti in un colpo.
                 if ($made <= 0) {
+                    Database::run('UPDATE planets SET last_industry_at = NOW() WHERE id = ?', [(int) $pl['id']]);
                     continue;
                 }
-                Database::run('UPDATE planets SET stock_ore = stock_ore - ?, last_industry_at = NOW() WHERE id = ?',
-                    [$made * $orePer, (int) $pl['id']]);
+                $preso = Database::run(
+                    'UPDATE planets SET stock_ore = stock_ore - ?, last_industry_at = NOW() WHERE id = ? AND stock_ore >= ?',
+                    [$made * $orePer, (int) $pl['id'], $made * $orePer]
+                )->rowCount() > 0;
+                if (!$preso) {
+                    continue;
+                }
                 Database::run('UPDATE players SET components = components + ? WHERE id = ?',
                     [$made, (int) $pl['owner_player_id']]);
                 $out['planets']++;

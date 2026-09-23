@@ -22,7 +22,12 @@ $U = e(url('/gioco/mercato-nero'));
     <h2><span class="sec-ic">📦</span> Piazza merce (premio sul prezzo equo)<?= partial('help', ['key' => 'mercatonero.merce']) ?></h2>
     <form method="post" action="<?= $U ?>" class="row">
       <?= csrf_field() ?><input type="hidden" name="op" value="sell">
-      <label>Merce <select name="commodity"><option value="ore">⛏️ Minerale</option><option value="organics">🌿 Organico</option><option value="equipment">🔧 Equipaggiamento</option></select></label>
+      <?php $prezzi = $prezzi ?? []; $etichette = ['ore' => '⛏️ Minerale', 'organics' => '🌿 Organico', 'equipment' => '🔧 Equipaggiamento']; ?>
+      <label>Merce <select name="commodity">
+        <?php foreach ($etichette as $k => $lbl): $pz = $prezzi[$k] ?? null; ?>
+          <option value="<?= e($k) ?>"<?= $pz === null ? ' disabled' : '' ?>><?= e($lbl) ?> — <?= $pz === null ? 'qui non la ritira' : number_format($pz, 2, ',', '.') . ' cr/u' ?></option>
+        <?php endforeach; ?>
+      </select></label>
       <label>Qta <input type="number" name="qty" min="1" value="10" class="qty"></label>
       <button class="btn xs" type="submit">Vendi</button>
     </form>

@@ -104,38 +104,69 @@ final class Economy
         $hoursFull = max(1.0, GameConfig::float('economy.regen_hours_full', 72.0));
         $span = $hoursFull * 3600.0;
 
+        // Si calcolano INCREMENTI, non valori assoluti, e si scrivono come tali.
+        //
+        // Prima la funzione leggeva il porto senza lucchetto, calcolava le scorte
+        // nuove e le scriveva per intero: uno scambio concluso nel frattempo
+        // veniva cancellato (merce venduta, crediti incassati, porto tornato
+        // com'era). E arrotondava ogni volta all'intero azzerando l'orologio:
+        // su un porto piccolo, che ricresce meno di un'unita' al minuto, bastava
+        // qualche azione ravvicinata perche' non ricrescesse mai.
+        $d = [];
         foreach (self::COMMODITIES as $c) {
             $pf = self::prefix($c);
             $cap = (float) $port["{$pf}_capacity"];
             $stock = (float) $port["{$pf}_stock"];
-            $rate = $cap / $span;
-            $delta = $rate * $elapsed;
-
-            if ($port["{$pf}_mode"] === 'sell') {
-                $stock = min($cap, $stock + $delta);          // il porto si rifornisce
-            } else {
-                $stock = max(0.0, $stock - $delta);           // il porto smaltisce le scorte comprate
-            }
-            $port["{$pf}_stock"] = (int) round($stock);
+            $delta = ($cap / $span) * $elapsed;
+            $d[$pf] = $port["{$pf}_mode"] === 'sell'
+                ? self::arrotonda(min(max(0.0, $cap - $stock), $delta))     // il porto si rifornisce
+                : -self::arrotonda(min(max(0.0, $stock), $delta));          // e smaltisce le scorte comprate
         }
-
         $crMax = (float) $port['credits_max'];
-        if ($crMax > 0) {
-            $port['credits'] = (int) round(min($crMax, (float) $port['credits'] + ($crMax / $span) * $elapsed));
-        }
-
+        $dCr = $crMax > 0 ? self::arrotonda(min(max(0.0, $crMax - (float) $port['credits']), ($crMax / $span) * $elapsed)) : 0;
         $fMax = (int) ($port['fighters_max'] ?? 0);
-        if ($fMax > 0 && (int) $port['fighters'] < $fMax) {
-            $port['fighters'] = (int) round(min($fMax, (float) $port['fighters'] + ($fMax / $span) * $elapsed));
+        $dF = $fMax > 0 ? self::arrotonda(min(max(0.0, $fMax - (float) $port['fighters']), ($fMax / $span) * $elapsed)) : 0;
+
+        // Una rigenerazione per istante: se nel frattempo qualcun altro ha gia'
+        // rigenerato questo porto, last_update non e' piu' quello letto e non si
+        // scrive — altrimenti due visite simultanee raddoppierebbero la ricrescita.
+        // I tetti stanno nella query: si ricresce fino al massimo, mai oltre, e
+        // mai si toglie niente a una cassa che un acquisto ha portato sopra.
+        $scritto = Database::run(
+            'UPDATE ports SET
+                ore_stock = LEAST(ore_capacity, GREATEST(0, CAST(ore_stock AS SIGNED) + ?)),
+                org_stock = LEAST(org_capacity, GREATEST(0, CAST(org_stock AS SIGNED) + ?)),
+                equ_stock = LEAST(equ_capacity, GREATEST(0, CAST(equ_stock AS SIGNED) + ?)),
+                credits   = GREATEST(credits, LEAST(credits_max, credits + ?)),
+                fighters  = GREATEST(fighters, LEAST(fighters_max, fighters + ?)),
+                last_update = NOW()
+              WHERE id = ? AND last_update = ?',
+            [$d['ore'], $d['org'], $d['equ'], $dCr, $dF, $port['id'], $port['last_update']]
+        )->rowCount() > 0;
+
+        $fresco = Database::first('SELECT * FROM ports WHERE id = ?', [$port['id']]);
+        if ($fresco === null) {
+            return $port;
         }
+        // si conservano i campi di contorno (region_id, sector_name, is_stardock)
+        // che la riga di ports da sola non ha
+        return array_merge($port, $fresco);
+    }
 
-        Database::run(
-            'UPDATE ports SET ore_stock = ?, org_stock = ?, equ_stock = ?, credits = ?, fighters = ?, last_update = NOW()
-             WHERE id = ?',
-            [$port['ore_stock'], $port['org_stock'], $port['equ_stock'], $port['credits'], $port['fighters'], $port['id']]
-        );
-
-        return $port;
+    /**
+     * Arrotondamento casuale imparziale: 0,3 diventa 1 tre volte su dieci. In
+     * media la ricrescita e' esatta qualunque sia la frequenza delle visite —
+     * l'arrotondamento al piu' vicino, invece, buttava via ogni frazione sotto
+     * il mezzo, e con visite frequenti la buttava via tutta.
+     */
+    public static function arrotonda(float $x): int
+    {
+        $x = max(0.0, $x);
+        $int = (int) floor($x);
+        if (mt_rand() / mt_getrandmax() < $x - $int) {
+            $int++;
+        }
+        return $int;
     }
 
     // --- prezzi ---------------------------------------------------------
@@ -252,9 +283,25 @@ final class Economy
         if ($cap1 <= 0) {
             return 0;
         }
-        $unit = self::quote($port, $commodity, 'sell', $cap1)['unit_raw'];
-        $byPortCredits = $unit > 0 ? (int) floor((int) $port['credits'] / $unit) : 0;
-        return max(0, min($cap1, $byPortCredits));
+        // Quanto il porto puo' pagare si cerca sul totale vero, non con il prezzo
+        // unitario del lotto massimo: vendendo meno si spunta un prezzo piu' alto,
+        // e il «Max» calcolato col prezzo basso superava la cassa — il giocatore
+        // vendeva il massimo mostrato e si sentiva rispondere che il porto non
+        // aveva credito. Ricerca binaria: il totale cresce con la quantita'.
+        $cassa = (int) $port['credits'];
+        if (self::quote($port, $commodity, 'sell', $cap1)['total'] <= $cassa) {
+            return $cap1;
+        }
+        [$lo, $hi] = [0, $cap1];
+        while ($lo < $hi) {
+            $mid = intdiv($lo + $hi + 1, 2);
+            if (self::quote($port, $commodity, 'sell', $mid)['total'] <= $cassa) {
+                $lo = $mid;
+            } else {
+                $hi = $mid - 1;
+            }
+        }
+        return $lo;
     }
 
     /** @param array<string,mixed> $ship */

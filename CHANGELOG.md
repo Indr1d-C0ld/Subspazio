@@ -4,6 +4,111 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-23 — Audit totale: crediti dal nulla, regole tradite, stati incoerenti
+
+Terzo audit, dopo quelli del 15 (sicurezza e integrità) e del 19 settembre
+(concorrenza e configurazione). Ha cercato ciò che nessuno dei due aveva
+toccato: le formule e i casi limite di ogni sottosistema, e ciò che i
+giocatori incontrano davvero.
+
+**Metodo.** Prima le prove dal campo: due settimane di log (zero avvisi PHP
+generati da giocatori), un giro automatico di tutte le 58 pagine come ospite,
+giocatore e amministratore (nessun errore 500), 26 invarianti sui dati reali
+(tutte rispettate). Poi sette letture parallele del codice, una per area. Ogni
+segnalazione è stata verificata **facendola accadere**, e ogni correzione ha
+una prova che fallisce sul codice di prima. Due segnalazioni non hanno retto e
+sono state scartate — fra cui il cambio d'ora del 25 ottobre: PHP sceglie la
+seconda occorrenza dell'ora ripetuta, quindi la produzione si ferma per
+un'ora invece di moltiplicarsi.
+
+### Denaro creato dal nulla
+
+- **[src/Game/BlackMarket.php](src/Game/BlackMarket.php)** — il mercato nero
+  pagava un premio sul prezzo medio di regione proprio accanto a porti che
+  quella merce la vendevano a sconto. Allo StarDock: minerale comprato a 11,56
+  e rivenduto a 21,58, **+87% a giro, zero turni**; provato +5.970 crediti in
+  tre giri; 345 coppie porto/merce su 431 sfruttabili. *Deciso con l'autore*:
+  premio sul prezzo equo del porto locale, e niente acquisti della merce che il
+  porto del settore vende — le coppie sfruttabili ora sono **zero**. La pagina
+  mostra il prezzo per merce. L'hardware si comprava oltre il tetto
+  (`max(1, …)` riportava a 1 lo spazio nullo).
+- **[src/Game/Bank.php](src/Game/Bank.php)** — interessi retroattivi: 10
+  milioni versati su un conto vuoto da un mese diventavano **11.614.000**. E la
+  maturazione, scrivendo un saldo letto senza lucchetto, annullava i prelievi
+  appena conclusi.
+- **[src/Game/Contracts.php](src/Game/Contracts.php)** — tre annulli simultanei
+  rimborsavano **150.000 da una cauzione di 50.000**. Ogni transizione passa ora
+  da `chiudi()`, che paga solo se la chiusura è avvenuta.
+- **[src/Game/Industry.php](src/Game/Industry.php)** — lavori d'Officina
+  rimborsati più volte, o rimborsati *e* consegnati; carico riversato ovunque e
+  oltre la capienza; un lavoro orfano che bloccava tutte le consegne.
+- **[src/Game/Shipyard.php](src/Game/Shipyard.php)**,
+  **[src/Game/Modules.php](src/Game/Modules.php)** — dispositivi pagati tre
+  volte in parallelo, tetti sforati, moduli guasti riparati gratis smontandoli
+  e rimontandoli, nave di soccorso concessa a chi aveva milioni in banca.
+- **[src/Game/Planets.php](src/Game/Planets.php)** — trasferimenti nave/pianeta
+  controllati sulla fotografia e scritti senza vincolo; guarnigioni richiamate
+  oltre il massimo dello scafo (decine di migliaia di caccia su uno scout);
+  quota di coloni illimitata fra mezzanotte e le 03:00.
+
+### Regole promesse e non applicate
+
+- **[src/Game/Combat.php](src/Game/Combat.php)** — una nave con zero caccia e
+  scudi carichi era **invulnerabile**; nell'assalto planetario la nave
+  **perdeva tutti i caccia non lanciati** (10.000 a bordo, 500 lanciati, 480
+  rimasti); NPC attaccabili in Federazione; l'assalto planetario non faceva
+  cadere l'occultamento; il registro battaglie diceva «vittoria» a chi moriva su
+  un campo minato. *Deciso con l'autore*: una capsula abbattuta non è
+  un'uccisione, la taglia la paga la Federazione a chi abbatte il ricercato, e
+  chi si difende e distrugge l'attaccante riceve uccisione e contratti.
+- **[src/Game/Npc.php](src/Game/Npc.php)**,
+  **[src/Game/Faction.php](src/Game/Faction.php)** — al battito del clock gli NPC
+  ignoravano occultamento e amicizie di fazione (una regola sola ora,
+  `Combat::npcLasciaStare()`); cacciatori di taglie senza tetto, alla soglia
+  sbagliata, e abbatterli alzava la reputazione con chi li mandava.
+- **[src/Game/Crew.php](src/Game/Crew.php)**,
+  **[src/Game/AwayMissions.php](src/Game/AwayMissions.php)**,
+  **[src/Game/Encounters.php](src/Game/Encounters.php)** — ufficiali con i bonus
+  oltre i posti dello scafo (anche in capsula), feriti che non guarivano mai,
+  scelte a pagamento gratis a cassa vuota, lealtà che cancellava i progressi.
+- **[src/Game/Economy.php](src/Game/Economy.php)** — un porto piccolo visitato
+  spesso **non ricresceva mai** (0 unità invece di ~21 in 300 visite): ora
+  incrementi con arrotondamento casuale imparziale. Il «Max» di vendita
+  superava la cassa del porto.
+- **[src/Game/Planets.php](src/Game/Planets.php)** — stessa causa: una colonia
+  sotto i ~1.500 coloni non cresceva mai. Genesis vietato in Federazione, tetto
+  al Quasar, scheda completa di un pianeta solo al proprietario o a chi è nel
+  settore.
+- **[src/Game/SectorFeatures.php](src/Game/SectorFeatures.php)** — le tempeste
+  ioniche si estinguevano (al 23/09 in tutte e nove le regioni c'erano solo
+  pericoli permanenti); conoscere un pozzo gravitazionale non serviva;
+  anomalie pagate a due risolutori; sonde che facevano due rilevamenti.
+- **[src/Game/Digest.php](src/Game/Digest.php)** — il rapporto di rientro
+  ricompariva ogni venti minuti a chi stava giocando.
+- **[src/Game/Leaderboard.php](src/Game/Leaderboard.php)**,
+  **[src/Game/Season.php](src/Game/Season.php)** — banditi in classifica e nel
+  podio; chiusura di stagione eseguibile due volte. *Deciso con l'autore*: la
+  stagione azzera anche tesori, materiali, lavori e reputazione; restano moduli
+  e ufficiali.
+- **[src/Auth/Auth.php](src/Auth/Auth.php)** — le iscrizioni mai confermate
+  non decadevano, benché l'e-mail lo promettesse.
+- **[src/Controllers/GameApiController.php](src/Controllers/GameApiController.php)**
+  — scansione remota gratuita del contenuto vivo di qualunque settore visitato;
+  bando federale aggirabile via API; stream SSE senza limite per giocatore e
+  con un cursore che poteva perdere eventi.
+- Testi di aiuto, guida e cantiere allineati al motore; i numeri della
+  configurazione non sono più scritti a mano.
+
+### Prove e dati
+
+- **[tests/](tests/)** — 11 file nuovi, da **261 a 386 verifiche**, tutte verdi
+  e tutte controprovate sul codice di prima. `tests/_corsa.php` lancia processi
+  separati con una barriera comune per la concorrenza vera. L'impalcatura non
+  lascia più battaglie finte nel registro reale (al 23/09 erano 205 su 220).
+- **[db/migrations/](db/migrations/)** `0042`–`0050` — nuove chiavi di
+  configurazione, colonna del guasto in inventario, provenienze dei moduli,
+  storico del registro battaglie raddrizzato e ripulito.
+
 ## 2026-09-20 — README esaustivo, e la coppia di repo che mancava
 
 SubSpazio era l'unico progetto senza il repository privato di riscontro. La

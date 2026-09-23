@@ -139,6 +139,13 @@ final class Faction
                 self::adjust($playerId, 'ferrengi', -(int) round($g * 1.5), 'aggressione', false);
                 self::adjust($playerId, 'frontier', (int) round($g / 2), 'colpito un Ferrengi');
             })(),
+            // Il cacciatore di taglie e' un incaricato della Federazione: prima
+            // contava come un pirata qualsiasi, e abbatterlo alzava proprio la
+            // reputazione con chi l'aveva mandato.
+            'hunter' => (function () use ($playerId, $g) {
+                self::adjust($playerId, 'fed', -$g, 'abbattuto un cacciatore federale', false);
+                self::adjust($playerId, 'frontier', (int) round($g / 2), 'abbattuto un cacciatore federale');
+            })(),
             'pirate' => (function () use ($playerId, $g) {
                 self::adjust($playerId, 'fed', $g, 'colpito un pirata');
                 self::adjust($playerId, 'frontier', $g, 'colpito un pirata');
@@ -155,7 +162,7 @@ final class Faction
     public static function onKillPlayer(int $playerId, int $victimAlignment): void
     {
         $g = GameConfig::int('faction.kill_gain', 6);
-        if ($victimAlignment >= 0) {
+        if (!Ranks::isEvil($victimAlignment)) {
             self::adjust($playerId, 'fed', -$g, 'omicidio', false);
             self::adjust($playerId, 'hegemony', (int) round($g / 2), 'un rivale in meno');
         } else {
@@ -324,27 +331,46 @@ final class Faction
                 GameConfig::set('faction.decay_last_run', date('Y-m-d H:i:s'));
             }
 
-            // cacciatori di taglie per chi è in rotta di collisione con la Federazione
-            $wary = GameConfig::int('faction.tier_wary', -20);
+            // Cacciatori di taglie per chi la Federazione considera OSTILE: e' la
+            // soglia che guida e README promettono. Prima si usava «diffidente»
+            // (-20), cosi' anche chi aveva appena pagato l'ammenda — che riporta
+            // a -30 — continuava a trovarseli addosso.
+            //
+            // E con un tetto: prima ogni minuto, per ogni ricercato, c'era il 25%
+            // di un cacciatore nuovo senza guardare quanti ce ne fossero gia'.
+            // Un'ora fermi = una quindicina di fregate. E contando come pirati,
+            // a 25 bloccavano la nascita dei pirati veri in tutto l'universo.
+            $ostile = GameConfig::int('faction.tier_hostile', -60);
             $minB = GameConfig::int('faction.bh_min_bounty', 2000);
             $chance = GameConfig::int('faction.bh_chance_pct', 25);
+            $tetto = max(0, GameConfig::int('faction.bh_max', 5));
+            $vivi = (int) (Database::first('SELECT COUNT(*) n FROM npcs WHERE name = ?', [Combat::CACCIATORE])['n'] ?? 0);
             foreach (Database::all(
                 "SELECT p.id, p.sector_id, p.handle, p.bounty
                  FROM players p
                  JOIN player_reputation r ON r.player_id = p.id AND r.faction = 'fed'
                  JOIN sectors s ON s.id = p.sector_id
                  WHERE r.value <= ? AND p.bounty >= ? AND s.is_fedspace = 0",
-                [$wary, $minB]
+                [$ostile, $minB]
             ) as $pl) {
+                if ($vivi >= $tetto) {
+                    break;
+                }
                 if (mt_rand(1, 100) > $chance) {
                     continue;
                 }
+                // uno alla volta per ricercato: se gliene e' gia' addosso uno, basta
+                if (Database::first('SELECT 1 x FROM npcs WHERE name = ? AND sector_id = ? LIMIT 1',
+                        [Combat::CACCIATORE, (int) $pl['sector_id']]) !== null) {
+                    continue;
+                }
+                $vivi++;
                 $rating = 1.3 + (int) $pl['bounty'] / 40000;
                 Database::run(
                     'INSERT INTO npcs (kind, name, ship_type, sector_id, home_sector, fighters, shields, combat_rating, credits, cargo_ore, cargo_org, cargo_equ, aggression)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?)',
                     [
-                        'pirate', 'Cacciatore di taglie', 'missile_frigate', (int) $pl['sector_id'], (int) $pl['sector_id'],
+                        'pirate', Combat::CACCIATORE, 'missile_frigate', (int) $pl['sector_id'], (int) $pl['sector_id'],
                         mt_rand(2500, 6000), mt_rand(600, 1500), round($rating, 2),
                         (int) round((int) $pl['bounty'] * 0.3), 1,
                     ]

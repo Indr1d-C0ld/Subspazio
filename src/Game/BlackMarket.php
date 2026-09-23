@@ -29,6 +29,39 @@ final class BlackMarket
     }
 
     /**
+     * Prezzo unitario che il mercato nero paga in questo settore, o null se qui
+     * quella merce non la ritira.
+     *
+     * Il premio si applica al prezzo equo del porto LOCALE, come promette
+     * l'aiuto, e il mercato nero non compra la merce che il porto del settore
+     * vende. Prima pagava un premio sul prezzo medio di regione, ignorando le
+     * scorte locali, proprio accanto a un porto che quella merce la vendeva a
+     * sconto: si comprava al porto e si rivendeva al mercato nero sul posto,
+     * +87% a giro allo StarDock, senza spendere un turno.
+     */
+    public static function buyPrice(int $sectorId, string $commodity): ?float
+    {
+        if (!in_array($commodity, Economy::COMMODITIES, true)) {
+            return null;
+        }
+        $port = Economy::portAt($sectorId);
+        if ($port === null || $port[Economy::prefix($commodity) . '_mode'] === 'sell') {
+            return null;
+        }
+        return Economy::fairUnit($port, $commodity) * GameConfig::float('blackmarket.sell_premium', 1.15);
+    }
+
+    /** @return array<string,?float> prezzo per merce nel settore (null = qui non la ritira) */
+    public static function buyPrices(int $sectorId): array
+    {
+        $out = [];
+        foreach (Economy::COMMODITIES as $c) {
+            $out[$c] = self::buyPrice($sectorId, $c);
+        }
+        return $out;
+    }
+
+    /**
      * @param array<string,mixed> $player
      * @param array<string,mixed> $ship
      */
@@ -45,9 +78,10 @@ final class BlackMarket
             return ['ok' => false, 'error' => 'Carico insufficiente.'];
         }
 
-        $region = (int) (Database::first('SELECT region_id FROM sectors WHERE id = ?', [(int) $player['sector_id']])['region_id'] ?? 0);
-        $base = Economy::regionBase($region, $commodity);
-        $unit = $base * GameConfig::float('blackmarket.sell_premium', 1.15);
+        $unit = self::buyPrice((int) $player['sector_id'], $commodity);
+        if ($unit === null) {
+            return ['ok' => false, 'error' => 'Qui il porto vende gia\' questa merce: il mercato nero non la ritira.'];
+        }
         $total = (int) round($unit * $qty);
         $alignHit = (int) floor(GameConfig::int('blackmarket.align_per_sale', -3) * max(1, $qty / 100));
         $alignHit = max($alignHit, -60);
@@ -108,7 +142,10 @@ final class BlackMarket
                     $pdo->rollBack();
                     return ['ok' => false, 'error' => "Servono {$unit} cr."];
                 }
-                Database::run("UPDATE ships SET {$spec['col']} = 1 WHERE id = ?", [$ship['id']]);
+                if (Database::run("UPDATE ships SET {$spec['col']} = 1 WHERE id = ? AND {$spec['col']} = 0", [$ship['id']])->rowCount() === 0) {
+                    $pdo->rollBack();
+                    return ['ok' => false, 'error' => 'Gia\' installato.'];
+                }
                 $pdo->commit();
             } catch (\Throwable $e) {
                 if ($pdo->inTransaction()) {
@@ -120,11 +157,16 @@ final class BlackMarket
             return ['ok' => true, 'cost' => $unit, 'align' => $alignBuy];
         }
 
+        // Prima era max(1, min(qty, spazio)): a tetto pieno lo spazio e' 0, il
+        // max lo riportava a 1, e il controllo qui sotto non scattava mai.
+        // Genesis e mine si compravano oltre il limite, uno alla volta, senza fine.
         $cap = GameConfig::int($spec['cap'], 9999);
-        $qty = max(1, min($qty, $cap - (int) $ship[$spec['col']]));
-        if ($qty <= 0) {
+        $grezza = Database::first('SELECT * FROM ships WHERE id = ?', [(int) $ship['id']]);
+        $room = $cap - (int) $grezza[$spec['col']];
+        if ($room <= 0) {
             return ['ok' => false, 'error' => 'Capacita\' massima raggiunta.'];
         }
+        $qty = max(1, min($qty, $room));
         $cost = $unit * $qty;
         if ((int) $player['credits'] < $cost) {
             return ['ok' => false, 'error' => "Servono {$cost} cr."];
@@ -136,7 +178,14 @@ final class BlackMarket
                 $pdo->rollBack();
                 return ['ok' => false, 'error' => "Servono {$cost} cr."];
             }
-            Database::run("UPDATE ships SET {$spec['col']} = {$spec['col']} + ? WHERE id = ?", [$qty, $ship['id']]);
+            $consegnato = Database::run(
+                "UPDATE ships SET {$spec['col']} = {$spec['col']} + ? WHERE id = ? AND {$spec['col']} + ? <= ?",
+                [$qty, $ship['id'], $qty, $cap]
+            )->rowCount() > 0;
+            if (!$consegnato) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'Capacita\' massima raggiunta.'];
+            }
             $pdo->commit();
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) {
@@ -162,8 +211,26 @@ final class BlackMarket
         if ((int) $player['credits'] < $cost) {
             return ['ok' => false, 'error' => "Ripulire la taglia costa {$cost} cr."];
         }
-        if (!Wallet::charge((int) $player['id'], ['credits' => $cost], [], ['bounty' => 0])) {
-            return ['ok' => false, 'error' => "Ripulire la taglia costa {$cost} cr."];
+        // Si toglie esattamente la taglia che si e' pagata. Prima si azzerava
+        // tutto: una taglia aggiunta nel frattempo (un'uccisione parallela)
+        // spariva senza essere pagata.
+        $pdo = Database::pdo();
+        $pdo->beginTransaction();
+        try {
+            if (!Wallet::charge((int) $player['id'], ['credits' => $cost])) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Ripulire la taglia costa {$cost} cr."];
+            }
+            if (Database::run('UPDATE players SET bounty = bounty - ? WHERE id = ? AND bounty >= ?', [$bounty, (int) $player['id'], $bounty])->rowCount() === 0) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'La taglia e\' cambiata: riprova.'];
+            }
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
         }
         Achievements::award((int) $player['id'], 'black_market');
         return ['ok' => true, 'cost' => $cost];

@@ -31,13 +31,30 @@ final class TurnManager
     }
 
     /** Giorno di gioco corrente (Y-m-d) tenendo conto dell'ora di reset. */
+    /**
+     * Istante d'inizio del giorno di gioco corrente, nell'ora del database.
+     * Serve a contare "oggi" come lo conta il gioco (dal reset delle 03:00),
+     * non come lo conta il calendario (dalla mezzanotte).
+     */
+    public static function gameDayStart(): string
+    {
+        $inizio = new \DateTimeImmutable(self::gameDay() . sprintf(' %02d:00:00', self::resetHour()), self::timezone());
+        return $inizio->setTimezone(new \DateTimeZone(date_default_timezone_get()))->format('Y-m-d H:i:s');
+    }
+
     public static function gameDay(): string
     {
-        $now = new \DateTimeImmutable('now', self::timezone());
-        if ((int) $now->format('G') < self::resetHour()) {
-            $now = $now->modify('-1 day');
+        return self::gameDayAt(time());
+    }
+
+    /** Il giorno di gioco a cui appartiene un istante qualunque. */
+    public static function gameDayAt(int $ts): string
+    {
+        $t = (new \DateTimeImmutable('@' . $ts))->setTimezone(self::timezone());
+        if ((int) $t->format('G') < self::resetHour()) {
+            $t = $t->modify('-1 day');
         }
-        return $now->format('Y-m-d');
+        return $t->format('Y-m-d');
     }
 
     /**

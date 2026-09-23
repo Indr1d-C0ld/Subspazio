@@ -146,8 +146,10 @@ final class Npc
             if ($ship === null || $ship['type_key'] === 'escape_pod') {
                 continue;
             }
-            // i Ferrengi puntano soprattutto i non-malvagi
-            if ($r['kind'] === 'ferrengi' && Ranks::isEvil((int) $player['alignment']) && mt_rand(0, 1)) {
+            // Stesse regole dell'ingresso nel settore: chi e' occultato non si
+            // vede, e le amicizie di fazione valgono anche fermi. Prima qui non
+            // c'era ne' l'una ne' l'altra cosa.
+            if (!empty($ship['cloaked']) || Combat::npcLasciaStare($r, $player)) {
                 continue;
             }
             Combat::npcEngagePlayer($r, $player, $ship, true);

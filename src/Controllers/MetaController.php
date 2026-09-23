@@ -50,6 +50,7 @@ final class MetaController
             'ship'      => Ctx::$ship,
             'available' => BlackMarket::available((int) $player['sector_id']),
             'catalog'   => BlackMarket::catalog(),
+            'prezzi'    => BlackMarket::buyPrices((int) $player['sector_id']),
         ]));
     }
 

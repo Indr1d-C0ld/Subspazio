@@ -45,6 +45,7 @@ if ($orfani > 0) {
 
 $inizio = microtime(true);
 $errore = null;
+$sogliaTracce = Finti::sogliaTracce();
 
 try {
     foreach ($file as $f) {
@@ -66,6 +67,7 @@ try {
 }
 
 $durata = (int) round((microtime(true) - $inizio) * 1000);
+$tracce = Finti::spazzaTracce($sogliaTracce);
 $residui = Finti::residui();
 
 echo "\n" . str_repeat('=', 62) . "\n";
@@ -73,7 +75,7 @@ echo "\n" . str_repeat('=', 62) . "\n";
 if ($errore !== null) {
     printf("INTERROTTO da %s: %s\n  in %s:%d\n", $errore::class, $errore->getMessage(), $errore->getFile(), $errore->getLine());
 }
-printf("Pulizia: %d righe sintetiche residue.\n", $residui);
+printf("Pulizia: %d righe sintetiche residue, %d tracce nei registri rimosse.\n", $residui, $tracce);
 
 $falliti = Esito::falliti();
 printf(

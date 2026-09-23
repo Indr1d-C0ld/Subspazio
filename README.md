@@ -25,8 +25,10 @@ testi o artwork della door proprietaria.
   (scorte contro capacità, più un valore base regionale che deriva nel tempo),
   rigenerazione lazy di scorte e tesoreria, **contrattazione** a offerta e
   controproposta, scambio veloce, Banca Intergalattica con interesse composto,
-  **mercato nero** (vendita a premio e hardware scontato pagando in
-  allineamento, ripulisce la taglia).
+  **mercato nero**: compra a premio sul prezzo equo del porto locale — ma non
+  la merce che il porto del settore vende, così non esiste arbitraggio sul
+  posto — e vende hardware scontato; ogni affare costa allineamento, e per
+  una cifra ripulisce la taglia. Il commercio non consuma turni.
 
 - **Navi, hardware & moduli** — cantiere StarDock: acquisto navi con permuta,
   potenziamento di stive, caccia e scudi, hardware (sonde, mine armid e limpet,
@@ -37,12 +39,18 @@ testi o artwork della door proprietaria.
   (con recupero in «Leghe»), e sovrappongono i loro bonus alle statistiche
   della nave.
 
-- **Combattimento** — motore a caccia con scudi, attacco nave contro nave (con
-  bottino, esperienza e taglia), assalto ai porti con saccheggio, caccia e mine
-  dispiegati (offensivi, difensivi o a pedaggio) che intercettano all'ingresso
-  nel settore, distruzione della nave con capsula di salvataggio, gradi e
-  allineamento, protezione novizio, **replay round per round** di ogni
-  battaglia.
+- **Combattimento** — motore a caccia con scudi (una nave senza caccia resta
+  vulnerabile finché ha scudi da consumare), attacco nave contro nave con
+  bottino ed esperienza, assalto ai porti con saccheggio, assalto ai pianeti
+  con saccheggio e bombardamento (l'ala lanciata combatte, il resto dei caccia
+  resta a bordo), caccia e mine dispiegati (offensivi, difensivi o a pedaggio,
+  con un tetto) che intercettano all'ingresso nel settore, distruzione della
+  nave con capsula di salvataggio, gradi e allineamento, protezione novizio,
+  **replay round per round** di ogni battaglia.
+  **Taglie**: chi uccide comandanti onesti accumula una taglia, che la
+  Federazione paga a chi lo abbatte. Chi si difende e distrugge l'attaccante
+  riceve l'uccisione e i contratti sulla sua testa. Abbattere una capsula di
+  salvataggio non vale come uccisione.
 
 - **Equipaggio** — ufficiali generati da archetipi, 6 ruoli con **bonus
   passivo** (fuso nelle statistiche dopo i moduli) e **abilità attiva**,
@@ -94,9 +102,12 @@ testi o artwork della door proprietaria.
   **eventi globali** (shock di mercato, brillamento solare, incursione
   Ferrengi, ondata di pirateria, stagione delle taglie) annunciati via radio.
 
-- **Meta-gioco** — **stagioni** con ladder, soft-reset dei comandanti e albo
-  d'oro (i traguardi persistono, l'universo si rigenera a scelta); **traguardi**
-  verificati sullo stato o per evento.
+- **Meta-gioco** — **stagioni** con ladder e albo d'oro. Alla chiusura
+  ripartono da zero crediti, navi, pianeti, materiali, tesori delle
+  corporazioni, lavori d'Officina e reputazione; restano traguardi, ufficiali
+  e moduli (che tornano in inventario). L'universo si rigenera a scelta.
+  **Traguardi** verificati sullo stato o per evento. Banditi e sospesi non
+  compaiono in classifica né nell'albo.
 
 - **Giornale di bordo & rientro** — un **registro incidenti** persistente e
   sfogliabile per giocatore, con voce coerente all'ambientazione: scontri
@@ -153,8 +164,8 @@ comandante, con una nave iniziale allo StarDock, i «primi passi» in evidenza e
 Il gioco ha un ritmo doppio:
 
 - **Turni** — un budget di azioni al giorno che si ricarica alle 03:00 (fuso
-  configurabile, default `Europe/Rome`). Warp, commercio e combattimento
-  consumano turni.
+  configurabile, default `Europe/Rome`). Warp, combattimento, scansione,
+  estrazione e le abilità dell'equipaggio consumano turni; il commercio no.
 - **Tick** — ogni minuto un cron fa avanzare il mondo: NPC, eventi, feature dei
   settori, fazioni, produzione e industria dei pianeti, lavori dell'Officina,
   scadenza dei contratti, interessi, drift di mercato, notifiche, garbage
@@ -250,7 +261,7 @@ La configurazione sta su **due livelli distinti**, e la differenza conta:
 | **Gioco** | tabella `game_config` | bilanciamento e regole: costi, probabilità, soglie, tempi | dal pannello `/admin/gioco` o da console, **a caldo** |
 
 Il primo richiede accesso al server ed è materia di installazione. Il secondo è
-il pannello di regolazione del gioco: 257 chiavi, tutte modificabili senza
+il pannello di regolazione del gioco: 262 chiavi, tutte modificabili senza
 riavviare nulla e senza toccare il codice.
 
 ### Livello 1 — il file di configurazione
@@ -292,30 +303,30 @@ php bin/console.php config:get combat          # solo la famiglia
 php bin/console.php config:set newbie.protect_hours 72
 ```
 
-Le 257 chiavi per famiglia:
+Le 262 chiavi per famiglia:
 
 | Famiglia | N. | Cosa regola |
 |---|---|---|
 | `economy` | 23 | prezzi base regionali, deriva del mercato, sconto d'acquisto, ricarico di vendita, bande della contrattazione |
 | `scan` | 26 | costo in turni di scansione/sonda/raccolta/studio, densità delle feature per fascia di regione, rese e bonus |
 | `crew` | 20 | costo di assunzione, livelli, lealtà, cure, costo e raffreddamento delle abilità, missioni away |
-| `faction` | 19 | guadagni e perdite di reputazione, soglie dei tier, ammenda, cacciatori di taglie, decadimento |
+| `faction` | 20 | guadagni e perdite di reputazione, soglie dei tier, ammenda, cacciatori di taglie (e loro tetto), decadimento |
 | `loot` | 18 | probabilità di drop per sorgente, rarità, doppio drop, recupero in Leghe, costi di potenziamento |
 | `hardware` | 18 | listino del Cantiere: sonde, mine, capsula, scanner, transwarp, occultamento, Genesi, laser |
 | `combat` | 13 | costo in turni dell'attacco, danni di caccia e mine, taglie, bottino, assalto ai porti |
-| `planet` | 12 | capacità e produzione per tipo, crescita dei coloni, Citadel, Quasar, bombardamento |
+| `planet` | 13 | capacità e produzione per tipo, crescita dei coloni, Citadel, Quasar (con livello massimo), bombardamento |
 | `craft` | 10 | raffineria (ricette e rese), durata dei lavori d'Officina, industria dei pianeti |
 | `npc` | 9 | popolazione, movimento, probabilità d'ingaggio, regione madre dei Ferrengi |
 | `mine` | 8 | giacimenti di asteroidi: rese, cristalli, costo in turni, densità per fascia |
 | `universe` | 6 | numero di settori, estensione della Federazione, parametri del generatore |
 | `blackmarket` | 5 | premio di vendita, sconto hardware, allineamento speso, pulizia della taglia |
 | `subsys` | 5 | guasti ai sottosistemi: probabilità, riparazione, Ingegnere |
-| `auth` | 4 | durata dei collegamenti di verifica e recupero, freno e tetto sui rinvii |
+| `auth` | 5 | durata dei collegamenti di verifica e recupero, freno e tetto sui rinvii, giorni dopo cui un'iscrizione non confermata decade |
 | `mail` | 4 | ritentativi, tetto giornaliero, messaggi per battito, potatura della coda |
 | `turns` | 4 | turni al giorno e ora del reset |
 | `season` | 4 | numero di stagione, dimensione dell'albo, cosa azzerare alla chiusura |
-| `contract`, `corp`, `eps`, `events`, `encounter`, `limpet`, `live`, `radio`, `rating`, `tick`, `bank`, `cloak`, `fednews`, `ranks` | 2–3 ciascuna | contratti e taglie, corporazioni, griglia di potenza, eventi globali, incontri a warp, mine limpet, stream SSE, radio, classifica, salute del clock, banca, occultamento, notiziario, soglie di allineamento |
-| `digest`, `game`, `limits`, `media`, `nav`, `newbie`, `onboarding`, `player`, `registration`, `security`, `shiplog`, `transwarp` | 1 ciascuna | rapporto di rientro, stato del gioco, freno sulle azioni, approvazione automatica delle immagini, autopilota, protezione novizio, ricompensa dei primi passi, dotazione iniziale, iscrizioni aperte/chiuse, lunghezza minima della password, capienza del giornale, costo del transwarp |
+| `contract`, `corp`, `eps`, `events`, `encounter`, `limpet`, `live`, `radio`, `rating`, `tick`, `bank`, `cloak`, `fednews`, `ranks` | 2–4 ciascuna | contratti e taglie, corporazioni, griglia di potenza, eventi globali, incontri a warp, mine limpet, stream SSE, radio, classifica, salute del clock, banca, occultamento, notiziario, soglie di allineamento |
+| `deploy`, `digest`, `game`, `limits`, `media`, `nav`, `newbie`, `onboarding`, `player`, `registration`, `security`, `shiplog`, `transwarp` | 1 ciascuna | tetto del pedaggio, rapporto di rientro, stato del gioco, freno sulle azioni, approvazione automatica delle immagini, autopilota, protezione novizio, ricompensa dei primi passi, dotazione iniziale, iscrizioni aperte/chiuse, lunghezza minima della password, capienza del giornale, costo del transwarp |
 
 Le più utili da conoscere subito:
 
@@ -328,6 +339,8 @@ Le più utili da conoscere subito:
 | `media.auto_approve` | `1` | `0` riporta avatar e logo alla coda di moderazione |
 | `mail.tetto_24h` | `140` | tetto di invii al giorno. **Abbassalo se il tuo account SMTP è condiviso con un altro servizio**: ciascuno conta solo i propri |
 | `limits.player_actions_per_min` | `120` | freno sulle azioni di gioco per giocatore |
+| `auth.pending_ttl_days` | `7` | un'iscrizione mai confermata decade dopo questi giorni dall'ultimo collegamento spedito, e il nome utente torna libero |
+| `deploy.toll_max` | `5000` | pedaggio massimo dei caccia schierati: viene prelevato in automatico a chi entra e può pagarlo |
 | `player.start_credits`, `player.start_ship` | | dotazione del comandante appena creato |
 
 **Una nota sul pulsante «↺»**: riporta la chiave al suo `default_value`, che è
@@ -342,9 +355,15 @@ php tests/run.php                # tutte
 php tests/run.php economica      # solo i file col nome che contiene "economica"
 ```
 
-Suite di integrazione senza dipendenze: integrità economica, concorrenza,
-percorsi di gioco normali, universo, clock, sessioni e turni, difese,
-iscrizione e posta, immagini, configurazione, schema.
+Suite di integrazione senza dipendenze, 386 verifiche in 22 file: integrità
+economica, concorrenza, banca/contratti/Officina, combattimento, navigazione,
+nave e moduli, pianeti, porti, equipaggio, mondo, percorsi di gioco normali,
+universo, clock, sessioni e turni, difese, iscrizione e posta, immagini,
+configurazione, schema, e le regole decise per mercato nero, uccisioni e
+stagioni. Ogni correzione ha una prova costruita per fallire sul codice di
+prima. Le prove di concorrenza lanciano processi separati con una barriera
+comune (`tests/_corsa.php`): due richieste dello stesso giocatore nello stesso
+istante sono un caso reale, non teorico.
 
 **Attenzione**: non esiste un database di prova separato. Le prove girano su
 quello configurato, ma creano e distruggono solo righe sintetiche col prefisso

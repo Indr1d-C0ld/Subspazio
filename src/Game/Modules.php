@@ -29,7 +29,7 @@ final class Modules
     public static function inventory(int $playerId): array
     {
         return Database::all(
-            'SELECT pi.id, pi.item_key, pi.rolled, pi.source, pi.acquired_at,
+            'SELECT pi.id, pi.item_key, pi.rolled, pi.broken_at, pi.source, pi.acquired_at,
                     it.name, it.category, it.rarity, it.effects, it.base_salvage, it.descr
              FROM player_items pi JOIN item_types it ON it.ckey = pi.item_key
              WHERE pi.player_id = ?
@@ -64,7 +64,7 @@ final class Modules
             return ['ok' => false, 'error' => 'La capsula non ha slot per moduli.'];
         }
         $it = Database::first(
-            'SELECT pi.id, pi.item_key, pi.rolled, it.name, it.category
+            'SELECT pi.id, pi.item_key, pi.rolled, pi.broken_at, it.name, it.category
              FROM player_items pi JOIN item_types it ON it.ckey = pi.item_key
              WHERE pi.id = ? AND pi.player_id = ?',
             [$itemId, (int) $player['id']]
@@ -74,23 +74,33 @@ final class Modules
         }
         $cat = (string) $it['category'];
         $slots = ShipStats::slots((string) $ship['type_key']);
-        $used = (int) (Database::first(
-            'SELECT COUNT(*) c FROM ship_modules sm JOIN item_types it ON it.ckey = sm.item_key
-             WHERE sm.ship_id = ? AND it.category = ?',
-            [(int) $ship['id'], $cat]
-        )['c'] ?? 0);
-        if ($used >= ($slots[$cat] ?? 0)) {
-            return ['ok' => false, 'error' => 'Nessuno slot ' . self::catLabel($cat) . ' libero su questo scafo.'];
-        }
 
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
+            // Il conteggio degli slot si fa con la nave sotto lucchetto: due
+            // installazioni parallele di moduli diversi riempivano lo stesso slot.
+            Database::first('SELECT id FROM ships WHERE id = ? FOR UPDATE', [(int) $ship['id']]);
+            $used = (int) (Database::first(
+                'SELECT COUNT(*) c FROM ship_modules sm JOIN item_types it ON it.ckey = sm.item_key
+                 WHERE sm.ship_id = ? AND it.category = ?',
+                [(int) $ship['id'], $cat]
+            )['c'] ?? 0);
+            if ($used >= ($slots[$cat] ?? 0)) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'Nessuno slot ' . self::catLabel($cat) . ' libero su questo scafo.'];
+            }
+            // Prima si toglie dall'inventario, e si installa solo se c'era: due
+            // installazioni parallele dello stesso modulo ne montavano due copie.
+            if (Database::run('DELETE FROM player_items WHERE id = ? AND player_id = ?', [$itemId, (int) $player['id']])->rowCount() === 0) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'Modulo non trovato nell\'inventario.'];
+            }
+            // Il guasto viaggia col modulo: un modulo guasto rimontato resta guasto.
             Database::run(
-                'INSERT INTO ship_modules (ship_id, slot, item_key, rolled) VALUES (?, ?, ?, ?)',
-                [(int) $ship['id'], $cat, $it['item_key'], $it['rolled']]
+                'INSERT INTO ship_modules (ship_id, slot, item_key, rolled, broken_at) VALUES (?, ?, ?, ?, ?)',
+                [(int) $ship['id'], $cat, $it['item_key'], $it['rolled'], $it['broken_at']]
             );
-            Database::run('DELETE FROM player_items WHERE id = ?', [$itemId]);
             $pdo->commit();
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) {
@@ -111,7 +121,7 @@ final class Modules
             return ['ok' => false, 'error' => 'L\'officina moduli è solo allo StarDock.'];
         }
         $m = Database::first(
-            'SELECT sm.id, sm.item_key, sm.rolled, it.name FROM ship_modules sm
+            'SELECT sm.id, sm.item_key, sm.rolled, sm.broken_at, it.name FROM ship_modules sm
              JOIN item_types it ON it.ckey = sm.item_key
              WHERE sm.id = ? AND sm.ship_id = ?',
             [$modId, (int) $ship['id']]
@@ -122,11 +132,14 @@ final class Modules
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
+            if (Database::run('DELETE FROM ship_modules WHERE id = ? AND ship_id = ?', [$modId, (int) $ship['id']])->rowCount() === 0) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'Modulo non installato su questa nave.'];
+            }
             Database::run(
-                'INSERT INTO player_items (player_id, item_key, rolled, source) VALUES (?, ?, ?, ?)',
-                [(int) $player['id'], $m['item_key'], $m['rolled'], 'shop']
+                'INSERT INTO player_items (player_id, item_key, rolled, broken_at, source) VALUES (?, ?, ?, ?, ?)',
+                [(int) $player['id'], $m['item_key'], $m['rolled'], $m['broken_at'], 'shop']
             );
-            Database::run('DELETE FROM ship_modules WHERE id = ?', [$modId]);
             $pdo->commit();
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) {
@@ -140,6 +153,10 @@ final class Modules
     /** @param array<string,mixed> $player */
     public static function scrap(array $player, int $itemId): array
     {
+        // L'aiuto dice «allo StarDock», e cosi' e' per installare e smontare.
+        if (!Shipyard::atShipyard((int) $player['sector_id'])) {
+            return ['ok' => false, 'error' => 'L\'officina moduli è solo allo StarDock.'];
+        }
         $it = Database::first(
             'SELECT pi.id, it.name, it.base_salvage, it.rarity
              FROM player_items pi JOIN item_types it ON it.ckey = pi.item_key
@@ -153,8 +170,11 @@ final class Modules
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
-            Database::run('DELETE FROM player_items WHERE id = ?', [$itemId]);
-            Database::run('UPDATE players SET salvage = salvage + ? WHERE id = ?', [$gain, (int) $player['id']]);
+            if (Database::run('DELETE FROM player_items WHERE id = ? AND player_id = ?', [$itemId, (int) $player['id']])->rowCount() === 0) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'Modulo non trovato.'];
+            }
+            Wallet::credit((int) $player['id'], ['salvage' => $gain]);
             $pdo->commit();
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) {

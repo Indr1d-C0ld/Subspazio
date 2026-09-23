@@ -32,7 +32,11 @@ final class Combat
         $rounds = 0;
         $trace = [['r' => 0, 'aF' => $aF, 'aS' => $aS, 'dF' => $dF, 'dS' => $dS]];
 
-        while ($aF > 0 && $dF > 0 && $rounds < $maxR) {
+        // Si combatte finche' l'attaccante ha caccia e il difensore ha ancora
+        // qualcosa da perdere. Con la sola condizione sui caccia, una nave con
+        // zero caccia e scudi carichi non subiva neppure un round: ne' dai
+        // giocatori, ne' dagli NPC, ne' dai caccia schierati — invulnerabile.
+        while ($aF > 0 && ($dF > 0 || $dS > 0) && $rounds < $maxR) {
             $rounds++;
 
             [$dS, $rem] = self::soak($dS, $aF * $kr * $aM * self::jitter($var));
@@ -113,18 +117,19 @@ final class Combat
         if (!empty($tShip['cloaked'])) {
             return self::err('Bersaglio non rilevabile: e\' sotto occultamento.');
         }
-        // aprire il fuoco smaschera un attaccante occultato
-        Cloak::drop((int) $atkShip['id'], 'apertura del fuoco');
+        $commit = $commit > 0 ? min($commit, (int) $atkShip['fighters']) : (int) $atkShip['fighters'];
+        if ($commit <= 0) {
+            return self::err('Non hai caccia da lanciare.');
+        }
 
+        // Solo adesso l'attacco e' valido: prima, un attacco rifiutato (senza
+        // caccia) smascherava lo stesso l'attaccante e bruciava l'abilita'
+        // dell'Ufficiale tattico, pagata 15 turni.
+        Cloak::drop((int) $atkShip['id'], 'apertura del fuoco');
         $aM = (float) ($atkShip['combat_rating'] ?? 1.0);
         $dM = (float) ($tShip['combat_rating'] ?? 1.0);
         if ($ab = Crew::consumePending((int) $atkPlayer['id'], 'attack_bonus_pct')) {
             $aM *= 1 + $ab / 100;
-        }
-
-        $commit = $commit > 0 ? min($commit, (int) $atkShip['fighters']) : (int) $atkShip['fighters'];
-        if ($commit <= 0) {
-            return self::err('Non hai caccia da lanciare.');
         }
 
         $r = self::duel($commit, (int) $atkShip['shields'], $aM, (int) $tShip['fighters'], (int) $tShip['shields'], $dM);
@@ -148,13 +153,24 @@ final class Combat
             Database::run('UPDATE ships SET fighters = ?, shields = ? WHERE id = ?', [$r['def_ftr'], $r['def_shd'], $tShip['id']]);
 
             if ($destroyedTarget) {
+                // Una capsula di salvataggio non e' una preda: abbatterla non vale
+                // come uccisione (niente rating, esperienza ne' moduli). Prima era
+                // una vittoria piena ottenuta per 2 turni, e un secondo account in
+                // capsula si poteva «coltivare» all'uscita della Federazione.
+                $eraCapsula = ($tShip['type_key'] ?? '') === 'escape_pod';
                 $loot = (int) floor((int) $target['credits'] * GameConfig::float('combat.loot_pct', 0.5));
-                $expGain = GameConfig::int('combat.exp_per_kill', 50)
+                $expGain = $eraCapsula ? 0 : GameConfig::int('combat.exp_per_kill', 50)
                     + (int) round($r['def_lost'] * GameConfig::float('combat.exp_per_fighter', 0.02));
-                $align = (int) $target['alignment'] >= 0
-                    ? GameConfig::int('combat.kill_good_alignment', -25)
-                    : GameConfig::int('combat.kill_evil_alignment', 15);
-                $bounty = (int) floor($loot * GameConfig::float('combat.bounty_pct', 0.1) * GameConfig::float('combat.bounty_mult', 1.0)) * ((int) $target['alignment'] >= 0 ? 1 : 0);
+                // Chi e' fuorilegge lo decide Ranks::isEvil, la stessa soglia che
+                // da' l'etichetta e che governa NPC e cannoni. Qui c'era `>= 0`:
+                // un comandante a -50, etichettato «Neutrale», veniva trattato da
+                // fuorilegge — e ucciderlo premiava invece di costare.
+                $vittimaFuorilegge = Ranks::isEvil((int) $target['alignment']);
+                $align = $vittimaFuorilegge
+                    ? GameConfig::int('combat.kill_evil_alignment', 15)
+                    : GameConfig::int('combat.kill_good_alignment', -25);
+                $bounty = $vittimaFuorilegge ? 0
+                    : (int) floor($loot * GameConfig::float('combat.bounty_pct', 0.1) * GameConfig::float('combat.bounty_mult', 1.0));
 
                 // Si prende quel che la vittima ha davvero adesso, non quel che
                 // aveva quando e' stato calcolato il bottino: l'attaccante
@@ -162,12 +178,17 @@ final class Combat
                 // scontro non puo' creare ne' distruggere crediti.
                 $loot = Wallet::seize((int) $target['id'], $loot);
                 Database::run(
-                    'UPDATE players SET credits = credits + ?, kills = kills + 1, experience = experience + ?, alignment = alignment + ?, bounty = bounty + ? WHERE id = ?',
-                    [$loot, $expGain, $align, $bounty, $atkPlayer['id']]
+                    'UPDATE players SET credits = credits + ?, kills = kills + ?, experience = experience + ?, alignment = alignment + ?, bounty = bounty + ? WHERE id = ?',
+                    [$loot, $eraCapsula ? 0 : 1, $expGain, $align, $bounty, $atkPlayer['id']]
                 );
-                $drops = Loot::rollKill((int) $atkPlayer['id'], 'pvp', $sectorId,
-                    (float) ($tShip['combat_rating'] ?? 1.0), null, $target);
-                Crew::awardKillXp((int) $atkPlayer['id']);
+                if (!$eraCapsula) {
+                    $drops = Loot::rollKill((int) $atkPlayer['id'], 'pvp', $sectorId,
+                        (float) ($tShip['combat_rating'] ?? 1.0), null, $target);
+                    Crew::awardKillXp((int) $atkPlayer['id']);
+                    // La taglia sulla testa del bersaglio la paga la Federazione a chi
+                    // lo abbatte. Prima restava un numero che nessuno incassava mai.
+                    self::riscuotiTaglia((int) $target['id'], (int) $atkPlayer['id']);
+                }
                 Faction::onKillPlayer((int) $atkPlayer['id'], (int) $target['alignment']);
                 self::destroyShip($target);
                 Contracts::onPlayerKilled((int) $target['id'], (int) $atkPlayer['id']);
@@ -188,7 +209,19 @@ final class Combat
                     $sectorId);
             }
             if ($destroyedAtk) {
+                // Chi si difende e distrugge l'attaccante ne ha il merito: prima
+                // non riceveva nulla, e i contratti sulla testa dell'attaccante
+                // restavano aperti.
+                Database::run(
+                    'UPDATE players SET kills = kills + 1, experience = experience + ? WHERE id = ?',
+                    [GameConfig::int('combat.exp_per_kill', 50), (int) $target['id']]
+                );
+                Crew::awardKillXp((int) $target['id']);
+                self::riscuotiTaglia((int) $atkPlayer['id'], (int) $target['id']);
                 self::destroyShip($atkPlayer);
+                Contracts::onPlayerKilled((int) $atkPlayer['id'], (int) $target['id']);
+                Live::alert((int) $target['id'], 'combat', 'Attacco respinto',
+                    "Hai distrutto {$atkPlayer['handle']}, che ti aveva attaccato nel settore {$sectorId}.", '/gioco');
             }
             Live::sector($sectorId, 'combat', null, "Scontro fra {$atkPlayer['handle']} e {$target['handle']}");
 
@@ -249,7 +282,6 @@ final class Combat
         if ((bool) $sector['is_fedspace']) {
             return self::err('Non in spazio Federazione.');
         }
-        Cloak::drop((int) $atkShip['id'], 'apertura del fuoco');
         $port = Economy::portAt($sectorId);
         if ($port === null) {
             return self::err('Nessun porto in questo settore.');
@@ -269,6 +301,7 @@ final class Combat
             return self::err('Non hai caccia da lanciare.');
         }
 
+        Cloak::drop((int) $atkShip['id'], 'apertura del fuoco');
         $aM = (float) ($atkShip['combat_rating'] ?? 1.0);
         if ($ab = Crew::consumePending((int) $atkPlayer['id'], 'attack_bonus_pct')) {
             $aM *= 1 + $ab / 100;
@@ -408,8 +441,16 @@ final class Combat
                 return ['ok' => false, 'error' => "Turni insufficienti (servono {$turnCost})."];
             }
             Database::run('UPDATE players SET protected_until = NULL WHERE id = ? AND protected_until IS NOT NULL', [$atkPlayer['id']]);
+            // Aprire il fuoco su un pianeta smaschera come ogni altro attacco:
+            // la guida lo promette, e prima qui mancava.
+            Cloak::drop((int) $atkShip['id'], 'assalto planetario');
 
+            // Si combatte con la sola ala lanciata; il resto dei caccia resta a
+            // bordo. Prima, a fine assalto, la nave riceveva come dotazione
+            // totale i soli superstiti dell'ala: 10.000 caccia, 500 lanciati,
+            // 480 tornati — e la nave ne aveva 480.
             $atkFtr = $commit;
+            $reserve = max(0, (int) $atkShip['fighters'] - $commit);
             $atkShd = (int) $atkShip['shields'];
             $events = [];
 
@@ -430,8 +471,10 @@ final class Combat
             $rounds = 0;
             $duelTrace = null;
 
-            if ($atkFtr <= 0 && $atkShd <= 0) {
-                $destroyedAtk = true;
+            if ($atkFtr <= 0) {
+                // L'ala e' stata spazzata via dalla volata: l'assalto fallisce.
+                // La nave e' distrutta solo se non le resta davvero nulla.
+                $destroyedAtk = $atkShd <= 0 && $reserve <= 0;
             } else {
                 $totalCol = (int) $p['col_ore'] + (int) $p['col_org'] + (int) $p['col_equ'] + (int) $p['col_idle'];
                 $militia = (int) floor($totalCol * GameConfig::float('planet.militia_col_frac', 0.01));
@@ -455,7 +498,7 @@ final class Combat
                 Database::run('UPDATE planets SET fighters = GREATEST(0, fighters - ?), shields = ? WHERE id = ?', [$garLost, $r['def_shd'], $planetId]);
 
                 $cracked = $r['def_ftr'] <= 0 && $atkFtr > 0;
-                $destroyedAtk = $atkFtr <= 0 && $atkShd <= 0 && $r['def_ftr'] > 0;
+                $destroyedAtk = ($atkFtr + $reserve) <= 0 && $atkShd <= 0 && $r['def_ftr'] > 0;
 
                 if ($cracked) {
                     $loot = (int) floor((int) $p['credits'] * GameConfig::float('combat.loot_pct', 0.5));
@@ -520,7 +563,7 @@ final class Combat
                 }
             }
 
-            Database::run('UPDATE ships SET fighters = ?, shields = ? WHERE id = ?', [max(0, $atkFtr), max(0, $atkShd), $atkShip['id']]);
+            Database::run('UPDATE ships SET fighters = ?, shields = ? WHERE id = ?', [max(0, $atkFtr) + $reserve, max(0, $atkShd), $atkShip['id']]);
             if ($destroyedAtk) {
                 self::destroyShip($atkPlayer);
             }
@@ -576,7 +619,12 @@ final class Combat
         if ((int) $npc['sector_id'] !== (int) $atkPlayer['sector_id']) {
             return self::err('Il bersaglio non e\' in questo settore.');
         }
-        Cloak::drop((int) $atkShip['id'], 'apertura del fuoco');
+        // Navi, porti e pianeti rifiutavano gia' la Fedspace; gli NPC no. La
+        // pagina nascondeva il bottone, ma una POST fatta a mano arrivava al
+        // motore — e la guida promette "niente attacchi" nei settori bassi.
+        if ((bool) (Universe::sector((int) $npc['sector_id'])['is_fedspace'] ?? false)) {
+            return self::err('La Federazione non tollera atti ostili in questo settore.');
+        }
         $turnCost = GameConfig::int('combat.attack_turn_cost', 2);
         $atkPlayer = TurnManager::sync($atkPlayer);
         if ((int) $atkPlayer['turns'] < $turnCost) {
@@ -587,6 +635,7 @@ final class Combat
             return self::err('Non hai caccia da lanciare.');
         }
 
+        Cloak::drop((int) $atkShip['id'], 'apertura del fuoco');
         $aM = (float) ($atkShip['combat_rating'] ?? 1.0);
         if ($ab = Crew::consumePending((int) $atkPlayer['id'], 'attack_bonus_pct')) {
             $aM *= 1 + $ab / 100;
@@ -634,7 +683,7 @@ final class Combat
                 $drops = Loot::rollKill((int) $atkPlayer['id'], 'npc', (int) $npc['sector_id'],
                     (float) $npc['combat_rating'], (string) $npc['kind']);
                 Crew::awardKillXp((int) $atkPlayer['id']);
-                Faction::onKillNpc((int) $atkPlayer['id'], (string) $npc['kind']);
+                Faction::onKillNpc((int) $atkPlayer['id'], $npc['name'] === self::CACCIATORE ? 'hunter' : (string) $npc['kind']);
                 Database::run('DELETE FROM npcs WHERE id = ?', [$npcId]);
             } else {
                 Database::run('UPDATE npcs SET fighters = ?, shields = ? WHERE id = ?', [$r['def_ftr'], $r['def_shd'], $npcId]);
@@ -705,7 +754,10 @@ final class Combat
         Database::run(
             'INSERT INTO combat_log (kind, sector_id, defender_player_id, rounds, att_fighters_lost, def_fighters_lost, outcome, detail) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
             ['npc', (int) $npc['sector_id'], (int) $player['id'], $r['rounds'], $r['att_lost'], $r['def_lost'],
-                $playerDead ? 'att_destroyed' : ($npcDead ? 'def_win' : 'draw'),
+                // Qui chi entra e' il DIFENSORE: se muore e' 'def_destroyed'. Prima
+                // l'esito era invertito, e il registro battaglie diceva «vittoria»
+                // a chi era appena stato distrutto.
+                $playerDead ? 'def_destroyed' : ($npcDead ? 'att_destroyed' : 'draw'),
                 json_encode(['npc' => $npc['name'], 'aggressor' => true], JSON_UNESCAPED_UNICODE)]
         );
 
@@ -776,7 +828,15 @@ final class Combat
         $pid = (int) $player['id'];
         $cloaked = !empty($ship['cloaked']);
         $mine = static fn (int $ownerId): bool => $ownerId === $pid || Corp::areMates($pid, $ownerId);
-        $noEngage = Crew::consumePending($pid, 'no_engage') !== null;
+        // «Negoziato» promette di evitare l'ingaggio al prossimo ingresso OSTILE.
+        // Prima veniva consumato a qualunque ingresso fuori dalla Federazione,
+        // anche in un settore vuoto — e sotto occultamento, dove non serve.
+        // Ora si spende solo se qui c'e' davvero qualcuno che ingaggerebbe.
+        $ostile = !$cloaked && (
+            Database::first('SELECT 1 x FROM sector_fighters WHERE sector_id = ? AND owner_player_id <> ? LIMIT 1', [$sectorId, $pid]) !== null
+            || Database::first('SELECT 1 x FROM npcs WHERE sector_id = ? AND aggression > 0 LIMIT 1', [$sectorId]) !== null
+        );
+        $noEngage = $ostile && Crew::consumePending($pid, 'no_engage') !== null;
 
         // Lo scudo novizio vale contro tutto cio' che un altro comandante ha
         // piazzato qui — cannoni planetari, mine, caccia schierati — non
@@ -822,7 +882,7 @@ final class Combat
             [$ship, $dead] = self::applyDamage($ship, $dmg);
             Database::run(
                 'INSERT INTO combat_log (kind, sector_id, defender_player_id, outcome, detail) VALUES (?, ?, ?, ?, ?)',
-                ['quasar', $sectorId, $pid, $dead ? 'att_destroyed' : 'passed', json_encode(['planet' => $pl['name'], 'dmg' => $dmg], JSON_UNESCAPED_UNICODE)]
+                ['quasar', $sectorId, $pid, $dead ? 'def_destroyed' : 'passed', json_encode(['planet' => $pl['name'], 'dmg' => $dmg], JSON_UNESCAPED_UNICODE)]
             );
             $events[] = "Cannone Quasar di {$pl['name']}: {$dmg} danni alla nave.";
             if (!$dead && ($hit = Subsystems::maybeBreak((int) $ship['id'], 'Quasar', true, false))) {
@@ -844,7 +904,7 @@ final class Combat
             Database::run('DELETE FROM sector_mines WHERE id = ?', [$m['id']]);
             Database::run(
                 'INSERT INTO combat_log (kind, sector_id, defender_player_id, outcome, detail) VALUES (?, ?, ?, ?, ?)',
-                ['mines', $sectorId, $pid, $dead ? 'att_destroyed' : 'passed', json_encode(['armid' => (int) $m['qty'], 'dmg' => $dmg], JSON_UNESCAPED_UNICODE)]
+                ['mines', $sectorId, $pid, $dead ? 'def_destroyed' : 'passed', json_encode(['armid' => (int) $m['qty'], 'dmg' => $dmg], JSON_UNESCAPED_UNICODE)]
             );
             $events[] = "Campo minato Armid ({$m['qty']} mine): {$dmg} danni alla nave.";
             if (!$dead && ($hit = Subsystems::maybeBreak((int) $ship['id'], 'mine Armid', (int) $ship['shields'] === 0, false))) {
@@ -922,7 +982,7 @@ final class Combat
             Database::run(
                 'INSERT INTO combat_log (kind, sector_id, attacker_player_id, defender_player_id, rounds, att_fighters_lost, def_fighters_lost, outcome, detail) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 ['fighters', $sectorId, (int) $g['owner_player_id'], $pid, $r['rounds'], $r['att_lost'], $r['def_lost'],
-                    ($r['def_ftr'] <= 0 && $r['def_shd'] <= 0) ? 'att_destroyed' : 'passed', json_encode($r, JSON_UNESCAPED_UNICODE)]
+                    ($r['def_ftr'] <= 0 && $r['def_shd'] <= 0) ? 'def_destroyed' : 'passed', json_encode($r, JSON_UNESCAPED_UNICODE)]
             );
             $events[] = sprintf('  Scontro: persi %d tuoi caccia, distrutti %d nemici.', $r['def_lost'], $r['att_lost']);
             if ($r['def_lost'] > 0 && ($hit = Subsystems::maybeBreak((int) $ship['id'], 'scontro coi caccia', (int) $ship['shields'] === 0, false))) {
@@ -936,13 +996,8 @@ final class Combat
         }
 
         // 3) NPC ostili nel settore
-        $ferrOk = Faction::tierAtLeast($pid, 'ferrengi', 'friendly');
-        $pirOk  = Faction::tierAtLeast($pid, 'frontier', 'allied');
         foreach ((($noEngage || $cloaked) ? [] : Database::all('SELECT * FROM npcs WHERE sector_id = ? AND aggression > 0', [$sectorId])) as $npc) {
-            if ($npc['kind'] === 'ferrengi' && (Ranks::isEvil((int) ($player['alignment'] ?? 0)) || $ferrOk)) {
-                continue;
-            }
-            if ($npc['kind'] === 'pirate' && $pirOk && $npc['name'] !== 'Cacciatore di taglie') {
+            if (self::npcLasciaStare($npc, $player)) {
                 continue;
             }
             $freshShip = PlayerService::ship((int) $player['ship_id']);
@@ -993,6 +1048,54 @@ final class Combat
      * @param array<string,mixed> $player
      * @return array{dock:int, lost_credits:int, had_pod:bool}
      */
+    /**
+     * Un NPC aggressivo lascia stare questo comandante?
+     *
+     * Una regola sola, usata sia all'ingresso nel settore sia dal clock. Prima
+     * ce n'erano due copie: all'ingresso Ferrengi e pirati rispettavano le
+     * amicizie di fazione, mentre al battito del clock no — e chi entrava
+     * indisturbato veniva attaccato un minuto dopo, fermo nello stesso posto.
+     * L'occultamento resta un controllo di chi chiama: nasconde da tutti.
+     *
+     * @param array<string,mixed> $npc
+     * @param array<string,mixed> $player
+     */
+    public static function npcLasciaStare(array $npc, array $player): bool
+    {
+        $pid = (int) $player['id'];
+        if ($npc['kind'] === 'ferrengi') {
+            return Ranks::isEvil((int) ($player['alignment'] ?? 0))
+                || Faction::tierAtLeast($pid, 'ferrengi', 'friendly');
+        }
+        if ($npc['kind'] === 'pirate' && $npc['name'] !== self::CACCIATORE) {
+            return Faction::tierAtLeast($pid, 'frontier', 'allied');
+        }
+        return false;
+    }
+
+    /**
+     * La Federazione paga la taglia di un ricercato a chi lo abbatte, e la
+     * taglia si azzera. Lettura e azzeramento nella stessa istruzione vincolata:
+     * pagata una volta sola anche se due colpi arrivano insieme.
+     */
+    private static function riscuotiTaglia(int $vittimaId, int $cacciatoreId): int
+    {
+        $taglia = (int) (Database::first('SELECT bounty FROM players WHERE id = ?', [$vittimaId])['bounty'] ?? 0);
+        if ($taglia <= 0) {
+            return 0;
+        }
+        if (Database::run('UPDATE players SET bounty = 0 WHERE id = ? AND bounty = ?', [$vittimaId, $taglia])->rowCount() === 0) {
+            return 0;
+        }
+        Wallet::credit($cacciatoreId, ['credits' => $taglia]);
+        ShipLog::write($cacciatoreId, 'contract', 'info', 'Taglia federale riscossa',
+            'La Federazione ha versato ' . number_format($taglia, 0, ',', '.') . ' cr per l\'abbattimento di un ricercato.');
+        return $taglia;
+    }
+
+    /** Nome degli NPC che la Federazione manda dietro ai ricercati. */
+    public const CACCIATORE = 'Cacciatore di taglie';
+
     public static function destroyShip(array $player): array
     {
         $player = Database::first('SELECT * FROM players WHERE id = ?', [$player['id']]);
@@ -1024,7 +1127,8 @@ final class Combat
             "UPDATE ships SET type_key = 'escape_pod', name = ?, sector_id = ?, holds_total = ?,
              hold_ore = 0, hold_organics = 0, hold_equipment = 0, hold_colonists = 0,
              fighters = 0, shields = 0, mines_armid = 0, mines_limpet = 0, probes = 0, genesis = 0,
-             escape_pod = 0, dev_scanner = 'none', dev_transwarp = 0, dev_cloak = 0
+             escape_pod = 0, dev_scanner = 'none', dev_transwarp = 0, dev_cloak = 0,
+             mining_laser = 0, cloaked = 0
              WHERE id = ?",
             ['Capsula ' . $player['handle'], $dock, $podHolds, $ship['id']]
         );
@@ -1034,6 +1138,7 @@ final class Combat
         );
         Database::run('INSERT IGNORE INTO player_visited_sectors (player_id, sector_id) VALUES (?, ?)', [$player['id'], $dock]);
         Database::run('DELETE FROM ship_limpets WHERE ship_id = ?', [$ship['id']]);
+        Crew::adattaAlloScafo((int) $player['id']);   // la capsula non ha posti
 
         return ['dock' => $dock, 'lost_credits' => $lost, 'had_pod' => $hadPod];
     }

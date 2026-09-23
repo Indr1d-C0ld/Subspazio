@@ -35,7 +35,9 @@ $sec = static function (string $icon, string $title, string $body): string {
   <?= $sec('⚔️', 'Combattimento',
       '<p>Fuori dalla Federazione puoi attaccare navi, porti, pianeti e <strong>NPC</strong> (pirati, Ferrengi, mercanti). '
     . 'Il duello è a caccia con scudi; attaccare costa turni. Se ti distruggono sopravvivi in <strong>capsula di salvataggio</strong> '
-    . 'allo StarDock (perdi carico, moduli installati e metà crediti; se sei a secco chiedi una nave di soccorso al Cantiere). '
+    . 'allo StarDock: perdi carico e moduli installati (in parte recuperati in Leghe). Dei crediti a bordo, chi ti abbatte '
+    . 'ne prende metà; senza <strong>capsula di salvataggio</strong> ne perdi anche metà di quelli rimasti, con la capsula nulla. '
+    . 'Se sei a secco chiedi una nave di soccorso al Cantiere. '
     . 'Puoi dispiegare <strong>caccia</strong> e <strong>mine</strong> nei settori. '
     . '<a href="' . e(url('/gioco/battaglie')) . '">Registro battaglie</a></p>') ?>
 
@@ -46,7 +48,7 @@ $sec = static function (string $icon, string $title, string $body): string {
 
   <?= $sec('🌫️', 'Occultamento & Transwarp',
       '<p>L\'<strong>occultamento</strong> (hardware Cantiere) ti toglie dai sensori: ti vede solo chi ha uno '
-    . 'scanner olografico nel tuo settore, e superi caccia e NPC senza ingaggio. In cambio: +1 turno per warp, '
+    . 'scanner olografico nel tuo settore, e superi caccia e NPC senza ingaggio. In cambio: +' . \App\Game\Cloak::warpPenalty() . ' turno/i per warp, '
     . 'vietato in spazio Federazione, non ferma mine né Quasar, e <strong>cade</strong> se apri il fuoco, attracchi '
     . 'allo StarDock o salti in Transwarp. Attivalo dalla plancia, sezione «Armi e dispiegamento».</p>'
     . '<p>Il <strong>drive Transwarp</strong> salta in un colpo verso qualunque settore <em>già esplorato</em>, '
