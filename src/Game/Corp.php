@@ -211,16 +211,29 @@ final class Corp
             return ['ok' => false, 'error' => 'Non sei in nessuna corporazione.'];
         }
         $cid = (int) $m['corp_id'];
-        $others = (int) (Database::first('SELECT COUNT(*) c FROM corp_members WHERE corp_id = ? AND player_id <> ?', [$cid, $player['id']])['c'] ?? 0);
 
         $pdo = Database::pdo();
         $pdo->beginTransaction();
+        $tesoro = 0;
         try {
+            // Soci rimasti contati con la corporazione sotto lucchetto: prima il
+            // conteggio stava fuori dalla transazione, e se gli ultimi due soci
+            // uscivano insieme ciascuno vedeva l'altro ancora dentro — la
+            // corporazione restava vuota, con il tesoro irraggiungibile.
+            $corpRow = Database::first('SELECT treasury FROM corporations WHERE id = ? FOR UPDATE', [$cid]);
+            $others = (int) (Database::first('SELECT COUNT(*) c FROM corp_members WHERE corp_id = ? AND player_id <> ?', [$cid, $player['id']])['c'] ?? 0);
             Database::run('DELETE FROM corp_members WHERE player_id = ?', [$player['id']]);
             Database::run('UPDATE players SET corp_id = NULL WHERE id = ?', [$player['id']]);
             Database::run('UPDATE planets SET corp_id = NULL, owner_player_id = ? WHERE corp_id = ? AND owner_player_id = ?', [$player['id'], $cid, $player['id']]);
 
             if ($others === 0) {
+                // L'ultimo socio che esce scioglie la corporazione e si porta via
+                // il tesoro. Prima il tesoro veniva cancellato insieme alla
+                // corporazione, senza alcun avviso.
+                $tesoro = max(0, (int) ($corpRow['treasury'] ?? 0));
+                if ($tesoro > 0) {
+                    Wallet::credit((int) $player['id'], ['credits' => $tesoro]);
+                }
                 Database::run('UPDATE planets SET corp_id = NULL WHERE corp_id = ?', [$cid]);
                 Database::run('DELETE FROM corporations WHERE id = ?', [$cid]);
             } elseif ($m['role'] === 'ceo') {
@@ -235,7 +248,7 @@ final class Corp
             }
             throw $e;
         }
-        return ['ok' => true, 'disbanded' => $others === 0];
+        return ['ok' => true, 'disbanded' => $others === 0, 'treasury' => $tesoro];
     }
 
     /** @param array<string,mixed> $player */

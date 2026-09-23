@@ -64,7 +64,9 @@ final class CorpController
     {
         $res = Corp::leave(Ctx::$player);
         Session::flash($res['ok'] ? 'success' : 'error', $res['ok']
-            ? ($res['disbanded'] ? 'Corporazione sciolta.' : 'Hai lasciato la corporazione.')
+            ? ($res['disbanded']
+                ? 'Corporazione sciolta.' . (($res['treasury'] ?? 0) > 0 ? ' Il tesoro (' . number_format((int) $res['treasury'], 0, ',', '.') . ' cr) torna a te.' : '')
+                : 'Hai lasciato la corporazione.')
             : $res['error']);
         return redirect('/gioco/corp');
     }

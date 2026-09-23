@@ -4,6 +4,41 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-23 — Reputazione dal commercio in base al valore; cassa della corporazione all'ultimo socio
+
+Le due regole che l'audit totale aveva lasciato aperte, ora decise.
+
+- **[src/Game/Faction.php](src/Game/Faction.php)** — ogni scambio nella
+  regione di una fazione valeva +1 di reputazione, **qualunque fosse la
+  cifra**. Cento acquisti da un'unità portavano una fazione ad «alleata», e un
+  solo scambio da 12 crediti toglieva il bando della Federazione dallo StarDock,
+  invece dell'ammenda da 15.000. Ora la reputazione cresce col valore scambiato:
+  in media `faction.trade_gain` punti ogni `faction.trade_rep_step` crediti,
+  con arrotondamento casuale imparziale (gli scambi piccoli contano in
+  proporzione, non zero e non uno) e al massimo `faction.trade_gain_max` punti
+  per singolo scambio.
+- **[db/migrations/0051_reputazione_commercio.sql](db/migrations/0051_reputazione_commercio.sql)**
+  — due chiavi nuove: `faction.trade_rep_step` (5.000) e
+  `faction.trade_gain_max` (3). Le chiavi di configurazione passano da 262 a
+  264.
+- **[src/Game/Corp.php](src/Game/Corp.php)** — quando usciva l'ultimo socio la
+  corporazione veniva cancellata **insieme alla cassa**, senza avviso. Ora
+  `leave()` conta i soci rimasti dentro la transazione, con la riga della
+  corporazione bloccata, e se non ne resta nessuno versa la cassa a chi esce
+  prima di sciogliere la corporazione.
+- **[src/Controllers/CorpController.php](src/Controllers/CorpController.php)**,
+  **[views/game/corp.php](views/game/corp.php)** — la conferma di uscita avvisa
+  l'ultimo socio che la corporazione si scioglie e quanto gli torna; dopo, il
+  messaggio dice la cifra accreditata.
+- **[tests/regole_decise.php](tests/regole_decise.php)** — tre verifiche nuove:
+  duecento scambi da 12 crediti non comprano reputazione, uno scambio da
+  50.000 vale il massimo per scambio, l'ultimo socio riceve la cassa da
+  120.000. Usano una regione finta, perché nel gioco vivo le regioni possono non
+  avere padrone. Sul codice di prima falliscono tutte e tre; la suite completa
+  dà 390 verifiche, 0 fallite.
+- **README.md** — reputazione da commercio, cassa all'ultimo socio, conteggio
+  delle chiavi (264, famiglia `faction` a 22).
+
 ## 2026-09-23 — Audit totale: crediti dal nulla, regole tradite, stati incoerenti
 
 Terzo audit, dopo quelli del 15 (sicurezza e integrità) e del 19 settembre

@@ -69,7 +69,10 @@ testi o artwork della door proprietaria.
 - **Fazioni & reputazione** — quattro potenze: Federazione Unita, Consorzio
   Ferrengi, Egemonia di Korr, Liberi Mondi della Frontiera. La reputazione per
   giocatore va da −100 a +100 su 5 tier, mossa da commercio, kill, missioni e
-  lavoro nel profondo, con spill-over sulle rivali. Sblocca **empori di
+  lavoro nel profondo, con spill-over sulle rivali. Il commercio conta **per il
+  valore scambiato**, non per il numero di scambi: in media un punto ogni
+  5.000 crediti nella regione della fazione, al massimo 3 per singolo scambio
+  (gli scambi piccoli contano in proporzione). Sblocca **empori di
   fazione** allo StarDock; la Federazione ostile revoca Cantiere e Banca (con
   possibilità di **ammenda**) e invia **cacciatori di taglie**; decade ogni
   giorno.
@@ -89,7 +92,9 @@ testi o artwork della door proprietaria.
   **Citadel** livelli 1–6, cannone **Quasar**, guarnigione e scudi planetari,
   assalto planetario con saccheggio e bombardamento. Le **corporazioni** si
   fondano e si lasciano, condividono cassa e possesso dei pianeti, i soci non
-  si sparano addosso, e possono stringere **alleanze**.
+  si sparano addosso, e possono stringere **alleanze**. Quando esce l'ultimo
+  socio la corporazione si scioglie e **la cassa torna a lui** (la pagina lo
+  avvisa prima di confermare).
 
 - **Contratti fra giocatori** — **taglie** con cauzione, riscosse in automatico
   da chi elimina il bersaglio; **consegne** di merce con ricompensa. La
@@ -261,7 +266,7 @@ La configurazione sta su **due livelli distinti**, e la differenza conta:
 | **Gioco** | tabella `game_config` | bilanciamento e regole: costi, probabilità, soglie, tempi | dal pannello `/admin/gioco` o da console, **a caldo** |
 
 Il primo richiede accesso al server ed è materia di installazione. Il secondo è
-il pannello di regolazione del gioco: 262 chiavi, tutte modificabili senza
+il pannello di regolazione del gioco: 264 chiavi, tutte modificabili senza
 riavviare nulla e senza toccare il codice.
 
 ### Livello 1 — il file di configurazione
@@ -303,14 +308,14 @@ php bin/console.php config:get combat          # solo la famiglia
 php bin/console.php config:set newbie.protect_hours 72
 ```
 
-Le 262 chiavi per famiglia:
+Le 264 chiavi per famiglia:
 
 | Famiglia | N. | Cosa regola |
 |---|---|---|
 | `economy` | 23 | prezzi base regionali, deriva del mercato, sconto d'acquisto, ricarico di vendita, bande della contrattazione |
 | `scan` | 26 | costo in turni di scansione/sonda/raccolta/studio, densità delle feature per fascia di regione, rese e bonus |
 | `crew` | 20 | costo di assunzione, livelli, lealtà, cure, costo e raffreddamento delle abilità, missioni away |
-| `faction` | 20 | guadagni e perdite di reputazione, soglie dei tier, ammenda, cacciatori di taglie (e loro tetto), decadimento |
+| `faction` | 22 | guadagni e perdite di reputazione (quella da commercio in proporzione al valore scambiato), soglie dei tier, ammenda, cacciatori di taglie (e loro tetto), decadimento |
 | `loot` | 18 | probabilità di drop per sorgente, rarità, doppio drop, recupero in Leghe, costi di potenziamento |
 | `hardware` | 18 | listino del Cantiere: sonde, mine, capsula, scanner, transwarp, occultamento, Genesi, laser |
 | `combat` | 13 | costo in turni dell'attacco, danni di caccia e mine, taglie, bottino, assalto ai porti |

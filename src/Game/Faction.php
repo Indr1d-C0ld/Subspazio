@@ -125,8 +125,23 @@ final class Faction
     public static function onTrade(int $playerId, int $regionId, int $total): void
     {
         $f = self::controllerOf($regionId);
-        if ($f !== null && $total > 0) {
-            self::adjust($playerId, $f, GameConfig::int('faction.trade_gain', 1), 'commercio');
+        if ($f === null || $total <= 0) {
+            return;
+        }
+        // La reputazione cresce col valore scambiato, non col numero di scambi.
+        // Prima ogni scambio valeva +1, qualunque la cifra: cento acquisti da
+        // un'unita' portavano una fazione ad «alleata», e un solo scambio da 12
+        // crediti toglieva il bando della Federazione dallo StarDock (invece
+        // dell'ammenda da 15.000). In media si guadagna trade_gain ogni
+        // trade_rep_step crediti; gli scambi piccoli contano in proporzione
+        // (arrotondamento casuale imparziale), i grandi al massimo trade_gain_max.
+        $passo = max(1, GameConfig::int('faction.trade_rep_step', 5000));
+        $gain = min(
+            max(0, GameConfig::int('faction.trade_gain_max', 3)),
+            Economy::arrotonda($total / $passo * GameConfig::int('faction.trade_gain', 1))
+        );
+        if ($gain > 0) {
+            self::adjust($playerId, $f, $gain, 'commercio');
         }
     }
 

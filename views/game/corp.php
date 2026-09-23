@@ -89,7 +89,9 @@
     <?php endif; ?>
 
     <form method="post" action="<?= e(url('/gioco/corp/esci')) ?>" class="inline" style="margin-top:1rem"
-          data-confirm="Lasciare la corporazione?">
+          data-confirm="<?= count($members ?? []) <= 1
+              ? e('Sei l\'ultimo socio: lasciandola la corporazione si scioglie' . ((int) ($corp['treasury'] ?? 0) > 0 ? ' e il tesoro (' . number_format((int) $corp['treasury'], 0, ',', '.') . ' cr) torna a te' : '') . '. Procedere?')
+              : 'Lasciare la corporazione?' ?>">
       <?= csrf_field() ?><button class="btn xs danger" type="submit">Lascia la corporazione</button>
     </form>
   <?php endif; ?>

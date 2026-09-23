@@ -81,6 +81,41 @@ return static function (): void {
         Esito::verifica('e incassa il contratto sulla testa dell\'attaccante', (int) $d['credits'] - $primaDif >= 4000,
             ((int) $d['credits'] - $primaDif) . ' cr');
 
+        Esito::sezione('Reputazione — il commercio conta per quanto vale');
+
+        // Regione finta: nel gioco vivo le regioni possono non avere padrone.
+        Database::run("INSERT INTO regions (name, faction) VALUES ('__test_regione', 'ferrengi')");
+        $regione = ['id' => Database::lastInsertId(), 'faction' => 'ferrengi'];
+        {
+            $rep = static fn (int $pid): int => (int) (Database::first('SELECT value FROM player_reputation WHERE player_id = ? AND faction = ?', [$pid, $regione['faction']])['value'] ?? 0);
+
+            Esito::scenario('duecento scambi da 12 crediti');
+            [$t] = Finti::comandante(0, [], $sd);
+            for ($i = 0; $i < 200; $i++) {
+                App\Game\Faction::onTrade((int) $t['id'], (int) $regione['id'], 12);
+            }
+            // Prima: +1 a scambio, e dopo cento scambi la fazione era «alleata».
+            // Ora 2.400 crediti in tutto valgono in media meno di mezzo punto.
+            Esito::verifica('non comprano la reputazione', $rep((int) $t['id']) <= 3, 'reputazione ' . $rep((int) $t['id']));
+
+            Esito::scenario('un grande scambio da 50.000 crediti');
+            [$t2] = Finti::comandante(0, [], $sd);
+            App\Game\Faction::onTrade((int) $t2['id'], (int) $regione['id'], 50_000);
+            Esito::uguale('vale il massimo per singolo scambio', GameConfig::int('faction.trade_gain_max', 3), $rep((int) $t2['id']));
+        }
+
+        Esito::sezione('Corporazioni — l\'ultimo socio si porta via il tesoro');
+
+        [$ceo] = Finti::comandante(0, [], $sd);
+        Database::run("INSERT INTO corporations (name, tag, password_hash, ceo_player_id, treasury) VALUES ('__test_corp', 'TSTC', 'x', ?, 120000)", [(int) $ceo['id']]);
+        $corpId = Database::lastInsertId();
+        Database::run("INSERT INTO corp_members (player_id, corp_id, role) VALUES (?, ?, 'ceo')", [(int) $ceo['id'], $corpId]);
+        $prima = (int) $rileggi((int) $ceo['id'])['credits'];
+        $rl = App\Game\Corp::leave($rileggi((int) $ceo['id']));
+        // Prima il tesoro veniva cancellato insieme alla corporazione.
+        Esito::verifica('la corporazione si scioglie', !empty($rl['disbanded']));
+        Esito::uguale('e il tesoro torna a lui', 120000, (int) $rileggi((int) $ceo['id'])['credits'] - $prima);
+
         Esito::sezione('Stagione — la ricchezza riparte da zero (statica: la chiusura non si prova sul gioco vero)');
         $s = (string) file_get_contents(dirname(__DIR__) . '/src/Game/Season.php');
         foreach ([
@@ -96,5 +131,8 @@ return static function (): void {
         foreach ($contratti as $id) {
             Database::run('DELETE FROM contracts WHERE id = ?', [$id]);
         }
+        Database::run("DELETE FROM corporations WHERE name = '__test_corp'");
+        Database::run("DELETE FROM regions WHERE name = '__test_regione'");
+        Database::run("DELETE r FROM player_reputation r JOIN players p ON p.id = r.player_id WHERE p.handle LIKE '\\_\\_test\\_%'");
     }
 };
