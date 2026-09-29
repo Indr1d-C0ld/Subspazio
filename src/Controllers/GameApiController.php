@@ -505,39 +505,28 @@ final class GameApiController
         $start = time();
         $lastBeat = time();
 
-        $consegnati = [];
+        $stato = Live::statoStream($lastId);
         while (!connection_aborted() && (time() - $start) < $maxS) {
             $player = \App\Game\PlayerService::forUser((int) \App\Auth\Auth::id())
                 ?? ($pidForStream > 0 ? Database::first('SELECT * FROM players WHERE id = ?', [$pidForStream]) : null);
             if ($player === null) {
                 break;
             }
-            // Si rilegge una finestra all'indietro e si scartano gli eventi gia'
-            // consegnati. Un evento scritto dentro una transazione riceve il suo
-            // numero subito ma diventa visibile solo al commit: se nel frattempo
-            // ne arrivava uno successivo, il cursore lo superava e il primo — per
-            // esempio «sei stato distrutto» — non veniva mai inviato.
-            foreach (Live::since($player, max(0, $lastId - 200), 500) as $ev) {
-                $eid = (int) $ev['id'];
-                if (isset($consegnati[$eid])) {
-                    continue;
-                }
-                $consegnati[$eid] = true;
-                $lastId = max($lastId, $eid);
+            foreach (Live::giro($player, $stato) as $ev) {
                 $data = json_encode([
+                    // L'id dell'evento, distinto dal cursore «id:» (che e' il
+                    // massimo raggiunto): serve al client per non mostrare
+                    // due volte lo stesso evento.
+                    'eid'     => (int) $ev['id'],
                     'kind'    => $ev['kind'],
                     'title'   => $ev['title'],
                     'body'    => $ev['body'],
                     'payload' => $ev['payload'] ? json_decode((string) $ev['payload'], true) : null,
                     'at'      => $ev['created_at'],
                 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-                echo "id: {$lastId}\n";
+                echo "id: {$ev['cursore']}\n";
                 echo "event: {$ev['kind']}\n";
                 echo 'data: ' . $data . "\n\n";
-            }
-            // la memoria dei consegnati resta limitata alla finestra
-            if (count($consegnati) > 2000) {
-                $consegnati = array_filter($consegnati, static fn ($v, $k) => $k > $lastId - 200, ARRAY_FILTER_USE_BOTH);
             }
             if (time() - $lastBeat >= 15) {
                 echo ": keepalive\n\n";

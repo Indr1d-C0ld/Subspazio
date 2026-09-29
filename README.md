@@ -127,7 +127,10 @@ testi o artwork della door proprietaria.
   sistemi.
 
 - **Realtime & PWA** — stream **SSE** (`/api/stream`) per mappa live, toast,
-  campanella degli avvisi e badge senza refresh; Web App Manifest, service
+  campanella degli avvisi e badge senza refresh. Ogni evento si vede una volta
+  sola: lo stream considera già visto ciò che esiste quando si apre, e la scheda
+  ricorda cosa ha mostrato e da dove riprendere, così cambiare schermata non
+  ripresenta notifiche vecchie. Web App Manifest, service
   worker (guscio offline) e mappa con pan e zoom touch. Il service worker
   richiede HTTPS.
 
@@ -360,11 +363,11 @@ php tests/run.php                # tutte
 php tests/run.php economica      # solo i file col nome che contiene "economica"
 ```
 
-Suite di integrazione senza dipendenze, 386 verifiche in 22 file: integrità
+Suite di integrazione senza dipendenze, 401 verifiche in 23 file: integrità
 economica, concorrenza, banca/contratti/Officina, combattimento, navigazione,
 nave e moduli, pianeti, porti, equipaggio, mondo, percorsi di gioco normali,
 universo, clock, sessioni e turni, difese, iscrizione e posta, immagini,
-configurazione, schema, e le regole decise per mercato nero, uccisioni e
+configurazione, schema, notifiche in tempo reale, e le regole decise per mercato nero, uccisioni e
 stagioni. Ogni correzione ha una prova costruita per fallire sul codice di
 prima. Le prove di concorrenza lanciano processi separati con una barriera
 comune (`tests/_corsa.php`): due richieste dello stesso giocatore nello stesso

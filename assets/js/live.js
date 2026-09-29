@@ -42,15 +42,40 @@
     }
   }
 
+  // --- memoria della scheda ---------------------------------------
+  // Ogni pagina apre il suo stream: la scheda ricorda quali eventi ha gia'
+  // mostrato e fin dove era arrivata, cosi' cambiare schermata non ripresenta
+  // notifiche vecchie e non perde quelle arrivate durante il caricamento.
+  const K_VISTI = 'subspazio.live.visti';
+  const K_CURSORE = 'subspazio.live.cursore';
+  const leggi = (k, d) => { try { const v = JSON.parse(sessionStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } };
+  const scrivi = (k, v) => { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+  let visti = leggi(K_VISTI, []);
+  if (!Array.isArray(visti)) visti = [];
+  function giaVisto(eid) {
+    if (!eid) return false;
+    if (visti.includes(eid)) return true;
+    visti.push(eid);
+    if (visti.length > 300) visti = visti.slice(-300);
+    scrivi(K_VISTI, visti);
+    return false;
+  }
+
   // --- stream ------------------------------------------------------
   let es = null;
   function connect() {
-    es = new EventSource(base + '/api/stream');
+    // Si riprende dal cursore della pagina precedente solo se e' fresco: dopo
+    // una lunga assenza si riparte da adesso (gli avvisi restano nella campanella).
+    const c = leggi(K_CURSORE, null);
+    const riprendi = c && c.id > 0 && Date.now() - c.t < 60000 ? '?last=' + encodeURIComponent(c.id) : '';
+    es = new EventSource(base + '/api/stream' + riprendi);
     es.addEventListener('error', () => { /* EventSource ritenta da solo */ });
 
     const handle = (ev) => {
       let d;
       try { d = JSON.parse(ev.data); } catch (e) { return; }
+      if (ev.lastEventId) scrivi(K_CURSORE, { id: parseInt(ev.lastEventId, 10) || 0, t: Date.now() });
+      if (giaVisto(d.eid)) return;
       const k = d.kind;
 
       if (['move_in', 'move_out', 'combat', 'npc_spawn', 'planet_new'].includes(k)) {

@@ -101,6 +101,63 @@ final class Live
         );
     }
 
+    /**
+     * Stato iniziale di uno stream che parte dal cursore $partenza (l'ultimo
+     * evento gia' visto dal client, o il piu' recente se non ne ha).
+     *
+     * @return array{cursore:int,partenza:int,primo:bool,consegnati:array<int,bool>}
+     */
+    public static function statoStream(int $partenza): array
+    {
+        return ['cursore' => $partenza, 'partenza' => $partenza, 'primo' => true, 'consegnati' => []];
+    }
+
+    /**
+     * Un giro dello stream: gli eventi da inviare adesso, ciascuno con il
+     * cursore da annunciare («id:»).
+     *
+     * Si rilegge una finestra all'indietro e si scartano gli eventi gia'
+     * consegnati. Un evento scritto dentro una transazione riceve il suo
+     * numero subito ma diventa visibile solo al commit: se nel frattempo ne
+     * arrivava uno successivo, il cursore lo superava e il primo — per esempio
+     * «sei stato distrutto» — non veniva mai inviato.
+     *
+     * Cio' che e' gia' visibile al primo giro, fino al punto di partenza, conta
+     * come visto: dalla pagina stessa, o dallo stream precedente fino a
+     * Last-Event-ID. Senza questa semina la finestra all'indietro partiva con
+     * la memoria vuota, e ogni cambio di pagina (e ogni riconnessione ogni
+     * cinque minuti) rimandava tutti gli eventi dell'ultima ora come notifiche
+     * nuove.
+     *
+     * @param array<string,mixed> $player
+     * @param array{cursore:int,partenza:int,primo:bool,consegnati:array<int,bool>} $stato
+     * @return list<array<string,mixed>>
+     */
+    public static function giro(array $player, array &$stato): array
+    {
+        $out = [];
+        foreach (self::since($player, max(0, $stato['cursore'] - 200), 500) as $ev) {
+            $eid = (int) $ev['id'];
+            if (isset($stato['consegnati'][$eid])) {
+                continue;
+            }
+            $stato['consegnati'][$eid] = true;
+            if ($stato['primo'] && $eid <= $stato['partenza']) {
+                continue;
+            }
+            $stato['cursore'] = max($stato['cursore'], $eid);
+            $ev['cursore'] = $stato['cursore'];
+            $out[] = $ev;
+        }
+        $stato['primo'] = false;
+        // la memoria dei consegnati resta limitata alla finestra
+        if (count($stato['consegnati']) > 2000) {
+            $min = $stato['cursore'] - 200;
+            $stato['consegnati'] = array_filter($stato['consegnati'], static fn ($k) => $k > $min, ARRAY_FILTER_USE_KEY);
+        }
+        return $out;
+    }
+
     public static function lastId(): int
     {
         return (int) (Database::first('SELECT COALESCE(MAX(id),0) m FROM live_events')['m'] ?? 0);

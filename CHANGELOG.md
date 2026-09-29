@@ -4,6 +4,55 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-29 — Le notifiche non si ripresentano più a ogni cambio di schermata
+
+Le notifiche in tempo reale tornavano di continuo: a ogni cambio di pagina
+ricomparivano tutti gli eventi dell'ultima ora, già passati, insieme a
+quelli nuovi. Su smartphone il gioco diventava impraticabile. Il difetto era
+nato con la correzione G11 dell'audit del 23 settembre.
+
+**La causa.** Ogni pagina apre il suo stream SSE. Per non perdere gli eventi
+scritti dentro una transazione (numerati subito ma visibili solo al commit), la
+correzione G11 faceva rileggere allo stream gli ultimi 200 eventi prima del
+cursore, scartando quelli già consegnati. Ma la memoria dei consegnati partiva
+vuota a ogni connessione. Così ogni pagina nuova, e ogni riconnessione
+automatica ogni cinque minuti, rimandava come nuovi tutti gli eventi visibili al
+giocatore ancora conservati (la ritenzione è di un'ora): avvisi, attacchi,
+movimenti nel settore, radio. Nessuna prova copriva lo stream, e il difetto era
+passato.
+
+- **[src/Game/Live.php](src/Game/Live.php)** — la logica di consegna esce dal
+  ciclo dell'endpoint e diventa `Live::statoStream()` + `Live::giro()`, che si
+  possono provare giro per giro. Al primo giro tutto ciò che è già visibile fino
+  al punto di partenza (l'evento più recente, o `Last-Event-ID` alla
+  riconnessione) conta come consegnato. Nei giri successivi la finestra
+  all'indietro recupera solo gli eventi che diventano visibili dopo, cioè i
+  ritardatari delle transazioni.
+- **[src/Controllers/GameApiController.php](src/Controllers/GameApiController.php)**
+  — l'endpoint `/api/stream` usa `Live::giro()`. Ogni evento porta anche il suo
+  numero (`eid`), distinto dal cursore `id:`, che è il massimo raggiunto.
+- **[assets/js/live.js](assets/js/live.js)** — secondo argine lato client. La
+  scheda ricorda in `sessionStorage` gli ultimi 300 eventi mostrati e non ne
+  mostra mai uno due volte (anche i badge non si gonfiano più). Ricorda anche il
+  cursore: la pagina successiva riprende da lì (`?last=`) se è passato meno di
+  un minuto, così non si perdono gli eventi arrivati mentre la pagina caricava.
+  Dopo un'assenza più lunga si riparte da adesso, e gli avvisi restano
+  comunque nella campanella.
+- **[sw.js](sw.js)** — versione della cache a `subspazio-v47`, per
+  distribuire subito il nuovo `live.js` alle app installate.
+- **[tests/notifiche.php](tests/notifiche.php)** — nuovo file, 11 verifiche.
+  Il primo giro di uno stream nuovo non manda niente di già esistente; un
+  evento nuovo arriva una volta sola; la riconnessione con `Last-Event-ID` non
+  rimanda ciò che il client ha già avuto; la ripresa dalla pagina precedente
+  manda solo ciò che è arrivato nel frattempo. Un evento scritto da un altro
+  processo in una transazione tenuta aperta 1,5 secondi arriva dopo il commit,
+  e non torna. Senza la semina falliscono 4 verifiche; senza la finestra
+  all'indietro fallisce quella dell'evento lento.
+- **[tests/_corsa.php](tests/_corsa.php)** — azione `evento_lento` per la
+  prova della transazione.
+- **README.md** — lo stream consegna ogni evento una volta sola; la suite passa
+  a 401 verifiche in 23 file.
+
 ## 2026-09-23 — Reputazione dal commercio in base al valore; cassa della corporazione all'ultimo socio
 
 Le due regole che l'audit totale aveva lasciato aperte, ora decise.

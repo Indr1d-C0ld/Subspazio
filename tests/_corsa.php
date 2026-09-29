@@ -10,6 +10,8 @@ declare(strict_types=1);
  *   annulla_lavoro    <playerId> <jobId>
  *   compra_hw         <playerId> <item>(0=cloak,1=genesis) <qty>
  *   carica_pianeta    <playerId> <planetId> <qty>
+ *   evento_lento      <playerId> <ms>  (avviso scritto in una transazione che
+ *                                       resta aperta <ms> millisecondi)
  * Esce con 0 se l'azione e' riuscita, 1 altrimenti.
  */
 require dirname(__DIR__) . '/bin/_bootstrap.php';
@@ -17,6 +19,7 @@ require dirname(__DIR__) . '/bin/_bootstrap.php';
 use App\Core\Database;
 use App\Game\Contracts;
 use App\Game\Industry;
+use App\Game\Live;
 use App\Game\Planets;
 use App\Game\PlayerService;
 use App\Game\Shipyard;
@@ -32,6 +35,13 @@ $r = match ($azione) {
     'annulla_lavoro'    => Industry::cancelJob($player, $a[1]),
     'compra_hw'         => Shipyard::buyHardware($player, PlayerService::ship((int) $player['ship_id']), $a[1] === 0 ? 'cloak' : 'genesis', $a[2] ?? 1),
     'carica_pianeta'    => Planets::moveResources($player, PlayerService::ship((int) $player['ship_id']), $a[1], 'ore', $a[2], 'load'),
+    'evento_lento'      => (static function () use ($a): array {
+        Database::pdo()->beginTransaction();
+        Live::player($a[0], 'destroyed', 'Evento lento', 'scritto dentro una transazione');
+        usleep(($a[1] ?? 0) * 1000);
+        Database::pdo()->commit();
+        return ['ok' => true];
+    })(),
     default             => ['ok' => false],
 };
 exit(empty($r['ok']) ? 1 : 0);
