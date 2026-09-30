@@ -58,8 +58,37 @@ testi o artwork della door proprietaria.
   bonus. **Missioni away** a skill-check con esiti scalati, dal trionfo al
   disastro. Permadeath opzionale, spento di default.
 
-- **Scansione & frontiera** — le regioni profonde nascondono relitti, depositi,
-  anomalie, giacimenti di asteroidi e pericoli ambientali. La **scansione**
+- **Fasce di rischio** — attorno a Sol (lo StarDock) lo spazio è diviso in
+  **cinque fasce concentriche**, per distanza sulla mappa galattica: Cintura di
+  Sol, Anello dei Coloni, Frontiera, Marche Remote, Orlo del Buio. Più ci si
+  allontana, più le minacce sono forti e frequenti e più tutto rende:
+
+  | Fascia | Caccia dei predoni | Ingaggio | Porti pagano | Se perdi contro un NPC |
+  |---|---|---|---|---|
+  | I · Cintura di Sol | 80–250 | 15% | +0% | razzia |
+  | II · Anello dei Coloni | 250–650 | 30% | +5% | razzia |
+  | III · Frontiera | 700–1.800 | 45% | +10% | distruzione |
+  | IV · Marche Remote | 1.800–4.500 + Ferrengi | 60% | +15% | distruzione |
+  | V · Orlo del Buio | 4.500–11.000 + Ferrengi | 75% | +20% | distruzione |
+
+  Ogni predone nasce in una fascia che ne fissa forza e crediti a bordo, e si
+  muove solo nella sua o una più in fuori, **mai verso Sol**; i Ferrengi vivono
+  solo nelle fasce IV–V. La nave iniziale respinge i predoni della Cintura. Nelle
+  prime due fasce chi perde viene **razziato, non distrutto**: i predoni
+  prendono il carico e il 10% dei crediti a bordo (che ritrova chi li abbatte),
+  la nave resta senza caccia né scudi, e per 30 minuti i predoni di quelle fasce
+  lo lasciano stare. Con la distanza crescono anche esperienza (da ×0,5 a ×2),
+  probabilità di bottino e **rarità dei moduli** (nella Cintura quasi solo
+  civili, nell'Orlo sperimentali, xeno e precursori), ricchezza di relitti,
+  depositi, anomalie e giacimenti, difficoltà e premi delle missioni away. I
+  pericoli ambientali cominciano dalla fascia II. La plancia mostra la fascia
+  del settore; ogni bottone di warp porta il numero della fascia d'arrivo, e un
+  salto che ne sale due o più in una volta (le corsie federali a lungo raggio
+  portano da Sol fino all'Orlo) chiede conferma. La mappa stellare può colorare
+  i settori per fascia. Tutti i valori sono nella famiglia `fasce` del pannello.
+
+- **Scansione & frontiera** — più lontano da Sol, relitti, depositi, anomalie,
+  giacimenti di asteroidi e pericoli ambientali sono più ricchi e più duri. La **scansione**
   costa turni e rivela le anomalie del settore corrente e di quelli vicini (il
   raggio dipende da scanner, ufficiale Scienziato o modulo); poi si spoglia, si
   raccoglie o si studia. Hazard (radiazioni, tempeste ioniche) e pozzi
@@ -103,7 +132,8 @@ testi o artwork della door proprietaria.
 - **Mondo vivo** — **classifiche** di comandanti e corporazioni (rating
   combinato ricalcolato dal tick); **radio subspaziale** con i canali radio,
   fedcomm, corp, privato e hail, e badge dei messaggi non letti; **NPC**
-  Ferrengi, pirati e mercanti che si muovono, ingaggiano e rinascono sul tick;
+  Ferrengi, pirati e mercanti che si muovono, ingaggiano e rinascono sul tick,
+  ognuno nella sua fascia di rischio;
   **eventi globali** (shock di mercato, brillamento solare, incursione
   Ferrengi, ondata di pirateria, stagione delle taglie) annunciati via radio.
 
@@ -269,7 +299,7 @@ La configurazione sta su **due livelli distinti**, e la differenza conta:
 | **Gioco** | tabella `game_config` | bilanciamento e regole: costi, probabilità, soglie, tempi | dal pannello `/admin/gioco` o da console, **a caldo** |
 
 Il primo richiede accesso al server ed è materia di installazione. Il secondo è
-il pannello di regolazione del gioco: 264 chiavi, tutte modificabili senza
+il pannello di regolazione del gioco: 281 chiavi, tutte modificabili senza
 riavviare nulla e senza toccare il codice.
 
 ### Livello 1 — il file di configurazione
@@ -311,20 +341,21 @@ php bin/console.php config:get combat          # solo la famiglia
 php bin/console.php config:set newbie.protect_hours 72
 ```
 
-Le 264 chiavi per famiglia:
+Le 281 chiavi per famiglia:
 
 | Famiglia | N. | Cosa regola |
 |---|---|---|
 | `economy` | 23 | prezzi base regionali, deriva del mercato, sconto d'acquisto, ricarico di vendita, bande della contrattazione |
-| `scan` | 26 | costo in turni di scansione/sonda/raccolta/studio, densità delle feature per fascia di regione, rese e bonus |
+| `scan` | 26 | costo in turni di scansione/sonda/raccolta/studio, densità delle feature in frontiera (fasce I–III) e frontiera profonda (IV–V), rese e bonus |
 | `crew` | 20 | costo di assunzione, livelli, lealtà, cure, costo e raffreddamento delle abilità, missioni away |
 | `faction` | 22 | guadagni e perdite di reputazione (quella da commercio in proporzione al valore scambiato), soglie dei tier, ammenda, cacciatori di taglie (e loro tetto), decadimento |
-| `loot` | 18 | probabilità di drop per sorgente, rarità, doppio drop, recupero in Leghe, costi di potenziamento |
+| `fasce` | 20 | soglie delle cinque fasce (frazioni del raggio della galassia), per ciascuna: predoni (quanti, caccia, rating), Ferrengi, crediti a bordo, probabilità d'ingaggio, esperienza, premio dei porti, probabilità e rarità del bottino, ricchezza delle feature, difficoltà delle missioni; razzie (fino a quale fascia, quota di crediti, tregua), prima fascia dei pericoli, avviso sui salti |
+| `loot` | 16 | probabilità di drop per sorgente, rarità (in PvP), doppio drop, recupero in Leghe, costi di potenziamento |
 | `hardware` | 18 | listino del Cantiere: sonde, mine, capsula, scanner, transwarp, occultamento, Genesi, laser |
 | `combat` | 13 | costo in turni dell'attacco, danni di caccia e mine, taglie, bottino, assalto ai porti |
 | `planet` | 13 | capacità e produzione per tipo, crescita dei coloni, Citadel, Quasar (con livello massimo), bombardamento |
 | `craft` | 10 | raffineria (ricette e rese), durata dei lavori d'Officina, industria dei pianeti |
-| `npc` | 9 | popolazione, movimento, probabilità d'ingaggio, regione madre dei Ferrengi |
+| `npc` | 7 | popolazione di Ferrengi e mercanti, ritmo di movimento e di nascita, esperienza per uccisione, regione madre dei Ferrengi |
 | `mine` | 8 | giacimenti di asteroidi: rese, cristalli, costo in turni, densità per fascia |
 | `universe` | 6 | numero di settori, estensione della Federazione, parametri del generatore |
 | `blackmarket` | 5 | premio di vendita, sconto hardware, allineamento speso, pulizia della taglia |
@@ -363,11 +394,11 @@ php tests/run.php                # tutte
 php tests/run.php economica      # solo i file col nome che contiene "economica"
 ```
 
-Suite di integrazione senza dipendenze, 401 verifiche in 23 file: integrità
+Suite di integrazione senza dipendenze, 441 verifiche in 23 file: integrità
 economica, concorrenza, banca/contratti/Officina, combattimento, navigazione,
 nave e moduli, pianeti, porti, equipaggio, mondo, percorsi di gioco normali,
 universo, clock, sessioni e turni, difese, iscrizione e posta, immagini,
-configurazione, schema, notifiche in tempo reale, e le regole decise per mercato nero, uccisioni e
+configurazione, schema, notifiche in tempo reale, fasce di rischio, e le regole decise per mercato nero, uccisioni e
 stagioni. Ogni correzione ha una prova costruita per fallire sul codice di
 prima. Le prove di concorrenza lanciano processi separati con una barriera
 comune (`tests/_corsa.php`): due richieste dello stesso giocatore nello stesso

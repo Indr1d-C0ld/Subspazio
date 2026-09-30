@@ -68,6 +68,9 @@ $jobs = [
     'planets'        => static fn () => Planets::tickDue(),
 
     // 5) NPC, eventi globali, feature di settore, fazioni, industria, contratti.
+    //    Prima le fasce: se le soglie sono cambiate dal pannello, gli NPC si
+    //    muovono gia' sui confini nuovi.
+    'fasce'              => static fn () => \App\Game\Fasce::allinea(),
     'npc'                => static fn () => Npc::tick(),
     'event'              => static fn () => Events::tick(),
     'features'           => static fn () => \App\Game\SectorFeatures::tick(),

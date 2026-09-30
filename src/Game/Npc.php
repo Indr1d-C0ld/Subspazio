@@ -10,6 +10,12 @@ use App\Core\Database;
  * NPC: Ferrengi (alieni ostili con regione natale), pirati (predoni di
  * frontiera), mercanti (civili da depredare). Movimento, ingaggio e
  * respawn sono gestiti dal tick.
+ *
+ * Ogni NPC nasce in una fascia di distanza da Sol (Fasce) che ne fissa forza,
+ * crediti a bordo e raggio d'azione: un predone resta nella sua fascia o in
+ * quelle adiacenti, i Ferrengi solo nelle fasce esterne. Prima nascevano e
+ * vagavano ovunque fuori dalla Federazione, e chi usciva da Sol con la nave
+ * iniziale incontrava navi dieci volte piu' forti a un salto di distanza.
  */
 final class Npc
 {
@@ -70,19 +76,17 @@ final class Npc
 
         $mosse = [];
         foreach ($due as $npc) {
-            $adj = $rotte[(int) $npc['sector_id']] ?? [];
+            // Universe::sector() qui non tocca il database: la cache e' gia' calda.
+            $adj = self::destinazioniAmmesse($npc, $rotte[(int) $npc['sector_id']] ?? []);
             if ($adj === []) {
+                // Nessuna uscita nel suo territorio: resta, ma il turno passa.
+                // Altrimenti tornava in testa alla coda a ogni battito.
+                $mosse[(int) $npc['id']] = (int) $npc['sector_id'];
                 continue;
             }
-            // Ferrengi evitano la Fedspace; i mercanti preferiscono i settori con porto.
-            // Universe::sector() qui non tocca il database: la cache e' gia' calda.
+            // i mercanti preferiscono i settori con porto
             $pick = $adj[array_rand($adj)];
-            if ($npc['kind'] === 'ferrengi') {
-                $safe = array_values(array_filter($adj, static fn ($s) => !(bool) (Universe::sector($s)['is_fedspace'] ?? 0)));
-                if ($safe !== []) {
-                    $pick = $safe[array_rand($safe)];
-                }
-            } elseif ($npc['kind'] === 'trader') {
+            if ($npc['kind'] === 'trader') {
                 $ports = array_values(array_filter($adj, static fn ($s) => (int) (Universe::sector($s)['has_port'] ?? 0) === 1));
                 if ($ports !== [] && mt_rand(0, 1)) {
                     $pick = $ports[array_rand($ports)];
@@ -92,6 +96,43 @@ final class Npc
         }
 
         return self::applicaMosse($mosse);
+    }
+
+    /**
+     * Fra i settori adiacenti, quelli in cui questo NPC puo' andare.
+     *
+     * Nessun ostile entra nello spazio federale. Un predone resta nella sua
+     * fascia di nascita o si spinge al massimo una fascia piu' in fuori, mai
+     * verso Sol: cosi' la minaccia piu' forte di una fascia e' quella della
+     * fascia stessa, e chi resta vicino a casa sa cosa aspettarsi. I Ferrengi
+     * restano dalla loro prima fascia in su. I cacciatori di taglie (senza fascia) inseguono il ricercato ovunque
+     * fuori dalla Federazione; i mercanti vanno dove vogliono.
+     *
+     * @param array<string,mixed> $npc
+     * @param list<int>           $adj
+     * @return list<int>
+     */
+    public static function destinazioniAmmesse(array $npc, array $adj): array
+    {
+        $ostile = (int) $npc['aggression'] > 0;
+        $nascita = $npc['band'] !== null ? (int) $npc['band'] : null;
+        return array_values(array_filter($adj, static function (int $s) use ($npc, $ostile, $nascita): bool {
+            $sec = Universe::sector($s);
+            if ($sec === null) {
+                return false;
+            }
+            $b = Fasce::diSettore($s);
+            if ($ostile && ((bool) $sec['is_fedspace'] || $b <= 0)) {
+                return false;
+            }
+            if ($npc['kind'] === 'ferrengi') {
+                return $b >= Fasce::ferrengiDa();
+            }
+            if ($npc['kind'] === 'pirate' && $nascita !== null) {
+                return $b >= $nascita && $b <= $nascita + 1;
+            }
+            return true;
+        }));
     }
 
     /**
@@ -125,9 +166,8 @@ final class Npc
 
     private static function engage(): int
     {
-        $chance = GameConfig::int('npc.engage_chance_pct', 65);
         $rows = Database::all(
-            "SELECT n.*, p.id AS player_id FROM npcs n
+            "SELECT n.*, p.id AS player_id, s.band AS settore_band FROM npcs n
              JOIN players p ON p.sector_id = n.sector_id
              JOIN sectors s ON s.id = n.sector_id
              WHERE n.aggression > 0 AND s.is_fedspace = 0"
@@ -138,10 +178,16 @@ final class Npc
             if (isset($seen[$r['id']])) {
                 continue; // un ingaggio per NPC per tick
             }
-            if (mt_rand(1, 100) > $chance) {
+            // Vicino a Sol gli ostili attaccano di rado, lontano quasi sempre.
+            // Prima la probabilita' era una sola, il 65%, ovunque.
+            $band = $r['settore_band'] !== null ? (int) $r['settore_band'] : Fasce::diSettore((int) $r['sector_id']);
+            if (mt_rand(1, 100) > Fasce::ingaggioPct($band)) {
                 continue;
             }
             $player = Database::first('SELECT * FROM players WHERE id = ?', [$r['player_id']]);
+            if (Combat::treguaVale($player, $band)) {
+                continue;
+            }
             $ship = PlayerService::ship((int) $player['ship_id']);
             if ($ship === null || $ship['type_key'] === 'escape_pod') {
                 continue;
@@ -163,93 +209,145 @@ final class Npc
     {
         $perTick = GameConfig::int('npc.spawn_per_tick', 4);
         $n = 0;
+
+        // Predoni: una quota per fascia, riempita cominciando dalla piu' scoperta.
+        $perFascia = [];
+        foreach (Database::all(
+            "SELECT band, COUNT(*) c FROM npcs WHERE kind = 'pirate' AND band IS NOT NULL GROUP BY band"
+        ) as $r) {
+            $perFascia[(int) $r['band']] = (int) $r['c'];
+        }
+        for ($i = 0; $i < $perTick; $i++) {
+            $scelta = null;
+            $scopertura = 0;
+            for ($b = 1; $b <= Fasce::MAX; $b++) {
+                $manca = Fasce::predoniVoluti($b) - ($perFascia[$b] ?? 0);
+                if ($manca > $scopertura) {
+                    [$scelta, $scopertura] = [$b, $manca];
+                }
+            }
+            if ($scelta === null) {
+                break;
+            }
+            if (self::spawnOne('pirate', $scelta) === null) {
+                break;
+            }
+            $perFascia[$scelta] = ($perFascia[$scelta] ?? 0) + 1;
+            $n++;
+        }
+
         foreach ([
             ['ferrengi', GameConfig::int('npc.ferrengi_target', 40)],
-            ['pirate', GameConfig::int('npc.pirate_target', 25)],
             ['trader', GameConfig::int('npc.trader_target', 30)],
         ] as [$kind, $target]) {
             $have = (int) (Database::first('SELECT COUNT(*) c FROM npcs WHERE kind = ?', [$kind])['c'] ?? 0);
             $deficit = min($perTick, max(0, $target - $have));
             for ($i = 0; $i < $deficit; $i++) {
-                self::spawnOne($kind);
-                $n++;
+                if (self::spawnOne($kind) !== null) {
+                    $n++;
+                }
             }
         }
         return $n;
     }
 
-    public static function spawnOne(string $kind): void
+    /**
+     * Fa nascere un NPC. Senza fascia la sceglie il tipo: i predoni la meno
+     * presidiata, i Ferrengi una delle esterne, i mercanti una qualunque.
+     *
+     * @return int|null id del nuovo NPC, null se non c'era un settore adatto
+     */
+    public static function spawnOne(string $kind, ?int $band = null): ?int
     {
-        [$sector, $home] = self::spawnSector($kind);
+        [$sector, $home, $band] = self::spawnSector($kind, $band);
         if ($sector === null) {
-            return;
+            return null;
         }
-        [$name, $type, $ftr, $shd, $rating, $creds, $aggr] = match ($kind) {
-            'ferrengi' => [
-                'Ferrengi ' . self::FERRENGI_NAMES[array_rand(self::FERRENGI_NAMES)],
-                mt_rand(0, 1) ? 'havoc_gunstar' : 'missile_frigate',
-                mt_rand(2500, 9000), mt_rand(400, 1600), 1.6 + mt_rand(0, 60) / 100,
-                mt_rand(20000, 120000), 100,
-            ],
-            'pirate' => [
-                'Predone ' . self::PIRATE_NAMES[array_rand(self::PIRATE_NAMES)],
-                mt_rand(0, 1) ? 'scout_marauder' : 'missile_frigate',
-                mt_rand(600, 3000), mt_rand(100, 500), 1.0 + mt_rand(0, 50) / 100,
-                mt_rand(3000, 30000), 100,
-            ],
+        [$cMin, $cMax] = Fasce::creditiNpc(max(1, $band));
+        $creds = mt_rand($cMin, $cMax);
+        $pb = max(1, $band);
+        [$name, $type, $ftr, $rating, $creds, $aggr] = match ($kind) {
+            'ferrengi' => (static function () use ($pb, $creds): array {
+                [$a, $z] = Fasce::ferrengiCaccia($pb);
+                return [
+                    'Ferrengi ' . self::FERRENGI_NAMES[array_rand(self::FERRENGI_NAMES)],
+                    $pb >= 5 || mt_rand(0, 1) ? 'havoc_gunstar' : 'missile_frigate',
+                    mt_rand($a, $z), Fasce::predoniRating($pb) + 0.4 + mt_rand(0, 30) / 100,
+                    (int) round($creds * 1.6), 100,
+                ];
+            })(),
+            'pirate' => (static function () use ($pb, $creds): array {
+                [$a, $z] = Fasce::predoniCaccia($pb);
+                return [
+                    'Predone ' . self::PIRATE_NAMES[array_rand(self::PIRATE_NAMES)],
+                    $pb <= 2 ? 'scout_marauder' : ($pb >= 4 || mt_rand(0, 1) ? 'missile_frigate' : 'scout_marauder'),
+                    mt_rand($a, $z), Fasce::predoniRating($pb) + mt_rand(0, 15) / 100,
+                    $creds, 100,
+                ];
+            })(),
             default => [
                 'Mercantile ' . self::TRADER_NAMES[array_rand(self::TRADER_NAMES)],
                 mt_rand(0, 1) ? 'merchant_freighter' : 'cargo_transport',
-                mt_rand(50, 700), mt_rand(50, 400), 0.6,
-                mt_rand(5000, 60000), 0,
+                mt_rand(50, 700), 0.6,
+                (int) round($creds * 1.2), 0,
             ],
         };
+        // scudi in proporzione ai caccia: un quinto, con un po' di varieta'
+        $shd = $kind === 'trader' ? mt_rand(50, 400) : (int) round($ftr * mt_rand(12, 28) / 100);
+        // i mercanti lontani viaggiano piu' carichi
+        $stiva = $kind === 'trader' ? 150 + 60 * $pb : 20 + 10 * $pb;
 
         Database::run(
-            'INSERT INTO npcs (kind, name, ship_type, sector_id, home_sector, fighters, shields, combat_rating, credits, cargo_ore, cargo_org, cargo_equ, aggression)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO npcs (kind, name, ship_type, sector_id, home_sector, band, fighters, shields, combat_rating, credits, cargo_ore, cargo_org, cargo_equ, aggression)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
-                $kind, $name, $type, $sector, $home, $ftr, $shd, $rating, $creds,
-                $kind === 'trader' ? mt_rand(0, 400) : mt_rand(0, 60),
-                $kind === 'trader' ? mt_rand(0, 400) : mt_rand(0, 60),
-                $kind === 'trader' ? mt_rand(0, 400) : mt_rand(0, 60),
+                $kind, $name, $type, $sector, $home, $band, $ftr, $shd, round($rating, 2), $creds,
+                mt_rand(0, $stiva), mt_rand(0, $stiva), mt_rand(0, $stiva),
                 $aggr,
             ]
         );
+        return Database::lastInsertId();
     }
 
-    /** @return array{0:?int,1:?int} settore di spawn, settore natale */
-    private static function spawnSector(string $kind): array
+    /** @return array{0:?int,1:?int,2:int} settore di spawn, settore natale, fascia */
+    private static function spawnSector(string $kind, ?int $band): array
     {
         if ($kind === 'ferrengi') {
-            $region = GameConfig::str('npc.ferrengi_home_region', 'Abisso di Cygnus');
+            $da = Fasce::ferrengiDa();
+            $band = $band !== null ? max($da, min(Fasce::MAX, $band)) : mt_rand($da, Fasce::MAX);
+            // Preferiscono la regione natale, ma solo dove questa tocca le fasce
+            // esterne: l'Abisso di Cygnus arriva fin quasi a Sol.
             $row = Database::first(
                 'SELECT s.id FROM sectors s JOIN regions r ON r.id = s.region_id
-                 WHERE r.name = ? AND s.is_fedspace = 0 ORDER BY RAND() LIMIT 1',
-                [$region]
+                 WHERE r.name = ? AND s.is_fedspace = 0 AND s.band = ? ORDER BY RAND() LIMIT 1',
+                [GameConfig::str('npc.ferrengi_home_region', 'Abisso di Cygnus'), $band]
+            ) ?? Database::first(
+                'SELECT id FROM sectors WHERE is_fedspace = 0 AND band = ? ORDER BY RAND() LIMIT 1',
+                [$band]
             );
-            $home = $row ? (int) $row['id'] : null;
-            $near = Database::first(
-                'SELECT s.id FROM sectors s JOIN regions r ON r.id = s.region_id
-                 WHERE r.name = ? AND s.is_fedspace = 0 ORDER BY RAND() LIMIT 1',
-                [$region]
-            );
-            return [$near ? (int) $near['id'] : $home, $home];
+            return [$row ? (int) $row['id'] : null, $row ? (int) $row['id'] : null, $band];
         }
-        $row = Database::first(
-            "SELECT s.id FROM sectors s JOIN regions r ON r.id = s.region_id
-             WHERE s.is_fedspace = 0 AND r.kind IN ('frontier','deep') ORDER BY RAND() LIMIT 1"
-        );
-        return [$row ? (int) $row['id'] : null, null];
+        if ($band === null) {
+            $band = $kind === 'pirate' ? mt_rand(1, Fasce::MAX) : null;
+        }
+        $row = $band !== null
+            ? Database::first('SELECT id, band FROM sectors WHERE is_fedspace = 0 AND band = ? ORDER BY RAND() LIMIT 1', [$band])
+            : Database::first('SELECT id, band FROM sectors WHERE is_fedspace = 0 AND band IS NOT NULL ORDER BY RAND() LIMIT 1');
+        return [$row ? (int) $row['id'] : null, null, $row ? (int) $row['band'] : (int) $band];
     }
 
     private static function despawn(): int
     {
-        // NPC finiti in Fedspace (Ferrengi/pirati) o troppo vecchi e inerti
+        // NPC finiti in Fedspace (Ferrengi/pirati), fuori dal loro territorio
+        // (le soglie delle fasce possono cambiare dal pannello), o troppo
+        // vecchi e inerti.
         return Database::run(
             "DELETE n FROM npcs n JOIN sectors s ON s.id = n.sector_id
              WHERE (n.kind IN ('ferrengi','pirate') AND s.is_fedspace = 1)
-                OR (n.created_at < DATE_SUB(NOW(), INTERVAL 7 DAY))"
+                OR (n.kind = 'ferrengi' AND s.band < ?)
+                OR (n.kind = 'pirate' AND n.band IS NOT NULL AND (s.band < n.band OR s.band > n.band + 1))
+                OR (n.created_at < DATE_SUB(NOW(), INTERVAL 7 DAY))",
+            [Fasce::ferrengiDa()]
         )->rowCount();
     }
 

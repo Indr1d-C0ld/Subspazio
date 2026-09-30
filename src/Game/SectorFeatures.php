@@ -61,7 +61,10 @@ final class SectorFeatures
             Database::run("DELETE FROM sector_features WHERE depleted = 1 AND spawned_at < DATE_SUB(NOW(), INTERVAL 3 DAY)");
 
             $ttl = GameConfig::int('scan.feature_ttl_hours', 48);
-            foreach (['frontier', 'deep'] as $rk) {
+            // La frontiera sono le fasce I-III, la frontiera profonda IV-V
+            // (Fasce::tipo). Prima si contava per tipo di regione, e una regione
+            // «profonda» poteva cominciare a un salto dalla Federazione.
+            foreach (['frontier' => [1, 3], 'deep' => [4, Fasce::MAX]] as $rk => [$da, $a]) {
                 foreach (['wreck', 'cache', 'anomaly', 'hazard', 'asteroid'] as $kind) {
                     $target = $kind === 'asteroid'
                         ? GameConfig::int("mine.asteroid_target_{$rk}", 0)
@@ -69,26 +72,30 @@ final class SectorFeatures
                     if ($target <= 0) {
                         continue;
                     }
+                    // niente pericoli ambientali vicino a Sol
+                    $min = $kind === 'hazard' ? max($da, Fasce::pericoliDa()) : $da;
+                    if ($min > $a) {
+                        continue;
+                    }
                     $have = (int) (Database::first(
                         "SELECT COUNT(*) c FROM sector_features sf
                          JOIN sectors s ON s.id = sf.sector_id
-                         JOIN regions r ON r.id = s.region_id
-                         WHERE sf.depleted = 0 AND sf.kind = ? AND r.kind = ?",
-                        [$kind, $rk]
+                         WHERE sf.depleted = 0 AND sf.kind = ? AND s.band BETWEEN ? AND ?",
+                        [$kind, $da, $a]
                     )['c'] ?? 0);
                     $need = min(3, $target - $have);
                     for ($i = 0; $i < $need; $i++) {
                         $sec = Database::first(
-                            "SELECT s.id FROM sectors s JOIN regions r ON r.id = s.region_id
-                             WHERE r.kind = ? AND s.is_fedspace = 0
+                            "SELECT s.id, s.band FROM sectors s
+                             WHERE s.band BETWEEN ? AND ? AND s.is_fedspace = 0
                                AND NOT EXISTS (SELECT 1 FROM sector_features f WHERE f.sector_id = s.id AND f.depleted = 0 AND f.kind = ?)
                              ORDER BY RAND() LIMIT 1",
-                            [$rk, $kind]
+                            [$min, $a, $kind]
                         );
                         if ($sec === null) {
                             break;
                         }
-                        self::spawn((int) $sec['id'], $kind, $rk, $ttl);
+                        self::spawn((int) $sec['id'], $kind, (int) $sec['band'], $ttl);
                         $out['spawned']++;
                     }
                 }
@@ -99,10 +106,12 @@ final class SectorFeatures
         return $out;
     }
 
-    private static function spawn(int $sectorId, string $kind, string $regionKind, int $ttlHours): void
+    private static function spawn(int $sectorId, string $kind, int $band, int $ttlHours): void
     {
-        $deep = $regionKind === 'deep';
-        $rich = $deep ? mt_rand(2, 5) : mt_rand(1, 3);
+        $deep = Fasce::tipo($band) === 'deep';
+        // la ricchezza cresce con la distanza da Sol
+        [$rMin, $rMax] = Fasce::ricchezza($band);
+        $rich = mt_rand(max(1, $rMin), max(1, $rMax));
         [$subtype, $data, $expires] = match ($kind) {
             'wreck'   => [['nave', 'stazione', 'ferrengi', 'corsaro'][array_rand(['nave', 'stazione', 'ferrengi', 'corsaro'])], null, null],
             'cache'   => [['minerale', 'equipaggiamento', 'organico', 'misto'][array_rand(['minerale', 'equipaggiamento', 'organico', 'misto'])], null, null],
@@ -146,12 +155,10 @@ final class SectorFeatures
 
     // --- lettura ------------------------------------------------------
 
+    /** Federale, frontiera o frontiera profonda: discende dalla fascia. */
     public static function regionKind(int $sectorId): string
     {
-        return (string) (Database::first(
-            'SELECT r.kind FROM sectors s LEFT JOIN regions r ON r.id = s.region_id WHERE s.id = ?',
-            [$sectorId]
-        )['kind'] ?? 'core');
+        return Fasce::tipo(Fasce::diSettore($sectorId));
     }
 
     /** @return list<array<string,mixed>> feature del settore già scoperte dal giocatore */

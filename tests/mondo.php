@@ -94,7 +94,7 @@ return static function (): void {
             $tipi = [];
             for ($i = 0; $i < 6; $i++) {
                 $max = (int) Database::first('SELECT COALESCE(MAX(id),0) m FROM sector_features')['m'];
-                $spawn->invoke(null, (int) $reg['sid'], 'hazard', 'deep', 24);
+                $spawn->invoke(null, (int) $reg['sid'], 'hazard', 5, 24);   // fascia V: frontiera profonda
                 $nuova = Database::first('SELECT id, subtype FROM sector_features WHERE id > ?', [$max]);
                 if ($nuova !== null) {
                     $feature[] = (int) $nuova['id'];

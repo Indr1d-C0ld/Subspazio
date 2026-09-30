@@ -33,6 +33,12 @@
   let showRoutes = P.read('routes', '1') !== '0';
   let exploredOnly = P.read('explored', '0') === '1';
   let twoD = P.read('twod', '0') === '1';
+  let perFascia = P.read('fasce', '0') === '1';
+  // stessi colori delle etichette di fascia nel foglio di stile
+  const FASCE = (() => {
+    const cs = getComputedStyle(document.documentElement);
+    return [0, 1, 2, 3, 4, 5].map((b) => (cs.getPropertyValue('--fascia-' + b) || '').trim() || '#5b6b8c');
+  })();
 
   // ---- stato mappa ----------------------------------------------------------
   let data = null;
@@ -49,11 +55,23 @@
   const $ = (id) => document.getElementById(id);
   const elYaw = $('map-yaw'), elPitch = $('map-pitch'), elSpread = $('map-spread');
   const elLabels = $('map-labels'), elRoutes = $('map-routes'),
-        elExplored = $('map-explored'), el2d = $('map-2d');
+        elExplored = $('map-explored'), el2d = $('map-2d'), elFasce = $('map-fasce'),
+        elLegenda = $('map-fasce-legenda');
 
   if (elLabels) { elLabels.value = labelMode; elLabels.addEventListener('change', () => { labelMode = elLabels.value; P.write('labels', labelMode); schedule(); }); }
   if (elRoutes) { elRoutes.checked = showRoutes; elRoutes.addEventListener('change', () => { showRoutes = elRoutes.checked; P.write('routes', showRoutes ? 1 : 0); schedule(); }); }
   if (elExplored) { elExplored.checked = exploredOnly; elExplored.addEventListener('change', () => { exploredOnly = elExplored.checked; P.write('explored', exploredOnly ? 1 : 0); schedule(); }); }
+  if (elFasce) {
+    elFasce.checked = perFascia;
+    if (elLegenda) elLegenda.hidden = !perFascia;
+    elFasce.addEventListener('change', () => {
+      perFascia = elFasce.checked; P.write('fasce', perFascia ? 1 : 0);
+      if (elLegenda) elLegenda.hidden = !perFascia;
+      for (const no of nodes) no.color = colore(no);
+      schedule();
+    });
+  }
+  function colore(no) { return perFascia ? FASCE[Math.max(0, Math.min(5, no.band))] : no.regionColor; }
   if (el2d) { el2d.checked = twoD; el2d.addEventListener('change', () => { twoD = el2d.checked; P.write('twod', twoD ? 1 : 0); syncOrbitInputs(); schedule(); }); }
   if (elYaw) { elYaw.value = String(Math.round(cam.yaw / DEG)); elYaw.addEventListener('input', () => { cam.yaw = (+elYaw.value) * DEG; P.write('yaw', elYaw.value); schedule(); }); }
   if (elPitch) { elPitch.value = String(Math.round(cam.pitch / DEG)); elPitch.addEventListener('input', () => { cam.pitch = clamp(+elPitch.value, 2, 88) * DEG; P.write('pitch', elPitch.value); schedule(); }); }
@@ -89,12 +107,13 @@
     const trackedSet = new Set(data.tracked || []);
     nodes = (data.sectors || []).map((s, i) => {
       const n = {
-        id: s.id, name: s.name, color: s.color || '#5b6b8c',
+        id: s.id, name: s.name, regionColor: s.color || '#5b6b8c', band: s.band | 0, color: '',
         visited: !!s.visited, stardock: !!s.stardock, port: !!s.has_port, fed: !!s.fedspace,
         tracked: trackedSet.has(s.id),
         adj: false, idx: i,
         ux: 0, uy: 0, uz: 0, px: 0, py: 0, pz: 0, proj: null,
       };
+      n.color = colore(n);
       byId.set(s.id, n);
       return n;
     });

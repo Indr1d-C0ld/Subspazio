@@ -1,6 +1,6 @@
 <?php
-$sec = static function (string $icon, string $title, string $body): string {
-    return '<section class="panel guide-sec"><h2><span class="sec-ic">' . $icon . '</span> '
+$sec = static function (string $icon, string $title, string $body, string $classe = ''): string {
+    return '<section class="panel guide-sec' . ($classe !== '' ? ' ' . $classe : '') . '"><h2><span class="sec-ic">' . $icon . '</span> '
         . e($title) . '</h2>' . $body . '</section>';
 };
 ?>
@@ -21,6 +21,32 @@ $sec = static function (string $icon, string $title, string $body): string {
     . 'Il <strong>computer di bordo</strong> (in plancia) traccia rotte e autopilota verso settori già esplorati. '
     . 'I settori bassi sono <strong>Federazione</strong>: niente attacchi, niente mine.</p>') ?>
 
+  <?php
+  // I numeri vengono dalla configurazione: la guida non promette cio' che il
+  // pannello ha cambiato.
+  $righeFasce = '';
+  for ($fb = 1; $fb <= \App\Game\Fasce::MAX; $fb++) {
+      [$ca, $cz] = \App\Game\Fasce::predoniCaccia($fb);
+      $righeFasce .= '<tr class="fascia-' . $fb . '"><td><span class="tag fascia fascia-' . $fb . '">' . e(\App\Game\Fasce::ROMANI[$fb]) . '</span> '
+          . e(\App\Game\Fasce::NOMI[$fb]) . '</td>'
+          . '<td>' . number_format($ca, 0, ',', '.') . '–' . number_format($cz, 0, ',', '.')
+          . ($fb >= \App\Game\Fasce::ferrengiDa() ? ' + Ferrengi' : '') . '</td>'
+          . '<td>' . \App\Game\Fasce::ingaggioPct($fb) . '%</td>'
+          . '<td>+' . (int) round(100 * \App\Game\Economy::premioFascia(['band' => $fb])) . '%</td>'
+          . '<td>' . ($fb <= \App\Game\Fasce::razziaFinoA() ? 'razzia' : 'distruzione') . '</td></tr>';
+  }
+  ?>
+  <?= $sec('🎯', 'Fasce di rischio',
+      '<p>Attorno a Sol lo spazio è diviso in <strong>cinque fasce</strong>. Più ti allontani, più i nemici sono forti e '
+    . 'attaccano spesso, ma più rendono i porti, il bottino (più probabile e più raro), le anomalie e le missioni. '
+    . 'La fascia del settore è indicata in plancia; il numero romano sui bottoni di warp è quella di destinazione, '
+    . 'e un salto che ne sale molte in una volta chiede conferma.</p>'
+    . '<div class="table-wrap"><table class="tbl compact tbl-fasce"><thead><tr><th>Fascia</th><th>Caccia dei predoni</th><th>Ingaggio</th>'
+    . '<th>Porti pagano</th><th>Se perdi</th></tr></thead><tbody>' . $righeFasce . '</tbody></table></div>'
+    . '<p>Una <strong>razzia</strong> ti lascia la nave ma senza caccia né scudi, e i predoni si prendono il carico e il '
+    . \App\Game\Fasce::razziaCreditiPct() . '% dei crediti a bordo (quelli in banca sono al sicuro). Poi per '
+    . \App\Game\Fasce::treguaMin() . ' minuti i predoni di quelle fasce ti lasciano stare.</p>', 'guide-wide') ?>
+
   <?= $sec('🏪', 'Porti & contrattazione',
       '<p>Nei settori con un <strong>porto</strong> compri e vendi le tre merci (minerale, organico, equipaggiamento) a prezzi '
     . 'dinamici basati su domanda/offerta locale. Lo <strong>StarDock</strong> è il porto speciale, sempre presente e inespugnabile. '
@@ -34,7 +60,8 @@ $sec = static function (string $icon, string $title, string $body): string {
 
   <?= $sec('⚔️', 'Combattimento',
       '<p>Fuori dalla Federazione puoi attaccare navi, porti, pianeti e <strong>NPC</strong> (pirati, Ferrengi, mercanti). '
-    . 'Il duello è a caccia con scudi; attaccare costa turni. Se ti distruggono sopravvivi in <strong>capsula di salvataggio</strong> '
+    . 'Il duello è a caccia con scudi; attaccare costa turni. Vicino a Sol chi perde contro un NPC viene <strong>razziato</strong> '
+    . 'invece che distrutto (vedi «Fasce di rischio»). Se ti distruggono sopravvivi in <strong>capsula di salvataggio</strong> '
     . 'allo StarDock: perdi carico e moduli installati (in parte recuperati in Leghe). Dei crediti a bordo, chi ti abbatte '
     . 'ne prende metà; senza <strong>capsula di salvataggio</strong> ne perdi anche metà di quelli rimasti, con la capsula nulla. '
     . 'Se sei a secco chiedi una nave di soccorso al Cantiere. '
@@ -69,7 +96,8 @@ $sec = static function (string $icon, string $title, string $body): string {
   <?= $sec('📡', 'Scansione & frontiera',
       '<p>La <strong>scansione</strong> (dalla scheda settore, costa turni) rivela relitti, depositi, anomalie, giacimenti e '
     . '<strong>pericoli</strong> ambientali — anche nei settori vicini con scanner o uno Scienziato in plancia. '
-    . 'Le regioni di frontiera e profonde sono più ostili ma più ricche; gli hazard colpiscono all\'ingresso, meno se li conosci. '
+    . 'Più lontano da Sol le scoperte sono più ricche e i pericoli più duri (nella Cintura di Sol non ce ne sono); '
+    . 'gli hazard colpiscono all\'ingresso, meno se li conosci. '
     . 'Il <a href="' . e(url('/gioco/codex')) . '">Codex</a> raccoglie le scoperte.</p>') ?>
 
   <?= $sec('🚩', 'Fazioni & reputazione',

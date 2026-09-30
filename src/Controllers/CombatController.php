@@ -55,6 +55,8 @@ final class CombatController
                 . number_format($res['loot'], 0, ',', '.') . " cr, +{$res['exp']} exp." . Loot::describe($res['drops'] ?? []));
         } elseif ($res['destroyed_self']) {
             Session::flash('error', "{$res['npc_name']} ti ha distrutto. Capsula allo StarDock.");
+        } elseif (!empty($res['raided'])) {
+            Session::flash('error', Combat::testoRazzia(['name' => $res['npc_name']], $res['raided']));
         } else {
             Session::flash('error', "Scontro con {$res['npc_name']} ({$res['rounds']} round): persi {$res['attacker_lost']} caccia, inflitti -{$res['defender_lost']}.");
         }

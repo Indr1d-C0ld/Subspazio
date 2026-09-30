@@ -67,7 +67,8 @@ final class Loot
                 'planet' => 0.10,
                 default  => 0.15,
             });
-            $chance *= self::regionMult($sectorId);
+            $band = Fasce::diSettore($sectorId);
+            $chance *= Fasce::bottinoMult($band);
             $chance *= self::eventLuck();
             $chance *= 1 + $dropLuckPct / 100;
             if ($npcKind === 'ferrengi') {
@@ -103,7 +104,7 @@ final class Loot
                 if (!($guaranteed && $i === 0) && self::frand() >= min(0.95, $chance)) {
                     continue;
                 }
-                $item = self::pickItem($source);
+                $item = self::pickItem($source, $band);
                 if ($item === null) {
                     continue;
                 }
@@ -188,10 +189,19 @@ final class Loot
 
     // --- interni --------------------------------------------------------------
 
-    /** @return array<string,mixed>|null */
-    private static function pickItem(string $source): ?array
+    /**
+     * Fuori dal PvP la rarita' segue la fascia (Fasce::pesiRarita): vicino a
+     * Sol quasi solo moduli civili, nell'Orlo sperimentali, xeno e precursori.
+     * Il PvP tiene la tabella generale col suo pavimento: li' il valore sta
+     * nel bersaglio, non nel luogo.
+     *
+     * @return array<string,mixed>|null
+     */
+    private static function pickItem(string $source, int $band = 0): ?array
     {
-        $weights = self::rarityWeights();
+        $weights = $source !== 'pvp' && $band >= 1 && ($pf = Fasce::pesiRarita($band)) !== []
+            ? $pf
+            : self::rarityWeights();
 
         // pavimento di fascia in PvP
         if ($source === 'pvp') {
@@ -272,19 +282,6 @@ final class Loot
             }
         }
         return $out;
-    }
-
-    private static function regionMult(int $sectorId): float
-    {
-        $kind = (string) (Database::first(
-            'SELECT r.kind FROM sectors s LEFT JOIN regions r ON r.id = s.region_id WHERE s.id = ?',
-            [$sectorId]
-        )['kind'] ?? 'core');
-        return match ($kind) {
-            'deep'     => GameConfig::float('loot.region_bonus_deep', 1.5),
-            'frontier' => GameConfig::float('loot.region_bonus_frontier', 1.15),
-            default    => 1.0,
-        };
     }
 
     private static function eventLuck(): float

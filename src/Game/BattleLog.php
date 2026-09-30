@@ -129,6 +129,10 @@ final class BattleLog
             'def_destroyed' => $role === 'attaccante' ? 'vittoria' : 'distrutto',
             'att_destroyed' => $role === 'attaccante' ? 'distrutto' : 'vittoria',
             'repelled'      => $role === 'attaccante' ? 'respinto' : 'difesa riuscita',
+            // razzie nelle fasce vicine a Sol: chi perde resta vivo, spogliato
+            'def_raided'    => $role === 'attaccante' ? 'razzia riuscita' : 'razziato',
+            'att_raided'    => $role === 'attaccante' ? 'razziato' : 'razzia riuscita',
+            'draw'          => 'pareggio',
             'att_win'       => 'in vantaggio',
             'def_win'       => 'respinto',
             'passed'        => 'passato',

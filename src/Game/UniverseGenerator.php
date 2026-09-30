@@ -123,6 +123,9 @@ final class UniverseGenerator
         }
 
         Universe::forget(); // settori e rotte sono stati rifatti da zero
+        // Nuova galassia, nuovi anelli: le fasce di rischio si misurano sulle
+        // coordinate appena generate.
+        Fasce::ricalcola();
 
         return [
             'sectors'        => $this->count,

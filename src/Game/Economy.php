@@ -76,7 +76,7 @@ final class Economy
     public static function portAt(int $sectorId): ?array
     {
         $port = Database::first(
-            'SELECT p.*, s.region_id, s.name AS sector_name, s.is_stardock
+            'SELECT p.*, s.region_id, s.band, s.name AS sector_name, s.is_stardock
              FROM ports p JOIN sectors s ON s.id = p.sector_id
              WHERE p.sector_id = ? AND p.destroyed = 0',
             [$sectorId]
@@ -225,6 +225,7 @@ final class Economy
         } else {
             $discount = GameConfig::float('economy.buy_discount', 0.90);
             $unit = max($fair * 0.30, $fair * $discount * (1.0 - $slip * $qtyRel));
+            $unit *= 1.0 + self::premioFascia($port);
         }
 
         return [
@@ -243,8 +244,27 @@ final class Economy
         $cap = max(1.0, (float) $port[self::prefix($commodity) . '_capacity']);
         $qtyRel = max(0.0, $qty / $cap);
         $slip = GameConfig::float('economy.slippage', 0.35) * 0.5;
-        $f = $action === 'buy' ? (1.0 + $slip * $qtyRel) : (1.0 - $slip * $qtyRel);
+        $f = $action === 'buy' ? (1.0 + $slip * $qtyRel) : (1.0 - $slip * $qtyRel) * (1.0 + self::premioFascia($port));
         return (int) round($fair * $qty * $f);
+    }
+
+    /**
+     * Premio che un porto paga su cio' che compra, secondo la fascia di
+     * distanza da Sol (Fasce::commercioPct): i porti lontani pagano di piu'.
+     * Vale solo per la vendita del giocatore: il prezzo d'acquisto resta
+     * quello di sempre, cosi' lontano il margine si allarga. Il tetto al 24%
+     * tiene il premio da solo sotto il ricarico (0,90 x 1,24 < 1,12): senza una
+     * vera differenza di scorte fra due porti, comprare e rivendere la stessa
+     * merce resta in perdita anche nell'Orlo.
+     *
+     * @param array<string,mixed> $port
+     */
+    public static function premioFascia(array $port): float
+    {
+        $band = array_key_exists('band', $port) && $port['band'] !== null
+            ? (int) $port['band']
+            : Fasce::diSettore((int) ($port['sector_id'] ?? 0));
+        return max(0.0, min(0.24, Fasce::commercioPct($band) / 100));
     }
 
     /**
@@ -393,7 +413,7 @@ final class Economy
         $pdo->beginTransaction();
         try {
             $port = Database::first(
-                'SELECT p.*, s.region_id, s.name AS sector_name, s.is_stardock
+                'SELECT p.*, s.region_id, s.band, s.name AS sector_name, s.is_stardock
                  FROM ports p JOIN sectors s ON s.id = p.sector_id
                  WHERE p.sector_id = ? AND p.destroyed = 0 FOR UPDATE',
                 [$sectorId]

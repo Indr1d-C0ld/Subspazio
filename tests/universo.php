@@ -89,13 +89,17 @@ return static function (): void {
     // con TUTTE le uscite fuori dalla Fedspace: il tick despawna pirati e
     // Ferrengi che ci finiscono dentro (comportamento giusto del gioco), e un
     // NPC di prova sparito a meta' faceva fallire il conteggio a caso.
+    // Con le fasce di rischio i Ferrengi vivono solo nelle fasce esterne (e il
+    // clock rimuove quelli che ne escono): si parte da un settore di fascia
+    // IV-V le cui uscite restano tutte nelle fasce IV-V.
     $partenza = Database::first(
         'SELECT w.from_sector id, COUNT(*) n
          FROM warps w
          JOIN sectors d ON d.id = w.to_sector
-         WHERE NOT EXISTS (
+         JOIN sectors s0 ON s0.id = w.from_sector
+         WHERE s0.band >= 4 AND NOT EXISTS (
              SELECT 1 FROM warps w2 JOIN sectors d2 ON d2.id = w2.to_sector
-             WHERE w2.from_sector = w.from_sector AND d2.is_fedspace = 1
+             WHERE w2.from_sector = w.from_sector AND (d2.is_fedspace = 1 OR d2.band < 4)
          )
          GROUP BY w.from_sector HAVING n >= 2 ORDER BY RAND() LIMIT 1'
     );

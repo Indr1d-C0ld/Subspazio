@@ -55,16 +55,24 @@ final class Universe
         return (int) (Database::first('SELECT COUNT(*) AS c FROM sectors')['c'] ?? 0);
     }
 
-    /** @return array<string,mixed>|null */
+    /**
+     * Il tipo di regione («region_kind») discende dalla fascia di distanza da
+     * Sol (Fasce::tipo): la regione resta un'area politica ed economica, ma non
+     * dice piu' quanto si e' lontani.
+     *
+     * @return array<string,mixed>|null
+     */
     public static function sector(int $id): ?array
     {
         if (array_key_exists($id, self::$settori)) {
             return self::$settori[$id];
         }
         return self::$settori[$id] = Database::first(
-            'SELECT s.*, r.name AS region_name, r.color AS region_color, r.kind AS region_kind
+            "SELECT s.*, r.name AS region_name, r.color AS region_color,
+                    CASE WHEN s.band IS NULL THEN r.kind WHEN s.band = 0 THEN 'federation'
+                         WHEN s.band >= 4 THEN 'deep' ELSE 'frontier' END AS region_kind
              FROM sectors s LEFT JOIN regions r ON r.id = s.region_id
-             WHERE s.id = ?',
+             WHERE s.id = ?",
             [$id]
         );
     }
@@ -87,7 +95,9 @@ final class Universe
             $in = implode(',', array_fill(0, count($mancanti), '?'));
             $trovati = [];
             foreach (Database::all(
-                "SELECT s.*, r.name AS region_name, r.color AS region_color, r.kind AS region_kind
+                "SELECT s.*, r.name AS region_name, r.color AS region_color,
+                        CASE WHEN s.band IS NULL THEN r.kind WHEN s.band = 0 THEN 'federation'
+                             WHEN s.band >= 4 THEN 'deep' ELSE 'frontier' END AS region_kind
                  FROM sectors s LEFT JOIN regions r ON r.id = s.region_id
                  WHERE s.id IN ({$in})",
                 $mancanti

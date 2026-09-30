@@ -252,7 +252,11 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
       <?php if ($look['is_stardock']): ?><span class="tag dock">StarDock</span><?php endif; ?>
       <?php if ($look['is_fedspace']): ?><span class="tag fed">Federazione</span><?php endif; ?>
       <?php if ($look['has_port']): ?><span class="tag port">Porto</span><?php endif; ?>
+      <?php if ((int) ($look['band'] ?? 0) > 0): ?><span class="tag fascia fascia-<?= (int) $look['band'] ?>" title="<?= e($look['band_info']) ?>"><?= e($look['band_label']) ?></span><?php endif; ?>
     </header>
+    <?php if ((int) ($look['band'] ?? 0) > 0): ?>
+    <p class="fascia-info fascia-<?= (int) $look['band'] ?>"><?= e($look['band_info']) ?><?= partial('help', ['key' => 'plancia.fasce']) ?></p>
+    <?php endif; ?>
 
     <dl class="sector-meta">
       <div><dt>Regione</dt><dd><?= e($look['region'] ?? '—') ?></dd></div>
@@ -285,12 +289,12 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
     <h2><span class="sec-ic">🚀</span> Warp<?= partial('help', ['key' => 'plancia.warp']) ?></h2>
     <div class="warps">
       <?php foreach ($look['warps'] as $w): ?>
-        <form method="post" action="<?= e(url('/gioco/muovi')) ?>" class="inline warp-form">
+        <form method="post" action="<?= e(url('/gioco/muovi')) ?>" class="inline warp-form"<?= !empty($w['avviso']) ? ' data-confirm="' . e($w['avviso']) . '"' : '' ?>>
           <?= csrf_field() ?>
           <input type="hidden" name="to" value="<?= (int) $w['to'] ?>">
-          <button type="submit" class="btn warp<?= $w['visited'] ? '' : ' unknown' ?>"
-                  title="<?= $w['visited'] ? 'Settore esplorato' : 'Settore mai visitato' ?><?= $w['return_known'] ? '' : ' · nessun warp di ritorno noto' ?>">
-            → <?= (int) $w['to'] ?><?= $w['visited'] ? '' : ' *' ?>
+          <button type="submit" class="btn warp fascia-<?= (int) ($w['band'] ?? 0) ?><?= $w['visited'] ? '' : ' unknown' ?>"
+                  title="<?= e(\App\Game\Fasce::etichetta((int) ($w['band'] ?? 0))) ?> · <?= $w['visited'] ? 'Settore esplorato' : 'Settore mai visitato' ?><?= $w['return_known'] ? '' : ' · nessun warp di ritorno noto' ?>">
+            → <?= (int) $w['to'] ?><?= $w['visited'] ? '' : ' *' ?><?php if ((int) ($w['band'] ?? 0) > 0): ?><sup class="warp-fascia"><?= e(\App\Game\Fasce::ROMANI[(int) $w['band']]) ?></sup><?php endif; ?>
           </button>
         </form>
       <?php endforeach; ?>
@@ -314,6 +318,8 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
           </li>
         <?php endforeach; ?>
       </ul>
+      <?php $premio = (int) round(100 * \App\Game\Economy::premioFascia(['band' => (int) ($look['band'] ?? 0)])); ?>
+      <?php if ($premio > 0): ?><p class="hint">Lontano da Sol: qui il porto paga il <?= $premio ?>% in più ciò che compra.</p><?php endif; ?>
       <a class="btn xs" href="<?= e(url('/gioco/porto')) ?>">Entra nel porto</a>
       <?php if ($look['is_stardock']): ?>
         <a class="btn xs ghost" href="<?= e(url('/gioco/banca')) ?>">Banca</a>
@@ -376,13 +382,11 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
     </div>
     <?php endif; ?>
 
-    <?php $feats = $look['features'] ?? []; $rk = $look['region_kind'] ?? 'core'; ?>
+    <?php $feats = $look['features'] ?? []; ?>
     <?php if (!$look['is_fedspace']): ?>
     <div class="scan-box">
       <div class="scan-head">
         <strong>Scansione</strong>
-        <?php if ($rk === 'deep'): ?><span class="tag port">frontiera profonda</span>
-        <?php elseif ($rk === 'frontier'): ?><span class="tag">frontiera</span><?php endif; ?>
         <form method="post" action="<?= e(url('/gioco/scansiona')) ?>" class="inline">
           <?= csrf_field() ?><button class="btn xs" type="submit">Scansiona il settore</button>
         </form>
@@ -619,6 +623,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
       <label class="chk"><input type="checkbox" id="map-routes" checked> rotte</label>
       <label class="chk"><input type="checkbox" id="map-explored"> solo esplorati</label>
       <label class="chk"><input type="checkbox" id="map-2d"> vista 2D</label>
+      <label class="chk" title="Colora i settori per distanza da Sol invece che per regione"><input type="checkbox" id="map-fasce"> fasce</label>
       <span class="spacer"></span>
       <button type="button" class="btn xs ghost" id="map-zoom-out" aria-label="Riduci zoom">−</button>
       <button type="button" class="btn xs ghost" id="map-zoom-in" aria-label="Aumenta zoom">+</button>
@@ -629,6 +634,9 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
       <label>Inclinazione <input type="range" id="map-pitch" min="2" max="88" step="1" value="32" aria-label="Inclinazione verticale"></label>
       <label>Spaziatura <input type="range" id="map-spread" min="0.5" max="2.6" step="0.05" value="1" aria-label="Spaziatura fra i punti"></label>
     </div>
+    <p class="fasce-legenda" id="map-fasce-legenda" hidden>
+      <?php for ($fb = 0; $fb <= \App\Game\Fasce::MAX; $fb++): ?><span class="fascia-<?= $fb ?>"><?= e($fb === 0 ? 'Federazione' : \App\Game\Fasce::ROMANI[$fb] . ' ' . \App\Game\Fasce::NOMI[$fb]) ?></span><?php endfor; ?>
+    </p>
     <div id="starmap"
          data-map-url="<?= e(url('/api/mappa')) ?>"
          data-move-url="<?= e(url('/api/muovi')) ?>"

@@ -673,6 +673,12 @@ final class Combat
                 $exp = $npc['kind'] === 'ferrengi'
                     ? GameConfig::int('npc.kill_exp_ferrengi', 140)
                     : ($npc['kind'] === 'pirate' ? GameConfig::int('npc.kill_exp_pirate', 70) : 20);
+                // Un nemico di una fascia lontana insegna di piu'. Conta la
+                // fascia di nascita, che ne fissa la forza, non quella in cui
+                // lo si incontra.
+                $exp = (int) round($exp * Fasce::xpMult(
+                    $npc['band'] !== null ? (int) $npc['band'] : Fasce::diSettore((int) $npc['sector_id'])
+                ));
                 $align = match ($npc['kind']) {
                     'ferrengi' => 20, 'pirate' => 10, default => GameConfig::int('combat.kill_good_alignment', -25),
                 };
@@ -689,14 +695,19 @@ final class Combat
                 Database::run('UPDATE npcs SET fighters = ?, shields = ? WHERE id = ?', [$r['def_ftr'], $r['def_shd'], $npcId]);
             }
 
-            if ($destroyedAtk) {
+            $razzia = null;
+            if ($destroyedAtk && self::razziaInveceDiDistruzione($npc)) {
+                // Vicino a Sol chi perde viene spogliato, non abbattuto.
+                $razzia = self::razzia($npc, $atkPlayer, (int) $atkShip['id']);
+                $destroyedAtk = false;
+            } elseif ($destroyedAtk) {
                 self::destroyShip($atkPlayer);
             }
 
             Database::run(
                 'INSERT INTO combat_log (kind, sector_id, attacker_player_id, rounds, att_fighters_lost, def_fighters_lost, outcome, loot_credits, detail) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 ['npc', (int) $npc['sector_id'], $atkPlayer['id'], $r['rounds'], $r['att_lost'], $r['def_lost'],
-                    $killed ? 'def_destroyed' : ($destroyedAtk ? 'att_destroyed' : 'repelled'), $loot,
+                    $killed ? 'def_destroyed' : ($destroyedAtk ? 'att_destroyed' : ($razzia !== null ? 'att_raided' : 'repelled')), $loot,
                     json_encode(['npc' => $npc['name'], 'kind' => $npc['kind'], 'duel' => $r, 'drops' => $drops], JSON_UNESCAPED_UNICODE)]
             );
             $pdo->commit();
@@ -717,6 +728,7 @@ final class Combat
             'defender_lost'  => $r['def_lost'],
             'killed'         => $killed,
             'destroyed_self' => $destroyedAtk,
+            'raided'         => $razzia,
             'loot'           => $loot,
             'exp'            => $exp,
             'drops'          => $drops,
@@ -751,15 +763,27 @@ final class Combat
             Database::run('UPDATE npcs SET fighters = ?, shields = ? WHERE id = ?', [$r['att_ftr'], $r['att_shd'], $npc['id']]);
         }
 
+        $razzia = $playerDead && self::razziaInveceDiDistruzione($npc)
+            ? self::razzia($npc, $player, (int) $ship['id'])
+            : null;
+
         Database::run(
             'INSERT INTO combat_log (kind, sector_id, defender_player_id, rounds, att_fighters_lost, def_fighters_lost, outcome, detail) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
             ['npc', (int) $npc['sector_id'], (int) $player['id'], $r['rounds'], $r['att_lost'], $r['def_lost'],
                 // Qui chi entra e' il DIFENSORE: se muore e' 'def_destroyed'. Prima
                 // l'esito era invertito, e il registro battaglie diceva «vittoria»
                 // a chi era appena stato distrutto.
-                $playerDead ? 'def_destroyed' : ($npcDead ? 'att_destroyed' : 'draw'),
-                json_encode(['npc' => $npc['name'], 'aggressor' => true], JSON_UNESCAPED_UNICODE)]
+                $razzia !== null ? 'def_raided' : ($playerDead ? 'def_destroyed' : ($npcDead ? 'att_destroyed' : 'draw')),
+                json_encode(['npc' => $npc['name'], 'aggressor' => true, 'razzia' => $razzia], JSON_UNESCAPED_UNICODE)]
         );
+
+        if ($razzia !== null) {
+            $testo = self::testoRazzia($npc, $razzia);
+            Live::alert((int) $player['id'], 'raided', 'Razziato da un NPC', $testo, '/gioco');
+            ShipLog::write((int) $player['id'], 'npc', 'warning',
+                "Razzia nel settore {$npc['sector_id']}", $testo, (int) $npc['sector_id']);
+            return ['event' => $testo, 'destroyed' => false, 'raided' => true];
+        }
 
         if ($playerDead) {
             $d = self::destroyShip($player);
@@ -996,8 +1020,13 @@ final class Combat
         }
 
         // 3) NPC ostili nel settore
+        $inTregua = self::treguaVale(Database::first('SELECT * FROM players WHERE id = ?', [$pid]) ?? $player, Fasce::diSettore($sectorId));
         foreach ((($noEngage || $cloaked) ? [] : Database::all('SELECT * FROM npcs WHERE sector_id = ? AND aggression > 0', [$sectorId])) as $npc) {
             if (self::npcLasciaStare($npc, $player)) {
+                continue;
+            }
+            if ($inTregua && $npc['name'] !== self::CACCIATORE) {
+                $events[] = "{$npc['name']} ti ha gia' spogliato di recente: ti lascia passare.";
                 continue;
             }
             $freshShip = PlayerService::ship((int) $player['ship_id']);
@@ -1006,6 +1035,10 @@ final class Combat
             }
             $out = self::npcEngagePlayer($npc, $player, $freshShip);
             $events[] = $out['event'];
+            if (!empty($out['raided'])) {
+                // spogliato: gli altri predoni del settore non hanno piu' niente da prendere
+                break;
+            }
             if ($out['destroyed']) {
                 return ['events' => $events, 'player' => Database::first('SELECT * FROM players WHERE id = ?', [$pid]), 'ship' => PlayerService::ship((int) Database::first('SELECT ship_id FROM players WHERE id = ?', [$pid])['ship_id']), 'destroyed' => true];
             }
@@ -1048,6 +1081,91 @@ final class Combat
      * @param array<string,mixed> $player
      * @return array{dock:int, lost_credits:int, had_pod:bool}
      */
+    // --- razzie ----------------------------------------------------------
+
+    /**
+     * Nelle fasce vicine a Sol chi perde contro un NPC viene razziato invece
+     * che distrutto: i predoni prendono il carico e una parte dei crediti, e
+     * la nave resta in piedi senza difese. I cacciatori di taglie, mandati
+     * dalla Federazione dietro ai ricercati, non fanno sconti.
+     *
+     * @param array<string,mixed> $npc
+     */
+    public static function razziaInveceDiDistruzione(array $npc): bool
+    {
+        $band = Fasce::diSettore((int) $npc['sector_id']);
+        return $band >= 1 && $band <= Fasce::razziaFinoA() && $npc['name'] !== self::CACCIATORE;
+    }
+
+    /**
+     * La tregua dopo una razzia vale in questa fascia? Protegge solo dove si
+     * viene razziati: chi si spinge oltre ha scelto il rischio.
+     *
+     * @param array<string,mixed>|null $player
+     */
+    public static function treguaVale(?array $player, int $band): bool
+    {
+        return $player !== null && $band <= Fasce::razziaFinoA() && Fasce::inTregua($player);
+    }
+
+    /**
+     * Il carico passa nelle stive del predone (chi lo abbatte lo ritrova), una
+     * parte dei crediti a bordo nella sua cassa. Poi la tregua, altrimenti la
+     * nave spogliata e senza difese veniva razziata di nuovo al battito dopo.
+     *
+     * @param array<string,mixed> $npc
+     * @param array<string,mixed> $player
+     * @return array{ore:int, organics:int, equipment:int, credits:int}
+     */
+    private static function razzia(array $npc, array $player, int $shipId): array
+    {
+        $pid = (int) $player['id'];
+        $ship = Database::first('SELECT hold_ore, hold_organics, hold_equipment FROM ships WHERE id = ?', [$shipId]) ?? [];
+        $preso = ['ore' => 0, 'organics' => 0, 'equipment' => 0, 'credits' => 0];
+        foreach ([['hold_ore', 'cargo_ore', 'ore'], ['hold_organics', 'cargo_org', 'organics'], ['hold_equipment', 'cargo_equ', 'equipment']] as [$hc, $nc, $k]) {
+            $q = (int) ($ship[$hc] ?? 0);
+            // Si toglie solo cio' che c'era alla lettura: la guardia impedisce
+            // di contare due volte un carico spostato nel frattempo.
+            if ($q > 0 && Database::run("UPDATE ships SET {$hc} = {$hc} - ? WHERE id = ? AND {$hc} >= ?", [$q, $shipId, $q])->rowCount() > 0) {
+                Database::run("UPDATE npcs SET {$nc} = {$nc} + ? WHERE id = ?", [$q, (int) $npc['id']]);
+                $preso[$k] = $q;
+            }
+        }
+        $cr = (int) (Database::first('SELECT credits FROM players WHERE id = ?', [$pid])['credits'] ?? 0);
+        $tolti = intdiv($cr * Fasce::razziaCreditiPct(), 100);
+        if ($tolti > 0 && Wallet::charge($pid, ['credits' => $tolti])) {
+            Database::run('UPDATE npcs SET credits = credits + ? WHERE id = ?', [$tolti, (int) $npc['id']]);
+            $preso['credits'] = $tolti;
+        }
+        Database::run('UPDATE ships SET fighters = 0, shields = 0 WHERE id = ?', [$shipId]);
+        Database::run(
+            'UPDATE players SET tregua_npc_until = DATE_ADD(NOW(), INTERVAL ? MINUTE) WHERE id = ?',
+            [Fasce::treguaMin(), $pid]
+        );
+        return $preso;
+    }
+
+    /**
+     * @param array<string,mixed>                                      $npc
+     * @param array{ore:int, organics:int, equipment:int, credits:int} $r
+     */
+    public static function testoRazzia(array $npc, array $r): string
+    {
+        $bits = [];
+        foreach (['ore' => 'minerale', 'organics' => 'organici', 'equipment' => 'equipaggiamento'] as $k => $lbl) {
+            if ($r[$k] > 0) {
+                $bits[] = number_format($r[$k], 0, ',', '.') . ' ' . $lbl;
+            }
+        }
+        if ($r['credits'] > 0) {
+            $bits[] = number_format($r['credits'], 0, ',', '.') . ' cr';
+        }
+        return "RAZZIA: {$npc['name']} abbatte le tue difese e ti abborda"
+            . ($bits === [] ? ', ma a bordo non trova niente da prendere.' : ': porta via ' . implode(', ', $bits) . '.')
+            . ' La nave e\' salva ma senza caccia ne\' scudi: riarmala allo StarDock. Per '
+            . Fasce::treguaMin() . ' minuti i predoni di queste fasce ti lasciano stare.';
+    }
+
     /**
      * Un NPC aggressivo lascia stare questo comandante?
      *

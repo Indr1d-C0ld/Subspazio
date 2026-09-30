@@ -107,19 +107,23 @@ final class Events
         for ($i = 0; $i < $wave; $i++) {
             Npc::spawnOne('ferrengi');
         }
+        $da = Fasce::ferrengiDa();
         return self::record('ferrengi_incursion', 'Incursione Ferrengi',
-            "Una flotta Ferrengi di {$wave} navi si riversa nello spazio conosciuto. Comandanti, alla larga dai settori profondi.", 4,
+            "Una flotta Ferrengi di {$wave} navi si riversa nello spazio conosciuto. Comandanti, alla larga dalle fasce esterne ("
+            . Fasce::ROMANI[$da] . ($da < Fasce::MAX ? '-' . Fasce::ROMANI[Fasce::MAX] : '') . ').', 4,
             ['wave' => $wave]);
     }
 
     private static function pirateSurge(): string
     {
+        // Le ondate colpiscono dalla Frontiera in fuori: la Cintura di Sol e
+        // l'Anello dei Coloni restano il posto dove imparare il mestiere.
         $wave = mt_rand(5, 10);
         for ($i = 0; $i < $wave; $i++) {
-            Npc::spawnOne('pirate');
+            Npc::spawnOne('pirate', mt_rand(3, Fasce::MAX));
         }
         return self::record('pirate_surge', 'Ondata di pirateria',
-            "Bande di predoni ({$wave}) infestano le rotte di frontiera.", 4, ['wave' => $wave]);
+            "Bande di predoni ({$wave}) infestano le rotte dalla Frontiera in fuori (fasce III-V).", 4, ['wave' => $wave]);
     }
 
     private static function bountySeason(): string

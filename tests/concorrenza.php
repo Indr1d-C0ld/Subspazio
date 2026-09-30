@@ -122,7 +122,8 @@ return static function (): void {
         Esito::sezione('Concorrenza — le risorse a colpo singolo');
 
         Esito::scenario('tre raccolte simultanee dello stesso deposito');
-        $sec = (int) Database::first('SELECT id FROM sectors WHERE is_fedspace = 0 LIMIT 1')['id'];
+        // un settore di frontiera (fasce I-III): nel profondo il deposito rende di piu'
+        $sec = (int) Database::first('SELECT id FROM sectors WHERE is_fedspace = 0 AND band BETWEEN 1 AND 3 ORDER BY id LIMIT 1')['id'];
         [, $pid3, $sid3] = $comandante($sec, 500);
         Database::run(
             "INSERT INTO sector_features (sector_id, kind, subtype, richness, data, spawned_at, depleted)

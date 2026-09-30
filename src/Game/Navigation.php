@@ -32,12 +32,23 @@ final class Navigation
         $visited = self::visitedSet((int) $player['id']);
         $warpTargets = Universe::warpsFrom($sectorId);
 
+        $qui = Fasce::diSettore($sectorId);
+        Universe::sectorsMany($warpTargets);
         $warps = [];
         foreach ($warpTargets as $to) {
+            $band = Fasce::diSettore($to);
             $warps[] = [
                 'to'           => $to,
                 'visited'      => isset($visited[$to]),
                 'return_known' => isset($visited[$to]) || Universe::warpExists($to, $sectorId),
+                'band'         => $band,
+                // Le corsie federali a lungo raggio portano da Sol fino
+                // all'Orlo in un salto solo: chi sale di molte fasce insieme
+                // deve saperlo prima, non scoprirlo all'arrivo.
+                'avviso'       => $band >= 3 && $band - $qui >= Fasce::avvisoSalto()
+                    ? 'Il settore ' . $to . ' e\' in ' . Fasce::etichetta($band) . ' (da ' . Fasce::etichetta($qui) . '). '
+                      . Fasce::RIASSUNTI[$band] . ' Saltare comunque?'
+                    : null,
             ];
         }
 
@@ -124,6 +135,9 @@ final class Navigation
             'pinned'      => SectorNotes::pinned((int) $player['id']),
             'can_attack'  => !((bool) $sector['is_fedspace']) && $playersHere !== [],
             'region_kind' => $sector['region_kind'] ?? 'core',
+            'band'        => $qui,
+            'band_label'  => Fasce::etichetta($qui),
+            'band_info'   => Fasce::RIASSUNTI[$qui],
             'features'    => SectorFeatures::visibleFor((int) $player['id'], $sectorId),
         ];
     }
@@ -546,7 +560,7 @@ final class Navigation
         $knownIds = array_keys($known);
         $in2 = implode(',', array_fill(0, count($knownIds), '?'));
         $sectorRows = Database::all(
-            "SELECT s.id, s.name, s.x, s.y, s.is_fedspace, s.is_stardock, s.has_port,
+            "SELECT s.id, s.name, s.x, s.y, s.is_fedspace, s.is_stardock, s.has_port, s.band,
                     r.color AS region_color
              FROM sectors s LEFT JOIN regions r ON r.id = s.region_id
              WHERE s.id IN ($in2)",
@@ -566,6 +580,7 @@ final class Navigation
                 'stardock' => (bool) $s['is_stardock'],
                 'has_port' => (bool) $s['has_port'],
                 'color'    => $s['region_color'] ?: '#5b6b8c',
+                'band'     => (int) ($s['band'] ?? 0),
             ];
         }
 

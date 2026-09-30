@@ -4,6 +4,118 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-30 — Fasce di rischio attorno a Sol: minacce e ricompense crescono con la distanza
+
+Uscire dalla Federazione era una condanna. Nei trenta giorni precedenti i
+registri contano **22 ingaggi NPC contro giocatori e 22 navi distrutte**,
+nessun sopravvissuto: quasi sempre Ferrengi da 2.500-9.000 caccia contro i 750
+della nave iniziale, spesso a un salto da Sol (settori raggiunti dalle corsie
+federali). Un comandante è morto cinque volte in un pomeriggio contro lo stesso
+Ferrengi appostato davanti a un'uscita della Federazione. Gli NPC nascevano e
+vagavano ovunque fuori dalla Federazione, con un'unica probabilità d'ingaggio
+(65%) dappertutto.
+
+*Deciso con l'autore*: fasce ad anelli sulla mappa galattica, razzia invece di
+distruzione vicino a Sol, margini di commercio crescenti con la distanza,
+Ferrengi solo nelle fasce IV-V.
+
+| Fascia | Settori / porti | Caccia dei predoni | Ingaggio | Porti pagano | Se perdi |
+|---|---|---|---|---|---|
+| I · Cintura di Sol | 73 / 22 | 80–250 | 15% | +0% | razzia |
+| II · Anello dei Coloni | 157 / 57 | 250–650 | 30% | +5% | razzia |
+| III · Frontiera | 226 / 77 | 700–1.800 | 45% | +10% | distruzione |
+| IV · Marche Remote | 253 / 77 | 1.800–4.500 + Ferrengi | 60% | +15% | distruzione |
+| V · Orlo del Buio | 281 / 71 | 4.500–11.000 + Ferrengi | 75% | +20% | distruzione |
+
+### Le fasce
+
+- **[src/Game/Fasce.php](src/Game/Fasce.php)** (nuovo) — l'unica fonte della
+  distanza. Cinque anelli attorno allo StarDock più lo spazio federale (fascia
+  0); soglie come frazioni del raggio della galassia (0,36 / 0,53 / 0,69 /
+  0,84), valide anche dopo un Big Bang di altra misura. Ogni valore per fascia è
+  una chiave a cinque voci. Anche frontiera / frontiera profonda ora discende
+  dalla fascia (I-III e IV-V): una regione «profonda» poteva cominciare a un
+  salto dalla Federazione.
+- **[db/migrations/0052_fasce.sql](db/migrations/0052_fasce.sql)** — colonne
+  `sectors.band`, `npcs.band` (fascia di nascita; NULL per i cacciatori di
+  taglie), `players.tregua_npc_until`; prima assegnazione; 20 chiavi nuove
+  (famiglia `fasce`); via `loot.region_bonus_*`, `npc.pirate_target`,
+  `npc.engage_chance_pct`. La popolazione ostile nata con le vecchie regole
+  viene rimossa e il clock la ricostituisce in pochi minuti, ogni nave nella sua
+  fascia; i pericoli ambientali attivi nella Cintura si esauriscono.
+- **[src/Game/Universe.php](src/Game/Universe.php)**,
+  **[bin/tick.php](bin/tick.php)**,
+  **[src/Game/UniverseGenerator.php](src/Game/UniverseGenerator.php)** —
+  `region_kind` discende dalla fascia; il clock riassegna le fasce se le soglie
+  cambiano dal pannello; il Big Bang le ricalcola.
+
+### Minacce
+
+- **[src/Game/Npc.php](src/Game/Npc.php)** — predoni per fascia con una quota
+  ciascuna (6, 8, 9, 9, 8), forza, scudi e crediti in proporzione. Si muovono
+  solo nella fascia di nascita o in quella subito più esterna, **mai verso
+  Sol**. Ferrengi solo dalla fascia IV, preferendo la regione natale dove tocca
+  le fasce esterne. Ingaggio da fermi secondo la fascia. Il despawn toglie chi
+  esce dal proprio territorio.
+- **[src/Game/Events.php](src/Game/Events.php)** — ondate di pirateria nelle
+  fasce III-V, incursioni Ferrengi nelle esterne, e gli annunci lo dicono.
+
+### Razzie
+
+- **[src/Game/Combat.php](src/Game/Combat.php)** — nelle fasce I-II chi perde
+  contro un NPC, da difensore o da attaccante, viene **razziato invece che
+  distrutto**: carico e 10% dei crediti a bordo passano al predone (chi lo
+  abbatte li ritrova), la nave resta in piedi senza caccia né scudi. Poi 30
+  minuti di tregua in quelle fasce, al battito del clock e all'ingresso nei
+  settori: senza, una nave spogliata veniva razziata di nuovo al minuto dopo. I
+  cacciatori di taglie non razziano.
+- **[src/Controllers/CombatController.php](src/Controllers/CombatController.php)**,
+  **[src/Game/BattleLog.php](src/Game/BattleLog.php)** — messaggio ed esiti
+  `def_raided` / `att_raided`.
+
+### Ricompense
+
+- **[src/Game/Economy.php](src/Game/Economy.php)** — premio di fascia su ciò
+  che i porti comprano; prezzo d'acquisto invariato. Tetto al 24%, sotto il
+  ricarico: senza una vera differenza di scorte, comprare e rivendere resta in
+  perdita anche nell'Orlo.
+- **[src/Game/Loot.php](src/Game/Loot.php)** — probabilità di bottino
+  (×0,7…×1,7) e, fuori dal PvP, rarità per fascia: su 400 estrazioni, 15 moduli
+  rari nella Cintura e 212 nell'Orlo.
+- **[src/Game/Combat.php](src/Game/Combat.php)** — esperienza per un NPC
+  abbattuto secondo la sua fascia di nascita (×0,5…×2).
+- **[src/Game/SectorFeatures.php](src/Game/SectorFeatures.php)** — feature
+  per fascia con ricchezza crescente; pericoli ambientali solo dalla fascia II.
+- **[src/Game/AwayMissions.php](src/Game/AwayMissions.php)** — difficoltà (e
+  premi) delle missioni per fascia.
+
+### Plancia e guida
+
+- **[src/Game/Navigation.php](src/Game/Navigation.php)**,
+  **[views/game/index.php](views/game/index.php)** — fascia e rischio nella
+  scheda del settore; numero e colore della fascia d'arrivo su ogni warp;
+  conferma sui salti che salgono di due o più fasce verso la III e oltre; premio
+  del porto.
+- **[assets/js/game.js](assets/js/game.js)** — interruttore «fasce» sulla mappa
+  stellare, con legenda. La mappa è una disposizione a rete dei collegamenti,
+  non le coordinate vere: le fasce vi compaiono come colori, non come cerchi.
+- **[views/game/guide.php](views/game/guide.php)**,
+  **[src/Game/Help.php](src/Game/Help.php)** — sezione «Fasce di rischio» con la
+  tabella calcolata dalla configurazione; aiuto in plancia.
+- **[assets/css/app.css](assets/css/app.css)**, **[sw.js](sw.js)** — colori
+  delle fasce; cache `subspazio-v48`.
+
+### Prove
+
+- **[tests/fasce.php](tests/fasce.php)** (nuovo, 40 verifiche) — geografia,
+  nascita e movimento degli NPC, razzia e tregua, distruzione in fascia IV,
+  premio dei porti, bottino, esperienza, feature, conferma sui salti. Tiene il
+  lock del clock. Con la razzia disattivata, il premio azzerato o i predoni
+  liberi di scendere falliscono 8 verifiche.
+- **tests/concorrenza.php**, **tests/mondo.php**, **tests/universo.php** —
+  adattate alle fasce. Suite completa: 441 verifiche, 0 fallite.
+- **README.md** — sezione sulle fasce, famiglia `fasce` (281 chiavi).
+
 ## 2026-09-29 — Le notifiche non si ripresentano più a ogni cambio di schermata
 
 Le notifiche in tempo reale tornavano di continuo: a ogni cambio di pagina

@@ -35,11 +35,9 @@ final class AwayMissions
         $want = GameConfig::int('crew.mission_pool_size', 4);
         $have = (int) (Database::first("SELECT COUNT(*) c FROM away_missions WHERE player_id = ? AND status = 'open'", [$playerId])['c'] ?? 0);
 
-        $regionKind = (string) (Database::first(
-            'SELECT r.kind FROM sectors s LEFT JOIN regions r ON r.id = s.region_id WHERE s.id = ?',
-            [$sectorId]
-        )['kind'] ?? 'core');
-        $diffBase = match ($regionKind) { 'deep' => 16, 'frontier' => 11, default => 7 };
+        // Piu' lontano da Sol, missioni piu' difficili e (le ricompense sono
+        // proporzionali alla difficolta') piu' ricche.
+        $diffBase = Fasce::difficoltaMissioni(Fasce::diSettore($sectorId));
 
         for ($i = $have; $i < $want; $i++) {
             $kind = array_rand(self::KINDS);

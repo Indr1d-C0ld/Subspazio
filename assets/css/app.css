@@ -918,11 +918,14 @@ h1 .help, h2 .help, h3 .help, summary .help, legend .help, .side-stats .help { f
 .ob-mark { font-family: var(--font-mono); color: var(--ink-dim); }
 .ob-step.done .ob-mark { color: var(--ok); }
 
-.guide-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); gap: 1rem; }
+.guide-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); grid-auto-flow: dense; gap: 1rem; }
 .guide-sec { margin: 0; }
 .guide-sec h2 { margin-top: 0; }
 .guide-sec p { font-size: .9rem; color: var(--ink-soft); margin: .3rem 0 0; }
 .guide-sec a { color: var(--accent); }
+.guide-sec.guide-wide { grid-column: 1 / -1; }
+.tbl-fasce td:first-child { white-space: nowrap; }
+.tbl-fasce td { font-variant-numeric: tabular-nums; }
 
 /* =========================================================================
    Identità del comandante — stemma di flotta, targhetta, editor del profilo.
@@ -1213,3 +1216,36 @@ h1 .help, h2 .help, h3 .help, summary .help, legend .help, .side-stats .help { f
    utenti col sistema in light ottengano controlli di form, scrollbar e
    sfondi UA in variante scura, coerenti con la palette.
    ========================================================================= */
+
+/* =========================================================================
+   Fasce di rischio da Sol. Dal verde federale al rosso dell'Orlo: lo stesso
+   colore nell'etichetta del settore, sui bottoni di warp e sulla mappa.
+   ========================================================================= */
+:root {
+  --fascia-0: #5fe3a1;
+  --fascia-1: #7fd6c2;
+  --fascia-2: #6bb8ff;
+  --fascia-3: #ffcf6b;
+  --fascia-4: #ff9a5c;
+  --fascia-5: #ff6b8a;
+}
+.fascia-0 { --fc: var(--fascia-0); }
+.fascia-1 { --fc: var(--fascia-1); }
+.fascia-2 { --fc: var(--fascia-2); }
+.fascia-3 { --fc: var(--fascia-3); }
+.fascia-4 { --fc: var(--fascia-4); }
+.fascia-5 { --fc: var(--fascia-5); }
+.tag.fascia { color: var(--fc); border-color: color-mix(in srgb, var(--fc) 60%, transparent); background: color-mix(in srgb, var(--fc) 12%, transparent); }
+.fascia-info {
+  margin: .5rem 0 0; padding: .35rem .6rem; font-size: .84rem; color: var(--ink-soft);
+  border-left: 3px solid var(--fc); background: color-mix(in srgb, var(--fc) 6%, transparent);
+  border-radius: 0 4px 4px 0;
+}
+.btn.warp[class*="fascia-"] { border-bottom: 2px solid var(--fc, var(--field-border)); }
+.btn.warp.fascia-0 { border-bottom-color: var(--field-border); }
+.warp-fascia { margin-left: .3em; font-size: .68em; color: var(--fc); font-weight: 700; }
+.fasce-legenda { display: flex; flex-wrap: wrap; gap: .3rem .8rem; font-size: .78rem; color: var(--ink-soft); margin: .4rem 0 0; }
+.fasce-legenda span::before {
+  content: ""; display: inline-block; width: .7em; height: .7em; border-radius: 50%;
+  background: var(--fc); margin-right: .35em; vertical-align: -.05em;
+}
