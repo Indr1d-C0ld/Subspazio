@@ -272,6 +272,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
         <?php foreach ($look['pinned'] as $f): ?>
           <a class="pill" href="<?= e(url('/gioco/rotta?to=' . $f['sector'])) ?>">★ <?= e($f['label'] ?? ('#' . $f['sector'])) ?></a>
         <?php endforeach; ?>
+        <a class="fav-gestisci" href="<?= e(url('/gioco/rotte#preferiti')) ?>">modifica o rimuovi</a>
       </div>
     <?php endif; ?>
 
@@ -607,6 +608,16 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
         <label class="chk"><input type="checkbox" name="pinned" value="1" <?= !empty($look['note']['pinned']) ? 'checked' : '' ?>> preferito</label>
         <button class="btn xs" type="submit">Salva</button>
       </form>
+      <?php if (!empty($look['note'])): ?>
+      <form method="post" action="<?= e(url('/gioco/settore/nota/rimuovi')) ?>" class="inline"
+            data-confirm="Rimuovere preferito e nota di questo settore?">
+        <?= csrf_field() ?>
+        <input type="hidden" name="sector" value="<?= (int) $look['id'] ?>">
+        <input type="hidden" name="back" value="/gioco">
+        <button class="btn xs ghost" type="submit">Rimuovi preferito e nota</button>
+      </form>
+      <?php endif; ?>
+      <p class="hint">Per i preferiti di altri settori: <a href="<?= e(url('/gioco/rotte#preferiti')) ?>">Registro rotte</a>.</p>
     </details>
   </aside>
 

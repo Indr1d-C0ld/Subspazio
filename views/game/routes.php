@@ -51,16 +51,38 @@
       </tbody>
     </table>
 
-    <h2><span class="sec-ic">📌</span> Preferiti e note</h2>
+    <h2 id="preferiti"><span class="sec-ic">📌</span> Preferiti e note</h2>
     <?php if ($notes === []): ?>
       <p class="hint">Nessuna nota. Le aggiungi dalla scheda del settore in plancia.</p>
     <?php else: ?>
+    <p class="hint">Modifica o rimuovi qualunque preferito da qui, ovunque si trovi la tua nave.</p>
     <ul class="note-list">
       <?php foreach ($notes as $n): ?>
         <li>
-          <?= $n['pinned'] ? '★ ' : '' ?><a href="<?= e(url('/gioco/rotta?to=' . $n['sector_id'])) ?>"><?= (int) $n['sector_id'] ?></a>
-          <strong><?= e($n['label'] ?? $n['name']) ?></strong>
+          <div class="nl-head">
+            <span><?= $n['pinned'] ? '★ ' : '' ?><a href="<?= e(url('/gioco/rotta?to=' . $n['sector_id'])) ?>" title="Traccia la rotta"><?= (int) $n['sector_id'] ?></a>
+            <strong><?= e($n['label'] ?? $n['name']) ?></strong></span>
+            <form method="post" action="<?= e(url('/gioco/settore/nota/rimuovi')) ?>" class="inline"
+                  data-confirm="Rimuovere preferito e nota del settore <?= (int) $n['sector_id'] ?>?">
+              <?= csrf_field() ?>
+              <input type="hidden" name="sector" value="<?= (int) $n['sector_id'] ?>">
+              <input type="hidden" name="back" value="/gioco/rotte">
+              <button class="btn xs ghost" type="submit">Rimuovi</button>
+            </form>
+          </div>
           <?php if ($n['note']): ?><span class="nl-note"><?= e($n['note']) ?></span><?php endif; ?>
+          <details class="nl-edit">
+            <summary>Modifica</summary>
+            <form method="post" action="<?= e(url('/gioco/settore/nota')) ?>" class="row">
+              <?= csrf_field() ?>
+              <input type="hidden" name="sector" value="<?= (int) $n['sector_id'] ?>">
+              <input type="hidden" name="back" value="/gioco/rotte">
+              <label>Etichetta <input type="text" name="label" maxlength="32" value="<?= e($n['label'] ?? '') ?>"></label>
+              <label>Nota <input type="text" name="note" maxlength="255" value="<?= e($n['note'] ?? '') ?>"></label>
+              <label class="chk"><input type="checkbox" name="pinned" value="1" <?= $n['pinned'] ? 'checked' : '' ?>> preferito</label>
+              <button class="btn xs" type="submit">Salva</button>
+            </form>
+          </details>
         </li>
       <?php endforeach; ?>
     </ul>

@@ -30,7 +30,7 @@ final class Help
         'plancia.armi'          => 'Attacchi, assalti ai porti e dispiegamento di caccia e mine nel settore. Vietato in spazio Federazione.',
         'plancia.occultamento'  => 'Attiva/disattiva il dispositivo di occultamento (se installato). Da occultato sei fuori dai sensori ma più lento e disarmato.',
         'plancia.computer'      => 'Strumenti di navigazione: traccia una rotta, imposta il faro del settore e — se hai il drive — salta in Transwarp.',
-        'plancia.nota'          => 'Un\'etichetta e una nota private su questo settore; spunta «preferito» per ritrovarlo in fretta.',
+        'plancia.nota'          => 'Un\'etichetta e una nota private su questo settore; spunta «preferito» per ritrovarlo in fretta. Tutti i preferiti, anche di settori lontani, si modificano o rimuovono dal Registro rotte.',
 
         // --- Porto / economia ---------------------------------------
         'porto.commercio'       => 'Il porto compra e vende tre merci. Il prezzo si muove con le sue scorte: ogni scambio sposta il mercato.',

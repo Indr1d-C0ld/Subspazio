@@ -72,7 +72,32 @@ return static function (): void {
         $rt = Deploy::deployFighters($rileggi((int) $p3['id']), PlayerService::ship((int) $s3['id']), 1, 'toll', 5_000_000);
         Esito::verifica('un pedaggio da 5 milioni e\' rifiutato', empty($rt['ok']), (string) ($rt['error'] ?? ''));
         Esito::uguale('e i caccia restano a bordo', 10, (int) Database::first('SELECT fighters FROM ships WHERE id = ?', [(int) $s3['id']])['fighters']);
+
+        Esito::sezione('Preferiti — si gestiscono da lontano');
+
+        [$p4] = Finti::comandante(0, [], $a);
+        $lontano = (int) Database::first('SELECT id FROM sectors WHERE id <> ? AND is_fedspace = 0 ORDER BY id DESC LIMIT 1', [$a])['id'];
+        \App\Game\SectorNotes::set((int) $p4['id'], $lontano, 'vecchia', 'da cambiare', true);
+        \App\Game\Ctx::$player = $rileggi((int) $p4['id']);
+        $posta = static function (string $azione, array $campi): void {
+            $_POST = $campi;
+            (new \App\Controllers\RegistroController())->{$azione}(new \App\Core\Request(true));
+            $_POST = [];
+        };
+        $posta('saveNote', ['sector' => $lontano, 'label' => 'nuova', 'note' => '', 'pinned' => '1', 'back' => '/gioco/rotte']);
+        Esito::uguale('un preferito lontano si rinomina', 'nuova',
+            \App\Game\SectorNotes::get((int) $p4['id'], $lontano)['label'] ?? null);
+        // Prima non c'era modo: il modulo della plancia valeva solo per il
+        // settore in cui si era, e la lista del registro era di soli link.
+        $posta('removeNote', ['sector' => $lontano, 'back' => '/gioco/rotte']);
+        Esito::uguale('e si rimuove', null, \App\Game\SectorNotes::get((int) $p4['id'], $lontano));
+        Esito::uguale('sparendo dalla barra dei preferiti', [], \App\Game\SectorNotes::pinned((int) $p4['id']));
+        $vista = (string) file_get_contents(dirname(__DIR__) . '/views/game/routes.php');
+        Esito::verifica('il registro offre Modifica e Rimuovi per ogni nota (statica)',
+            str_contains($vista, '/gioco/settore/nota/rimuovi') && str_contains($vista, '<summary>Modifica</summary>'));
     } finally {
+        \App\Game\Ctx::$player = [];
+        Database::run("DELETE FROM player_sector_notes WHERE player_id IN (SELECT id FROM players WHERE handle LIKE '\\_\\_test\\_%')");
         foreach ($feature as $id) {
             Database::run('DELETE FROM player_feature_state WHERE feature_id = ?', [$id]);
             Database::run('DELETE FROM sector_features WHERE id = ?', [$id]);

@@ -4,6 +4,33 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-30 — I preferiti si modificano e rimuovono da ovunque
+
+I preferiti e le note sui settori si potevano cambiare **solo stando in quel
+settore**: il modulo in plancia vale per il settore corrente, e la barra dei
+preferiti e la lista nel Registro rotte erano di soli collegamenti. Per
+togliere un preferito bisognava tornare fin lì, svuotare i campi e togliere la
+spunta. Un preferito lontano restava nella barra per sempre.
+
+- **[src/Controllers/RegistroController.php](src/Controllers/RegistroController.php)**,
+  **[src/routes.php](src/routes.php)** — nuova azione
+  `POST /gioco/settore/nota/rimuovi`, che toglie nota e preferito di qualunque
+  settore. Il ritorno dopo il salvataggio accetta solo le due pagine che
+  ospitano i moduli (plancia e Registro rotte).
+- **[views/game/routes.php](views/game/routes.php)** — nel Registro rotte ogni
+  nota ha «Rimuovi» (con conferma) e un pannello «Modifica» con etichetta, nota
+  e spunta di preferito.
+- **[views/game/index.php](views/game/index.php)** — accanto ai preferiti il
+  collegamento «modifica o rimuovi»; nella scheda del settore il bottone
+  «Rimuovi preferito e nota» e il rimando al Registro per gli altri settori.
+- **[src/Game/Help.php](src/Game/Help.php)**,
+  **[assets/css/app.css](assets/css/app.css)**, **[sw.js](sw.js)** — aiuto,
+  stile della lista, cache `subspazio-v49`.
+- **[tests/navigazione.php](tests/navigazione.php)** — un preferito di un
+  settore lontano si rinomina e si rimuove passando dal controller, e sparisce
+  dalla barra. Sul codice di prima la rimozione non esiste. Suite completa: 445
+  verifiche, 0 fallite.
+
 ## 2026-09-30 — Fasce di rischio attorno a Sol: minacce e ricompense crescono con la distanza
 
 Uscire dalla Federazione era una condanna. Nei trenta giorni precedenti i

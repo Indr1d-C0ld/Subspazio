@@ -164,6 +164,7 @@ $router->get('/gioco/battaglie', [RegistroController::class, 'battles'], $game);
 $router->get('/gioco/battaglia/{id}', [RegistroController::class, 'battle'], $game);
 $router->get('/gioco/rotte', [RegistroController::class, 'routes'], $game);
 $router->post('/gioco/settore/nota', [RegistroController::class, 'saveNote'], $game);
+$router->post('/gioco/settore/nota/rimuovi', [RegistroController::class, 'removeNote'], $game);
 
 // Corporazioni (HTML)
 $router->get('/gioco/corp', [CorpController::class, 'show'], $game);

@@ -19,7 +19,8 @@ testi o artwork della door proprietaria.
 - **Universo & navigazione** — 1000+ settori con grafo di warp (collegamenti a
   senso unico, vicoli ciechi, Federazione protetta, StarDock), fog-of-war,
   tracciamento rotte con autopilota, mappa stellare 3D con pan e zoom, turni
-  giornalieri (ora di reset configurabile), preferiti e note per settore.
+  giornalieri (ora di reset configurabile), preferiti e note per settore
+  (modificabili e rimovibili dal Registro rotte, ovunque sia la nave).
 
 - **Economia** — porti classe 1–8 con **prezzi dinamici** domanda/offerta
   (scorte contro capacità, più un valore base regionale che deriva nel tempo),
@@ -394,7 +395,7 @@ php tests/run.php                # tutte
 php tests/run.php economica      # solo i file col nome che contiene "economica"
 ```
 
-Suite di integrazione senza dipendenze, 441 verifiche in 23 file: integrità
+Suite di integrazione senza dipendenze, 445 verifiche in 23 file: integrità
 economica, concorrenza, banca/contratti/Officina, combattimento, navigazione,
 nave e moduli, pianeti, porti, equipaggio, mondo, percorsi di gioco normali,
 universo, clock, sessioni e turni, difese, iscrizione e posta, immagini,

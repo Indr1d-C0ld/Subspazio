@@ -67,6 +67,26 @@ final class RegistroController
         );
         Session::flash($res['ok'] ? 'success' : 'error',
             $res['ok'] ? (!empty($res['removed']) ? 'Nota rimossa.' : 'Nota salvata.') : $res['error']);
-        return redirect($request->str('back', '/gioco'));
+        return redirect(self::ritorno($request));
+    }
+
+    /**
+     * Toglie nota e preferito di un settore, da qualunque punto della
+     * galassia. Prima si potevano cambiare solo stando in quel settore, e solo
+     * svuotando i campi e togliendo la spunta: un preferito lontano restava
+     * nella barra per sempre.
+     */
+    public function removeNote(Request $request): Response
+    {
+        SectorNotes::remove((int) Ctx::$player['id'], $request->int('sector'));
+        Session::flash('success', 'Preferito e nota del settore ' . $request->int('sector') . ' rimossi.');
+        return redirect(self::ritorno($request));
+    }
+
+    /** Si torna solo alle due pagine che ospitano i moduli delle note. */
+    private static function ritorno(Request $request): string
+    {
+        $back = $request->str('back', '/gioco');
+        return in_array($back, ['/gioco', '/gioco/rotte'], true) ? $back : '/gioco';
     }
 }

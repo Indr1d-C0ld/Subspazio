@@ -625,6 +625,10 @@ input:disabled, select:disabled, textarea:disabled { opacity: .5; }
 .note-list { list-style: none; margin: 0; padding: 0; }
 .note-list li { padding: .4rem 0; border-bottom: 1px solid var(--line-soft); font-size: .88rem; }
 .note-list .nl-note { color: var(--ink-soft); display: block; }
+.note-list .nl-head { display: flex; justify-content: space-between; align-items: center; gap: .6rem; }
+.note-list .nl-edit summary { cursor: pointer; color: var(--accent); font-size: .8rem; margin-top: .2rem; }
+.note-list .nl-edit form { margin-top: .4rem; }
+.fav-nav .fav-gestisci { font-size: .78rem; margin-left: .2rem; }
 
 .vs { color: var(--ink-dim); font-weight: 400; font-size: .8em; }
 #replay { display: flex; flex-direction: column; gap: .6rem; margin-top: 1rem; }
