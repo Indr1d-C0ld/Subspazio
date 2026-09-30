@@ -172,9 +172,10 @@ $buy = static function (
 <section class="panel">
   <h2><span class="sec-ic">🚀</span> Navi<?= partial('help', ['key' => 'cantiere.navi']) ?></h2>
   <p class="hint">Prezzo <strong>netto</strong> = costo dello scafo meno la permuta stimata della tua nave
-     (<?= number_format($trade_in, 0, ',', '.') ?> cr). Passano alla nuova nave carico, sonde, mine, Genesi,
-     capsula, laser minerario e ufficiali; i moduli tornano in inventario. Ripartono da zero caccia, scudi,
-     stive acquistate, scanner, transwarp e occultamento. Le nuove stive devono contenere il carico attuale.</p>
+     (<?= number_format($trade_in, 0, ',', '.') ?> cr). Passano alla nuova nave carico, stive, caccia e scudi
+     (almeno la dotazione del nuovo scafo, al massimo il suo tetto: ciò che eccede e avevi comprato ti viene
+     rimborsato), sonde, mine, Genesi, capsula, laser minerario e ufficiali; i moduli tornano in inventario.
+     Ripartono da zero scanner, transwarp e occultamento.</p>
   <div class="table-wrap">
   <table class="tbl ships-tbl">
     <thead><tr>

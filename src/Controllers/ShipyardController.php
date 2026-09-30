@@ -72,7 +72,9 @@ final class ShipyardController
         }
         $res = Shipyard::buyShip(Ctx::$player, Ctx::$ship, $request->str('type'));
         Session::flash($res['ok'] ? 'success' : 'error', $res['ok']
-            ? "Nuova nave: {$res['name']} (costo {$res['cost']} cr, permuta {$res['trade_in']})."
+            ? "Nuova nave: {$res['name']} (costo {$res['cost']} cr, permuta {$res['trade_in']}). "
+              . "Passano {$res['holds']} stive, {$res['fighters']} caccia e {$res['shields']} scudi."
+              . ($res['refund'] > 0 ? ' Rimborsati ' . number_format($res['refund'], 0, ',', '.') . ' cr per cio\' che supera il tetto del nuovo scafo.' : '')
             : $res['error']);
         return redirect('/gioco/cantiere');
     }

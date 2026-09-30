@@ -4,6 +4,37 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-09-30 — Cambio nave: stive, caccia e scudi comprati passano alla nuova nave
+
+Passando da una Scout Marauder con 25 stive piene a una Merchant Cruiser, il
+Cantiere rifiutava: «Svuota le stive: la nuova nave ha 20 stive, ne usi 25».
+Con la permuta stive, caccia e scudi ripartivano dalla dotazione del nuovo
+scafo, e quelli comprati andavano persi senza rimborso (la permuta vale
+sempre il 40% del prezzo base dello scafo). Si passava a una nave più grande e
+ci si ritrovava con meno stive. *Deciso con l'autore*: passano alla nuova nave.
+
+- **[src/Game/Shipyard.php](src/Game/Shipyard.php)** — nuovo
+  `Shipyard::eredita()`: di stive, caccia e scudi si tiene quel che si ha,
+  almeno la dotazione del nuovo scafo e al massimo il suo tetto. Ciò che eccede
+  il tetto ed era stato comprato (sopra la dotazione del vecchio scafo) si
+  rimborsa a prezzo di listino; la dotazione compresa nel prezzo di uno scafo
+  non si rimborsa, altrimenti cambiare nave diventerebbe un modo di vendere
+  caccia regalati. Il conto si fa sulla riga grezza della nave (i moduli
+  tornano in inventario) e si rifà dentro la transazione con la riga bloccata.
+  Il controllo del carico usa le stive ereditate, e il messaggio dice il tetto
+  del nuovo scafo.
+- **[src/Controllers/ShipyardController.php](src/Controllers/ShipyardController.php)**
+  — il messaggio dice cosa è passato e l'eventuale rimborso.
+- **[views/game/shipyard.php](views/game/shipyard.php)**,
+  **[src/Game/Help.php](src/Game/Help.php)** — la regola nuova nel Cantiere e
+  nell'aiuto.
+- **[tests/nave_e_moduli.php](tests/nave_e_moduli.php)** — il caso segnalato
+  (Scout con 25 stive piene → Merchant Cruiser: riesce, 25 stive, carico, caccia
+  e scudi a bordo); il ritorno a una Scout con 10.000 caccia (restano 2.500, gli
+  altri 7.500 rimborsati e accreditati); un Interdictor con i soli caccia di
+  serie non incassa nulla. Suite completa: 454 verifiche, 0 fallite.
+- **README.md** — la regola della permuta.
+
 ## 2026-09-30 — I preferiti si modificano e rimuovono da ovunque
 
 I preferiti e le note sui settori si potevano cambiare **solo stando in quel

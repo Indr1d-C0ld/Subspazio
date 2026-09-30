@@ -72,19 +72,32 @@ final class Shipyard
             return ['ok' => false, 'error' => "Servono {$cost} cr (permuta {$tradeIn}); ne hai " . (int) $player['credits'] . '.'];
         }
 
+        // Conta la riga grezza: la nave effettiva porta anche i moduli, che
+        // tornano in inventario e non devono gonfiare cio' che si eredita.
+        $eredita = self::eredita(Database::first('SELECT * FROM ships WHERE id = ?', [(int) $ship['id']]) ?? $ship, $type);
         $cargo = Economy::holdsUsed($ship);
-        if ($cargo > (int) $type['base_holds']) {
-            return ['ok' => false, 'error' => "Svuota le stive: la nuova nave ha {$type['base_holds']} stive, ne usi {$cargo}."];
+        if ($cargo > $eredita['holds_total']) {
+            return ['ok' => false, 'error' => "Svuota le stive: la {$type['name']} puo' portare al massimo {$eredita['holds_total']} stive, il carico ne occupa {$cargo}."];
         }
 
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
+            // Si rilegge bloccando la riga: un acquisto di stive o caccia
+            // arrivato nel frattempo entra nel conto invece di andare perso.
+            $grezza = Database::first('SELECT * FROM ships WHERE id = ? FOR UPDATE', [(int) $ship['id']]);
+            $eredita = self::eredita($grezza, $type);
+            if (Economy::holdsUsed($grezza) > $eredita['holds_total']) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Svuota le stive: la {$type['name']} puo' portare al massimo {$eredita['holds_total']} stive."];
+            }
             if (!Wallet::charge((int) $player['id'], ['credits' => $cost])) {
                 $pdo->rollBack();
                 return ['ok' => false, 'error' => "Servono {$cost} cr (permuta {$tradeIn})."];
             }
-            // caccia/scudi/scanner/transwarp/cloak NON si trasferiscono; sonde/mine/genesis si'.
+            // Stive, caccia e scudi passano alla nuova nave (almeno la sua
+            // dotazione, al massimo il suo tetto); scanner, transwarp e
+            // occultamento no; sonde, mine e Genesi si'.
             Database::run(
                 "UPDATE ships SET type_key = ?, name = ?, holds_total = ?, fighters = ?, shields = ?,
                  dev_scanner = 'none', dev_transwarp = 0, dev_cloak = 0, cloaked = 0
@@ -92,12 +105,15 @@ final class Shipyard
                 [
                     $type['ckey'],
                     'SS ' . $player['handle'],
-                    (int) $type['base_holds'],
-                    (int) $type['base_fighters'],
-                    (int) $type['base_shields'],
+                    $eredita['holds_total'],
+                    $eredita['fighters'],
+                    $eredita['shields'],
                     $ship['id'],
                 ]
             );
+            if ($eredita['rimborso'] > 0) {
+                Wallet::credit((int) $player['id'], ['credits' => $eredita['rimborso']]);
+            }
             Database::run('DELETE FROM ship_limpets WHERE ship_id = ?', [$ship['id']]);
             self::unshipModules((int) $ship['id'], (int) $player['id']);
             $pdo->commit();
@@ -109,7 +125,43 @@ final class Shipyard
         }
 
         Crew::adattaAlloScafo((int) $player['id']);
-        return ['ok' => true, 'cost' => $cost, 'trade_in' => $tradeIn, 'type' => $type['ckey'], 'name' => $type['name']];
+        return ['ok' => true, 'cost' => $cost, 'trade_in' => $tradeIn, 'type' => $type['ckey'], 'name' => $type['name'],
+                'holds' => $eredita['holds_total'], 'fighters' => $eredita['fighters'], 'shields' => $eredita['shields'],
+                'refund' => $eredita['rimborso']];
+    }
+
+    /**
+     * Cosa passa alla nuova nave di stive, caccia e scudi.
+     *
+     * Prima ripartivano tutti dalla dotazione del nuovo scafo: chi passava da
+     * una Scout Marauder con 25 stive a una Merchant Cruiser (20 di base) ne
+     * perdeva 15 pagate, e con il carico pieno l'acquisto era rifiutato. Ora si
+     * tiene quel che si ha, almeno la dotazione del nuovo scafo e al massimo il
+     * suo tetto. Cio' che eccede il tetto ed era stato comprato (sopra la
+     * dotazione del vecchio scafo) si rimborsa al prezzo di listino; la
+     * dotazione compresa nel prezzo di uno scafo non si rimborsa, altrimenti
+     * cambiare nave diventerebbe un modo di vendere caccia regalati.
+     *
+     * @param array<string,mixed> $grezza riga di ships, senza moduli
+     * @param array<string,mixed> $nuovo  riga di ship_types
+     * @return array{holds_total:int, fighters:int, shields:int, rimborso:int}
+     */
+    public static function eredita(array $grezza, array $nuovo): array
+    {
+        $vecchio = Database::first('SELECT * FROM ship_types WHERE ckey = ?', [$grezza['type_key']]) ?? [];
+        $out = ['rimborso' => 0];
+        foreach ([
+            ['holds_total', 'base_holds', 'max_holds',
+                (int) round((int) ($vecchio['hold_price'] ?? 0) * GameConfig::float('hardware.hold_price_mult', 1.0))],
+            ['fighters', 'base_fighters', 'max_fighters', (int) ceil(GameConfig::float('hardware.fighter_price', 12))],
+            ['shields', 'base_shields', 'max_shields', (int) ceil(GameConfig::float('hardware.shield_price', 8))],
+        ] as [$col, $base, $max, $prezzo]) {
+            $ha = (int) ($grezza[$col] ?? 0);
+            $out[$col] = max((int) $nuovo[$base], min($ha, (int) $nuovo[$max]));
+            $comprati = max(0, $ha - (int) ($vecchio[$base] ?? 0));
+            $out['rimborso'] += min($comprati, max(0, $ha - (int) $nuovo[$max])) * $prezzo;
+        }
+        return $out;
     }
 
     /**

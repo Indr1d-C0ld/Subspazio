@@ -116,6 +116,37 @@ return static function (): void {
         // poi 52, senza fine.
         Esito::verifica('viene rifiutato', empty($rb['ok']), (string) ($rb['error'] ?? ''));
         Esito::uguale('e le mine restano 50', 50, (int) Database::first('SELECT mines_armid FROM ships WHERE id = ?', [(int) $s7['id']])['mines_armid']);
+
+        Esito::sezione('Cambio nave — stive, caccia e scudi comprati non si perdono');
+
+        Esito::scenario('Scout Marauder con 25 stive piene di organici compra una Merchant Cruiser (20 di base)');
+        [$p8, $s8] = Finti::comandante(1_000_000, ['hold_organics' => 25, 'fighters' => 2500, 'shields' => 400], $sd);
+        Database::run("UPDATE ships SET type_key = 'scout_marauder', holds_total = 25 WHERE id = ?", [(int) $s8['id']]);
+        $rn = Shipyard::buyShip($rileggi((int) $p8['id']), PlayerService::ship((int) $s8['id']), 'merchant_cruiser');
+        $n8 = Database::first('SELECT * FROM ships WHERE id = ?', [(int) $s8['id']]);
+        // Prima: «Svuota le stive: la nuova nave ha 20 stive, ne usi 25».
+        Esito::verifica('l\'acquisto riesce', !empty($rn['ok']), (string) ($rn['error'] ?? ''));
+        Esito::uguale('con le 25 stive', 25, (int) $n8['holds_total']);
+        Esito::uguale('e il carico a bordo', 25, (int) $n8['hold_organics']);
+        Esito::uguale('i 2.500 caccia passano (dotazione 750)', 2500, (int) $n8['fighters']);
+        Esito::uguale('e i 400 scudi (dotazione 200)', 400, (int) $n8['shields']);
+
+        Esito::scenario('una Merchant Cruiser da 10.000 caccia torna a una Scout (tetto 2.500)');
+        Database::run('UPDATE ships SET fighters = 10000, hold_organics = 0 WHERE id = ?', [(int) $s8['id']]);
+        $prima = (int) $rileggi((int) $p8['id'])['credits'];
+        $rs = Shipyard::buyShip($rileggi((int) $p8['id']), PlayerService::ship((int) $s8['id']), 'scout_marauder');
+        $n8 = Database::first('SELECT * FROM ships WHERE id = ?', [(int) $s8['id']]);
+        $prezzoCaccia = (int) ceil(\App\Game\GameConfig::float('hardware.fighter_price', 12));
+        Esito::uguale('restano i caccia che la Scout puo\' portare', 2500, (int) $n8['fighters']);
+        // 7.500 oltre il tetto, tutti comprati (la Cruiser ne da' 750 di base)
+        Esito::uguale('gli altri 7.500 sono rimborsati a listino', 7500 * $prezzoCaccia, (int) ($rs['refund'] ?? -1));
+        Esito::uguale('e accreditati (lo scafo costa zero: la permuta lo copre)', $prima + 7500 * $prezzoCaccia,
+            (int) $rileggi((int) $p8['id'])['credits']);
+
+        Esito::scenario('la dotazione compresa in uno scafo non si rivende cambiando nave');
+        $ered = Shipyard::eredita(['type_key' => 'interdictor', 'holds_total' => 10, 'fighters' => 100000, 'shields' => 1000],
+            Database::first("SELECT * FROM ship_types WHERE ckey = 'scout_marauder'"));
+        Esito::uguale('un Interdictor con i soli caccia di serie non incassa nulla', 0, $ered['rimborso']);
     } finally {
         Database::run("DELETE bk FROM bank_accounts bk JOIN players p ON p.id = bk.player_id WHERE p.handle LIKE '\\_\\_test\\_%'");
     }

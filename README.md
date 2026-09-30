@@ -31,8 +31,10 @@ testi o artwork della door proprietaria.
   posto — e vende hardware scontato; ogni affare costa allineamento, e per
   una cifra ripulisce la taglia. Il commercio non consuma turni.
 
-- **Navi, hardware & moduli** — cantiere StarDock: acquisto navi con permuta,
-  potenziamento di stive, caccia e scudi, hardware (sonde, mine armid e limpet,
+- **Navi, hardware & moduli** — cantiere StarDock: acquisto navi con permuta
+  (stive, caccia e scudi passano alla nuova nave fino al suo tetto, e ciò che
+  eccede ed era stato comprato si rimborsa a listino), potenziamento di stive,
+  caccia e scudi, hardware (sonde, mine armid e limpet,
   capsula di salvataggio, scanner di densità e olografico, transwarp,
   occultamento, siluri Genesi, laser minerario). I **moduli** hanno 5 fasce di
   rarità (Civile, Militare, Sperimentale, Xeno, Precursore): si trovano come
@@ -395,7 +397,7 @@ php tests/run.php                # tutte
 php tests/run.php economica      # solo i file col nome che contiene "economica"
 ```
 
-Suite di integrazione senza dipendenze, 445 verifiche in 23 file: integrità
+Suite di integrazione senza dipendenze, 454 verifiche in 23 file: integrità
 economica, concorrenza, banca/contratti/Officina, combattimento, navigazione,
 nave e moduli, pianeti, porti, equipaggio, mondo, percorsi di gioco normali,
 universo, clock, sessioni e turni, difese, iscrizione e posta, immagini,
