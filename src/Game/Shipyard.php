@@ -271,6 +271,10 @@ final class Shipyard
         if ($kind === 'shields') {
             $max = (int) ($ship['max_shields'] ?? $max);
         }
+        // un hangar alza il tetto dei caccia: va potuto riempire
+        if ($kind === 'fighters') {
+            $max = max($max, (int) ($ship['max_fighters'] ?? $max));
+        }
         $room = $max - (int) $grezza[$col];
         if ($room <= 0) {
             return ['ok' => false, 'error' => 'Gia\' al massimo per questo scafo.'];

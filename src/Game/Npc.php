@@ -225,6 +225,9 @@ final class Npc
             if ($ship === null || $ship['type_key'] === 'escape_pod') {
                 continue;
             }
+            if (Combat::elude($ship)) {
+                continue;
+            }
             // Stesse regole dell'ingresso nel settore: chi e' occultato non si
             // vede, e le amicizie di fazione valgono anche fermi. Prima qui non
             // c'era ne' l'una ne' l'altra cosa.

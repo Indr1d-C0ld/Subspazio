@@ -94,7 +94,7 @@ final class ShipStats
             $list[] = [
                 'slot'   => $m['slot'],
                 'key'    => $m['item_key'],
-                'name'   => $m['name'],
+                'name'   => Loot::nomeConAffissi((string) $m['name'], $m['rolled']),
                 'rarity' => $m['rarity'],
                 'eff'    => $eff,
                 'broken' => $broken,
@@ -117,6 +117,9 @@ final class ShipStats
             if (isset($ship['max_holds'])) {
                 $ship['max_holds'] = (int) $ship['max_holds'] + (int) $sum['cargo_bonus'];
             }
+        }
+        if (!empty($sum['max_fighters_pct']) && isset($ship['max_fighters'])) {
+            $ship['max_fighters'] = (int) round((int) $ship['max_fighters'] * (1 + $sum['max_fighters_pct'] / 100));
         }
         if (!empty($sum['max_shields_pct']) && isset($ship['max_shields'])) {
             $ship['max_shields'] = (int) round((int) $ship['max_shields'] * (1 + $sum['max_shields_pct'] / 100));

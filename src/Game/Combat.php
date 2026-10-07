@@ -135,7 +135,9 @@ final class Combat
             $aM *= 1 + $ab / 100;
         }
 
-        $r = self::duel($commit, (int) $atkShip['shields'], $aM, (int) $tShip['fighters'], (int) $tShip['shields'], $dM);
+        // la corazza di ciascuno attenua i colpi dell'altro
+        $r = self::duel($commit, (int) $atkShip['shields'], $aM * self::colpiSubiti($tShip, false),
+            (int) $tShip['fighters'], (int) $tShip['shields'], $dM * self::colpiSubiti($atkShip, false));
 
         $atkFtrLeft = (int) $atkShip['fighters'] - $r['att_lost'];
         $destroyedTarget = $r['def_ftr'] <= 0 && $r['def_shd'] <= 0 && ($commit - $r['att_lost']) > 0;
@@ -317,7 +319,7 @@ final class Combat
         }
         $pM = 1.0 + (int) $port['tech_level'] * 0.15;
 
-        $r = self::duel($commit, (int) $atkShip['shields'], $aM, (int) $port['fighters'], 0, $pM);
+        $r = self::duel($commit, (int) $atkShip['shields'], $aM, (int) $port['fighters'], 0, $pM * self::colpiSubiti($atkShip, false));
         $atkFtrLeft = (int) $atkShip['fighters'] - $r['att_lost'];
         $bust = $r['def_ftr'] <= 0 && ($commit - $r['att_lost']) > 0;
         $destroyedAtk = $atkFtrLeft <= 0 && $r['att_shd'] <= 0;
@@ -497,7 +499,7 @@ final class Combat
                 if ($ab = Crew::consumePending((int) $atkPlayer['id'], 'attack_bonus_pct')) {
                     $aM *= 1 + $ab / 100;
                 }
-                $r = self::duel($atkFtr, $atkShd, $aM, $defFtr, $defShd, $defM);
+                $r = self::duel($atkFtr, $atkShd, $aM, $defFtr, $defShd, $defM * self::colpiSubiti($atkShip, false));
                 $rounds = $r['rounds'];
                 $atkFtr = $r['att_ftr'];
                 $atkShd = $r['att_shd'];
@@ -683,7 +685,7 @@ final class Combat
             $aM *= 1 + $ab / 100;
         }
         $r = self::duel($commit, (int) $atkShip['shields'], $aM,
-            (int) $npc['fighters'], (int) $npc['shields'], (float) $npc['combat_rating']);
+            (int) $npc['fighters'], (int) $npc['shields'], (float) $npc['combat_rating'] * self::colpiSubiti($atkShip, true));
 
         $atkFtrLeft = (int) $atkShip['fighters'] - $r['att_lost'];
         $killed = $r['def_ftr'] <= 0 && $atkFtrLeft > 0;
@@ -838,7 +840,7 @@ final class Combat
     public static function npcEngagePlayer(array $npc, array $player, array $ship, bool $fromTick = false): array
     {
         $r = self::duel(
-            (int) $npc['fighters'], (int) $npc['shields'], (float) $npc['combat_rating'],
+            (int) $npc['fighters'], (int) $npc['shields'], (float) $npc['combat_rating'] * self::colpiSubiti($ship, true),
             (int) $ship['fighters'], (int) $ship['shields'], (float) ($ship['combat_rating'] ?? 1.0)
         );
 
@@ -1087,7 +1089,7 @@ final class Combat
                 continue;
             }
 
-            $aM = 1.0;
+            $aM = self::colpiSubiti($ship, true);
             $dM = (float) ($ship['combat_rating'] ?? 1.0);
             $r = self::duel((int) $g['qty'], 0, $aM, (int) $ship['fighters'], (int) $ship['shields'], $dM);
 
@@ -1122,6 +1124,10 @@ final class Combat
         $inTregua = self::treguaVale(Database::first('SELECT * FROM players WHERE id = ?', [$pid]) ?? $player, Fasce::diSettore($sectorId));
         foreach ((($noEngage || $cloaked) ? [] : Database::all("SELECT * FROM npcs WHERE sector_id = ? AND (aggression > 0 OR kind = 'patrol')", [$sectorId])) as $npc) {
             if (self::npcLasciaStare($npc, $player)) {
+                continue;
+            }
+            if (self::elude($freshElusione ??= PlayerService::ship((int) $player['ship_id']) ?? $ship)) {
+                $events[] = "Le manovre evasive ti sottraggono all'aggancio di {$npc['name']}.";
                 continue;
             }
             if ($inTregua && $npc['name'] !== self::CACCIATORE && $npc['kind'] !== 'patrol') {
@@ -1164,6 +1170,8 @@ final class Combat
      */
     private static function applyDamage(array $ship, int $dmg): array
     {
+        // schermatura ambientale: mine, Quasar e pericoli fanno meno danni
+        $dmg = (int) round($dmg * (1 - self::resistenza($ship)));
         $sh = (int) $ship['shields'];
         $ft = (int) $ship['fighters'];
         $s = min($sh, $dmg); $sh -= $s; $dmg -= $s;
@@ -1180,6 +1188,35 @@ final class Combat
      * @param array<string,mixed> $player
      * @return array{dock:int, lost_credits:int, had_pod:bool}
      */
+    // --- effetti dei moduli in combattimento ------------------------------
+
+    /**
+     * Moltiplicatore dei colpi che una nave riceve: la corazza (armor_pct)
+     * attenua tutto, il disturbo elettronico (ecm_pct) solo i colpi di NPC e
+     * caccia schierati. Insieme al massimo il 60%.
+     *
+     * @param array<string,mixed> $ship nave effettiva (PlayerService::ship)
+     */
+    public static function colpiSubiti(array $ship, bool $elettronici): float
+    {
+        $e = $ship['mod_effects'] ?? [];
+        $rid = (float) ($e['armor_pct'] ?? 0) + ($elettronici ? (float) ($e['ecm_pct'] ?? 0) : 0.0);
+        return 1 - min(60.0, max(0.0, $rid)) / 100;
+    }
+
+    /** Quota di danno ambientale (mine, Quasar, pericoli) che la schermatura assorbe, al massimo il 90%. */
+    public static function resistenza(array $ship): float
+    {
+        return min(90.0, max(0.0, (float) (($ship['mod_effects'] ?? [])['hazard_resist_pct'] ?? 0))) / 100;
+    }
+
+    /** Le manovre evasive (evade_pct, al massimo il 60%) sottraggono a un aggancio? */
+    public static function elude(array $ship): bool
+    {
+        $p = min(60.0, max(0.0, (float) (($ship['mod_effects'] ?? [])['evade_pct'] ?? 0)));
+        return $p > 0 && mt_rand(1, 10000) <= $p * 100;
+    }
+
     // --- razzie ----------------------------------------------------------
 
     /**

@@ -82,9 +82,14 @@ $sec = static function (string $icon, string $title, string $body, string $class
     . 'ignorando le rotte, a costo fisso in turni. Comando in plancia, «Computer di bordo».</p>') ?>
 
   <?= $sec('🔩', 'Moduli & Officina',
-      '<p>Combattimenti e relitti lasciano <strong>moduli</strong> di 5 fasce (Civile→Precursore) che si installano negli '
-    . '<strong>slot</strong> dello scafo e ne cambiano le statistiche. In officina li smonti (→ Leghe di recupero), li potenzi '
-    . 'di fascia, o li <strong>produci su ricetta</strong> con la raffineria. '
+      '<p>Combattimenti e relitti lasciano <strong>moduli</strong> di 5 rarità (Civile→Precursore) che si installano negli '
+    . '<strong>slot</strong> dello scafo e ne cambiano le statistiche. Ce ne sono 18 <strong>famiglie</strong>: cannoni, hangar '
+    . '(più caccia), interdizione (i mercantili non scappano), scudi, rigenerazione, deflettori, corazza, schermi ambientali, '
+    . 'propulsori, manovra (elusione degli agganci), sensori, guerra elettronica, analisi del bottino, transponder (meno '
+    . 'notorietà), stive, recupero, occultamento, fabbrica di caccia. Quelli trovati hanno spesso <strong>affissi</strong> '
+    . 'casuali («…dell\'Assalto e della Fortuna») che aggiungono effetti: due moduli uguali non lo sono mai. In officina li '
+    . 'smonti (→ Leghe di recupero), li potenzi alla rarità successiva <em>della stessa famiglia</em> (gli affissi restano), '
+    . 'o li <strong>produci su ricetta</strong> con la raffineria. '
     . '<a href="' . e(url('/gioco/moduli')) . '">Officina moduli</a></p>') ?>
 
   <?= $sec('👥', 'Equipaggio & missioni',

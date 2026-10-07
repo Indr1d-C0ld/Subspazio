@@ -639,14 +639,14 @@ final class SectorFeatures
             $k = (float) ($h['known'] ? $mit : 1.0);
             $lab = self::HAZARD_LABEL[$h['subtype']] ?? $h['subtype'];
             if ($h['subtype'] === 'radiation') {
-                $drain = (int) round((int) $ship['shields'] * GameConfig::float('scan.hazard_radiation_drain', 0.35) * $k);
+                $drain = (int) round((int) $ship['shields'] * GameConfig::float('scan.hazard_radiation_drain', 0.35) * $k * (1 - Combat::resistenza($ship)));
                 if ($drain > 0) {
                     Database::run('UPDATE ships SET shields = GREATEST(0, shields - ?) WHERE id = ?', [$drain, (int) $ship['id']]);
                     $ship['shields'] = max(0, (int) $ship['shields'] - $drain);
                 }
                 $events[] = "{$lab}: -{$drain} scudi" . ($h['known'] ? ' (rotta ottimizzata)' : ' — non era segnalata!');
             } elseif ($h['subtype'] === 'ion_storm') {
-                $loss = (int) round((int) $ship['fighters'] * GameConfig::float('scan.hazard_ion_fighter_frac', 0.15) * $k);
+                $loss = (int) round((int) $ship['fighters'] * GameConfig::float('scan.hazard_ion_fighter_frac', 0.15) * $k * (1 - Combat::resistenza($ship)));
                 $loss = min($loss, (int) floor((int) $ship['fighters'] * 0.4));
                 if ($loss > 0) {
                     Database::run('UPDATE ships SET fighters = GREATEST(0, fighters - ?) WHERE id = ?', [$loss, (int) $ship['id']]);

@@ -4,6 +4,47 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-07 — Catalogo moduli: 88 modelli in 18 famiglie, affissi casuali
+
+Il catalogo aveva 23 moduli, uno per rarità e categoria: due moduli trovati
+erano quasi sempre lo stesso. *Deciso con l'autore*: catalogo molto più ampio,
+a famiglie, e affissi casuali.
+
+- **[db/migrations/0057_catalogo_moduli.sql](db/migrations/0057_catalogo_moduli.sql)**
+  — 18 famiglie con un modello per rarità (l'occultamento solo dalle tre più
+  alte): cannoni, hangar, interdizione, scudi, rigenerazione, deflettori,
+  corazza, schermi, propulsori, manovra, sensori, guerra elettronica, analisi,
+  transponder, stive, recupero, occultamento, officina. I 23 modelli esistenti
+  mantengono la chiave e le loro descrizioni; alcuni cambiano valori per stare
+  nella progressione della famiglia (i moduli già posseduti conservano i
+  valori trovati).
+- **Effetti nuovi, collegati nel motore** — tetto dei caccia
+  ([src/Game/ShipStats.php](src/Game/ShipStats.php), e il Cantiere lo
+  riempie: [src/Game/Shipyard.php](src/Game/Shipyard.php)); corazza e
+  disturbo elettronico che attenuano i colpi ricevuti in ogni duello, insieme
+  al massimo il 60%; schermatura contro mine, Quasar e pericoli (massimo 90%);
+  elusione degli agganci all'ingresso e al battito (massimo 60%)
+  ([src/Game/Combat.php](src/Game/Combat.php),
+  [src/Game/Npc.php](src/Game/Npc.php),
+  [src/Game/SectorFeatures.php](src/Game/SectorFeatures.php)); fabbrica di
+  caccia a bordo, un sessantesimo della produzione oraria a ogni battito fino
+  al tetto ([src/Game/Modules.php](src/Game/Modules.php),
+  [bin/tick.php](bin/tick.php)). Interdizione e transponder agiscono già su
+  fuga dei mercantili e notorietà.
+- **Affissi** ([src/Game/Loot.php](src/Game/Loot.php)) — 14 epiteti, ognuno
+  con un effetto il cui valore cresce con la rarità: 0–1 sui Civili, 2–3 sui
+  Precursori. Stanno dentro gli effetti del modulo (`_affissi`), quindi
+  passano senza perdite fra inventario, nave e cambio di scafo. Il nome li
+  mostra («Railgun a massa dell'Assalto e della Fortuna»); il potenziamento li
+  conserva riscalati sulla nuova rarità.
+- **Interfaccia** — `Modules::descriviEffetti()` descrive tutti gli effetti
+  in un posto solo; officina, elenco moduli della nave e messaggi di bottino
+  mostrano i nomi con gli affissi; la guida racconta famiglie e affissi.
+- **[tests/nave_e_moduli.php](tests/nave_e_moduli.php)** — catalogo completo,
+  affissi sommati e nominati, potenziamento che riscala l'affisso, tetti di
+  corazza e schermatura, hangar che alza il tetto e il Cantiere che lo riempie,
+  fabbrica di caccia. Suite: 507 verifiche, 0 fallite.
+
 ## 2026-10-07 — Nemici: fasce ripide, flotte, comandanti d'élite
 
 Anche nell'Orlo gli ostili arrivavano al massimo a 11.000 caccia (predoni) e

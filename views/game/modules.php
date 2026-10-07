@@ -8,28 +8,8 @@
 
 $RARITY = ['civ' => 'Civile', 'mil' => 'Militare', 'exp' => 'Sperimentale', 'xeno' => 'Xeno', 'precursor' => 'Precursore'];
 $CATLBL = ['weapon' => 'Armi', 'defense' => 'Difesa', 'drive' => 'Propulsione', 'computer' => 'Computer', 'utility' => 'Utility'];
-$NEXT   = ['civ' => 'mil', 'mil' => 'exp', 'exp' => 'xeno', 'xeno' => 'precursor'];
 
-$fmtEffects = static function ($rolled, $effects): string {
-    $e = json_decode((string) ($rolled ?: $effects), true) ?: [];
-    $out = [];
-    foreach ($e as $k => $v) {
-        $out[] = match ($k) {
-            'combat_pct'          => '+' . (int) $v . '% combattimento',
-            'max_shields_pct'     => '+' . (int) $v . '% scudi max',
-            'shield_regen'        => '+' . (int) $v . ' rigen. scudi/salto',
-            'warp_turn_reduction' => '−' . (int) $v . ' turno/i per warp',
-            'cargo_bonus'         => '+' . (int) $v . ' stive',
-            'scanner'             => 'scanner ' . $v,
-            'scan_range'          => '+' . (int) $v . ' raggio scansione',
-            'cloak'               => 'mantello',
-            'salvage_bonus_pct'   => '+' . (int) $v . '% Leghe',
-            'drop_luck_pct'       => '+' . (int) $v . '% fortuna bottino',
-            default               => $k . ' ' . $v,
-        };
-    }
-    return implode(' · ', $out);
-};
+$fmtEffects = static fn ($rolled, $effects): string => \App\Game\Modules::descriviEffetti($rolled, $effects);
 
 $usedByCat = [];
 foreach ($installed as $m) {
@@ -63,7 +43,7 @@ foreach ($installed as $m) {
           <?php foreach ($installed as $m): if ($m['category'] !== $cat) continue; ?>
             <div class="module-row<?= !empty($m['broken_at']) ? ' broken' : '' ?>">
               <span class="rarity rarity-<?= e($m['rarity']) ?>"><?= e($RARITY[$m['rarity']] ?? $m['rarity']) ?></span>
-              <strong><?= e($m['name']) ?></strong>
+              <strong><?= e(\App\Game\Modules::nome($m)) ?></strong>
               <?php if (!empty($m['broken_at'])): ?><span class="pill err" title="fuori uso dal <?= e(fmt_dt($m['broken_at'])) ?>">fuori uso</span><?php endif; ?>
               <span class="mut"><?= e($fmtEffects($m['rolled'], $m['effects'])) ?></span>
               <?php if ($at_dock): ?>
@@ -100,7 +80,7 @@ foreach ($installed as $m) {
         <li>
           <div class="mi-head">
             <span class="rarity rarity-<?= e($it['rarity']) ?>"><?= e($RARITY[$it['rarity']] ?? $it['rarity']) ?></span>
-            <strong><?= e($it['name']) ?></strong>
+            <strong><?= e(\App\Game\Modules::nome($it)) ?></strong>
             <?php if (!empty($it['broken_at'])): ?><span class="pill err" title="resta guasto una volta montato: si ripara allo StarDock">fuori uso</span><?php endif; ?>
             <span class="mut"><?= e($CATLBL[$it['category']] ?? $it['category']) ?></span>
           </div>

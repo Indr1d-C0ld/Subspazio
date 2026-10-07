@@ -177,6 +177,60 @@ return static function (): void {
         $mid = (int) Database::first('SELECT id FROM ship_modules WHERE ship_id = ?', [(int) $qs9['id']])['id'];
         $rr = Modules::remove($rileggi((int) $q9['id']), PlayerService::ship((int) $qs9['id']), $mid);
         Esito::verifica('il modulo non si toglie con le sue stive piene', empty($rr['ok']), (string) ($rr['error'] ?? ''));
+
+        Esito::sezione('Catalogo — famiglie complete, affissi, effetti nuovi');
+
+        $fam = Database::all('SELECT family, COUNT(*) n, COUNT(DISTINCT rarity) r FROM item_types GROUP BY family');
+        // Prima: 23 modelli, uno per rarita' e categoria.
+        Esito::verifica('almeno 80 modelli in almeno 15 famiglie',
+            (int) Database::first('SELECT COUNT(*) n FROM item_types')['n'] >= 80 && count($fam) >= 15);
+        Esito::verifica('in ogni famiglia una rarita\' per modello', array_filter($fam, static fn ($f) => (int) $f['n'] !== (int) $f['r']) === []);
+
+        $xeno = Loot::tiraAffissi('xeno');
+        Esito::uguale('un modulo Xeno trovato ha due affissi', 2, count($xeno));
+        $rr = Loot::conAffissi(['combat_pct' => 12], [['a' => 'assalto', 'k' => 'combat_pct', 'v' => 3], ['a' => 'fortuna', 'k' => 'drop_luck_pct', 'v' => 3]]);
+        Esito::uguale('gli affissi si sommano agli effetti', [15, 3], [$rr['combat_pct'], $rr['drop_luck_pct']]);
+        Esito::uguale('e danno un nome', 'Railgun a massa dell\'Assalto e della Fortuna', Loot::nomeConAffissi('Railgun a massa', $rr));
+
+        Esito::scenario('un Railgun dell\'Assalto potenziato a Sperimentale');
+        [$pa] = Finti::comandante(1_000_000, [], $sd);
+        Database::run('UPDATE players SET salvage = 100000 WHERE id = ?', [(int) $pa['id']]);
+        Database::run("INSERT INTO player_items (player_id, item_key, rolled, source) VALUES (?, 'w_railgun', ?, 'npc')",
+            [(int) $pa['id'], json_encode(Loot::conAffissi(['combat_pct' => 12], [['a' => 'assalto', 'k' => 'combat_pct', 'v' => 3]]))]);
+        $railgun = Database::lastInsertId();
+        $ru = Modules::upgrade($rileggi((int) $pa['id']), $railgun);
+        $rup = json_decode((string) Database::first('SELECT rolled FROM player_items WHERE player_id = ?', [(int) $pa['id']])['rolled'], true);
+        // 20 della Lancia al plasma + 3 x 2,4/1,6 = 4,5 -> 5
+        Esito::verifica('resta Lancia al plasma dell\'Assalto, con l\'affisso riscalato',
+            !empty($ru['ok']) && $ru['name'] === 'Lancia al plasma dell\'Assalto' && (int) $rup['combat_pct'] === 25,
+            ($ru['name'] ?? $ru['error'] ?? '') . ' ' . json_encode($rup));
+
+        Esito::scenario('corazza, disturbo, schermatura, elusione');
+        Esito::uguale('corazza 22 + disturbo 24 contro un NPC: -46%', 0.54,
+            round(\App\Game\Combat::colpiSubiti(['mod_effects' => ['armor_pct' => 22, 'ecm_pct' => 24]], true), 4));
+        Esito::uguale('con affissi in piu\' non si scende sotto il tetto del 60%', 0.4,
+            round(\App\Game\Combat::colpiSubiti(['mod_effects' => ['armor_pct' => 40, 'ecm_pct' => 35]], true), 4));
+        Esito::uguale('contro un comandante conta solo la corazza', 0.78,
+            round(\App\Game\Combat::colpiSubiti(['mod_effects' => ['armor_pct' => 22, 'ecm_pct' => 24]], false), 4));
+        Esito::uguale('il Velo Precursore assorbe il 90% dei danni ambientali', 0.9,
+            \App\Game\Combat::resistenza(['mod_effects' => ['hazard_resist_pct' => 90]]));
+        Esito::verifica('senza manovre evasive non si elude mai', !\App\Game\Combat::elude(['mod_effects' => []]));
+
+        Esito::scenario('un hangar alza il tetto dei caccia, e il Cantiere lo riempie');
+        [$ph, $sh] = Finti::comandante(1_000_000, ['fighters' => 10000], $sd);
+        Database::run("INSERT INTO ship_modules (ship_id, slot, item_key, rolled) VALUES (?, 'weapon', 'w_matrice', '{\"max_fighters_pct\":60}')", [(int) $sh['id']]);
+        $eff = PlayerService::ship((int) $sh['id']);
+        Esito::uguale('Merchant Cruiser: 10.000 + 60% = 16.000', 16000, (int) $eff['max_fighters']);
+        // Prima: «Gia' al massimo per questo scafo».
+        $up = Shipyard::upgrade($rileggi((int) $ph['id']), $eff, 'fighters', 500);
+        Esito::verifica('se ne comprano oltre i 10.000 dello scafo', !empty($up['ok']), (string) ($up['error'] ?? ''));
+
+        Esito::scenario('la Fabbrica Precursore produce caccia ogni minuto');
+        [, $sf] = Finti::comandante(0, ['fighters' => 0], $sd);
+        Database::run("INSERT INTO ship_modules (ship_id, slot, item_key, rolled) VALUES (?, 'utility', 'u_fabbrica', '{\"fighter_regen\":700}')", [(int) $sf['id']]);
+        Modules::tickFabbriche();
+        $f = (int) Database::first('SELECT fighters FROM ships WHERE id = ?', [(int) $sf['id']])['fighters'];
+        Esito::verifica('700 all\'ora sono 11 o 12 al minuto', $f === 11 || $f === 12, (string) $f);
     } finally {
         Database::run("DELETE bk FROM bank_accounts bk JOIN players p ON p.id = bk.player_id WHERE p.handle LIKE '\\_\\_test\\_%'");
     }

@@ -16,6 +16,32 @@ final class Loot
 {
     public const RARITIES = ['civ', 'mil', 'exp', 'xeno', 'precursor'];
 
+    /**
+     * Affissi: modificatori casuali dei moduli trovati come bottino. Ognuno
+     * aggiunge un effetto, con un valore che cresce con la rarita' del modulo,
+     * e un epiteto al nome («Railgun a massa dell'Assalto e della Fortuna»).
+     * Due moduli dello stesso modello non sono mai identici.
+     */
+    public const AFFISSI = [
+        'bastione'  => ['del Bastione', 'max_shields_pct', 3.0],
+        'assalto'   => ['dell\'Assalto', 'combat_pct', 2.0],
+        'vento'     => ['del Vento', 'evade_pct', 2.0],
+        'corazza'   => ['della Corazza', 'armor_pct', 1.5],
+        'stiva'     => ['della Stiva', 'cargo_bonus', 2.0],
+        'schermo'   => ['dello Schermo', 'hazard_resist_pct', 6.0],
+        'ombra'     => ['dell\'Ombra', 'notoriety_reduce_pct', 3.0],
+        'fenice'    => ['della Fenice', 'shield_regen', 12.0],
+        'predone'   => ['del Predone', 'interdict_pct', 5.0],
+        'sciacallo' => ['dello Sciacallo', 'salvage_bonus_pct', 6.0],
+        'fortuna'   => ['della Fortuna', 'drop_luck_pct', 2.0],
+        'sciame'    => ['dello Sciame', 'max_fighters_pct', 3.0],
+        'silenzio'  => ['del Silenzio', 'ecm_pct', 2.0],
+        'forgia'    => ['della Forgia', 'fighter_regen', 15.0],
+    ];
+
+    /** Quanto pesa un affisso secondo la rarita' del modulo. */
+    public const MOLT_RARITA = ['civ' => 1.0, 'mil' => 1.6, 'exp' => 2.4, 'xeno' => 3.4, 'precursor' => 4.6];
+
     public const RARITY_LABEL = [
         'civ'       => 'Civile',
         'mil'       => 'Militare',
@@ -108,14 +134,14 @@ final class Loot
                 if ($item === null) {
                     continue;
                 }
-                $rolled = self::rollEffects(ShipStats::decode($item['effects']) ?? []);
+                $rolled = self::conAffissi(self::rollEffects(ShipStats::decode($item['effects']) ?? []), self::tiraAffissi((string) $item['rarity']));
                 Database::run(
                     'INSERT INTO player_items (player_id, item_key, rolled, source) VALUES (?, ?, ?, ?)',
                     [$killerId, $item['ckey'], json_encode($rolled, JSON_UNESCAPED_UNICODE), $source]
                 );
                 $out['items'][] = [
                     'key'    => $item['ckey'],
-                    'name'   => $item['name'],
+                    'name'   => self::nomeConAffissi((string) $item['name'], $rolled),
                     'rarity' => $item['rarity'],
                     'label'  => self::RARITY_LABEL[$item['rarity']] ?? $item['rarity'],
                 ];
@@ -162,16 +188,87 @@ final class Loot
             if ($row === null) {
                 return null;
             }
-            $rolled = self::rollEffects(ShipStats::decode($row['effects']) ?? []);
+            $rolled = self::conAffissi(self::rollEffects(ShipStats::decode($row['effects']) ?? []), self::tiraAffissi((string) $row['rarity']));
             Database::run(
                 'INSERT INTO player_items (player_id, item_key, rolled, source) VALUES (?, ?, ?, ?)',
                 [$playerId, $row['ckey'], json_encode($rolled, JSON_UNESCAPED_UNICODE), $source]
             );
-            return ['key' => $row['ckey'], 'name' => $row['name'], 'rarity' => $row['rarity'],
+            return ['key' => $row['ckey'], 'name' => self::nomeConAffissi((string) $row['name'], $rolled), 'rarity' => $row['rarity'],
                     'label' => self::RARITY_LABEL[$row['rarity']] ?? $row['rarity']];
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    // --- affissi ---------------------------------------------------------------
+
+    /**
+     * Affissi per un modulo appena trovato: Civile 0-1, Militare 0-1 (piu'
+     * spesso), Sperimentale 1-2, Xeno 2, Precursore 2-3; tutti diversi.
+     *
+     * @return list<array{a:string, k:string, v:float|int}>
+     */
+    public static function tiraAffissi(string $rarity): array
+    {
+        $quanti = match ($rarity) {
+            'civ'       => self::frand() < 0.3 ? 1 : 0,
+            'mil'       => self::frand() < 0.6 ? 1 : 0,
+            'exp'       => 1 + (self::frand() < 0.4 ? 1 : 0),
+            'xeno'      => 2,
+            'precursor' => 2 + (self::frand() < 0.4 ? 1 : 0),
+            default     => 0,
+        };
+        $chiavi = array_keys(self::AFFISSI);
+        shuffle($chiavi);
+        $out = [];
+        foreach (array_slice($chiavi, 0, $quanti) as $a) {
+            [, $k, $base] = self::AFFISSI[$a];
+            $out[] = ['a' => $a, 'k' => $k, 'v' => self::valoreAffisso($base, $rarity, 0.8 + self::frand() * 0.4)];
+        }
+        return $out;
+    }
+
+    /** Valore di un affisso: base x peso della rarita' x variazione; interi, almeno 1. */
+    public static function valoreAffisso(float $base, string $rarity, float $variazione = 1.0): int
+    {
+        return max(1, (int) round($base * (self::MOLT_RARITA[$rarity] ?? 1.0) * $variazione));
+    }
+
+    /**
+     * Somma gli affissi agli effetti e li annota sotto «_affissi» (ShipStats
+     * ignora le chiavi non numeriche, il nome li legge da li').
+     *
+     * @param array<string,mixed> $rolled
+     * @param list<array{a:string, k:string, v:float|int}> $affissi
+     * @return array<string,mixed>
+     */
+    public static function conAffissi(array $rolled, array $affissi): array
+    {
+        if ($affissi === []) {
+            return $rolled;
+        }
+        foreach ($affissi as $af) {
+            $rolled[$af['k']] = ($rolled[$af['k']] ?? 0) + $af['v'];
+        }
+        $rolled['_affissi'] = $affissi;
+        return $rolled;
+    }
+
+    /** «Railgun a massa dell'Assalto e della Fortuna». */
+    public static function nomeConAffissi(string $nome, mixed $rolled): string
+    {
+        $r = is_array($rolled) ? $rolled : (ShipStats::decode($rolled) ?? []);
+        $epiteti = [];
+        foreach ((array) ($r['_affissi'] ?? []) as $af) {
+            if (isset(self::AFFISSI[$af['a'] ?? ''])) {
+                $epiteti[] = self::AFFISSI[$af['a']][0];
+            }
+        }
+        if ($epiteti === []) {
+            return $nome;
+        }
+        $ultimo = array_pop($epiteti);
+        return $nome . ' ' . ($epiteti === [] ? $ultimo : implode(', ', $epiteti) . ' e ' . $ultimo);
     }
 
     /** Riga di testo per i messaggi di combattimento. */

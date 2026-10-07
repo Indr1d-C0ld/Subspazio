@@ -226,7 +226,16 @@ final class Modules
             return ['ok' => false, 'error' => "Servono {$costMat} Leghe di recupero."];
         }
 
-        $rolled = json_encode(ShipStats::decode($target['effects']) ?? [], JSON_UNESCAPED_UNICODE);
+        // Gli affissi restano, riscalati sulla nuova rarita'.
+        $vecchi = (array) ((ShipStats::decode($it['rolled']) ?? [])['_affissi'] ?? []);
+        $nuovi = [];
+        foreach ($vecchi as $af) {
+            if (isset(Loot::AFFISSI[$af['a'] ?? ''])) {
+                $rapporto = (Loot::MOLT_RARITA[$next] ?? 1.0) / (Loot::MOLT_RARITA[$it['rarity']] ?? 1.0);
+                $nuovi[] = ['a' => $af['a'], 'k' => Loot::AFFISSI[$af['a']][1], 'v' => max(1, (int) round(round((float) $af['v'] * $rapporto, 6)))];
+            }
+        }
+        $rolled = json_encode(Loot::conAffissi(ShipStats::decode($target['effects']) ?? [], $nuovi), JSON_UNESCAPED_UNICODE);
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
@@ -243,7 +252,7 @@ final class Modules
             }
             throw $e;
         }
-        return ['ok' => true, 'name' => $target['name'], 'rarity' => $next,
+        return ['ok' => true, 'name' => Loot::nomeConAffissi((string) $target['name'], $rolled), 'rarity' => $next,
                 'label' => Loot::RARITY_LABEL[$next] ?? $next, 'cost' => $costCr, 'mat' => $costMat];
     }
 
@@ -296,6 +305,81 @@ final class Modules
             $mat += self::tierCost('loot.upgrade_cost_salvage', $order[$i]);
         }
         return [$cr, $mat];
+    }
+
+    /** Nome del modulo con i suoi affissi. */
+    public static function nome(array $row): string
+    {
+        return Loot::nomeConAffissi((string) $row['name'], $row['rolled'] ?? null);
+    }
+
+    /** Effetti leggibili di un modulo (valori trovati, o quelli del catalogo). */
+    public static function descriviEffetti(mixed $rolled, mixed $effects = null): string
+    {
+        $e = (is_array($rolled) ? $rolled : ShipStats::decode($rolled)) ?: (is_array($effects) ? $effects : ShipStats::decode($effects)) ?: [];
+        $out = [];
+        foreach ($e as $k => $v) {
+            if (str_starts_with((string) $k, '_')) {
+                continue;
+            }
+            $n = is_numeric($v) ? (int) round((float) $v) : 0;
+            $out[] = match ($k) {
+                'combat_pct'           => "+{$n}% combattimento",
+                'max_shields_pct'      => "+{$n}% scudi max",
+                'max_fighters_pct'     => "+{$n}% caccia max",
+                'shield_regen'         => "+{$n} rigen. scudi/salto",
+                'warp_turn_reduction'  => "−{$n} turno/i per warp",
+                'cargo_bonus'          => "+{$n} stive",
+                'scanner'              => 'scanner ' . ($v === 'holo' ? 'olografico' : 'di densità'),
+                'scan_range'           => "+{$n} raggio scansione",
+                'cloak'                => 'occultamento',
+                'salvage_bonus_pct'    => "+{$n}% Leghe",
+                'drop_luck_pct'        => "+{$n}% fortuna bottino",
+                'interdict_pct'        => "−{$n}% fuga dei bersagli",
+                'armor_pct'            => "−{$n}% danni subiti",
+                'ecm_pct'              => "−{$n}% danni da NPC e caccia",
+                'hazard_resist_pct'    => "−{$n}% danni ambientali",
+                'evade_pct'            => "{$n}% elusione",
+                'notoriety_reduce_pct' => "−{$n}% notorietà dei crimini",
+                'fighter_regen'        => "+{$n} caccia/ora",
+                default                => $k . ' ' . (is_scalar($v) ? $v : ''),
+            };
+        }
+        return implode(' · ', $out);
+    }
+
+    /**
+     * Fabbriche di caccia a bordo (fighter_regen, caccia all'ora): a ogni
+     * battito del clock ogni nave ne riceve un sessantesimo, con
+     * arrotondamento casuale imparziale, fino al tetto della nave.
+     *
+     * @return int navi rifornite
+     */
+    public static function tickFabbriche(): int
+    {
+        $perNave = [];
+        foreach (Database::all(
+            "SELECT sm.ship_id, sm.rolled, it.effects FROM ship_modules sm JOIN item_types it ON it.ckey = sm.item_key
+              WHERE sm.broken_at IS NULL AND (sm.rolled LIKE '%fighter_regen%' OR it.effects LIKE '%fighter_regen%')"
+        ) as $m) {
+            $eff = ShipStats::decode($m['rolled']) ?: ShipStats::decode($m['effects']) ?: [];
+            $perNave[(int) $m['ship_id']] = ($perNave[(int) $m['ship_id']] ?? 0) + (float) ($eff['fighter_regen'] ?? 0);
+        }
+        $n = 0;
+        foreach ($perNave as $shipId => $allOra) {
+            $ship = PlayerService::ship($shipId);
+            if ($ship === null || $ship['type_key'] === 'escape_pod') {
+                continue;
+            }
+            $q = Economy::arrotonda($allOra / 60);
+            if ($q > 0 && Database::run(
+                'UPDATE ships SET fighters = LEAST(?, fighters + ?) WHERE id = ? AND fighters < ?',
+                [(int) $ship['max_fighters'], $q, $shipId, (int) $ship['max_fighters']]
+            )->rowCount() > 0) {
+                $n++;
+            }
+        }
+        return $n;
     }
 
     private static function tierCost(string $key, string $rarity): int

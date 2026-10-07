@@ -40,7 +40,24 @@ testi o artwork della door proprietaria.
   rarità (Civile, Militare, Sperimentale, Xeno, Precursore): si trovano come
   bottino, occupano slot per categoria, si installano, smontano e potenziano
   (con recupero in «Leghe»), e sovrappongono i loro bonus alle statistiche
-  della nave.
+  della nave. Il catalogo conta **88 modelli in 18 famiglie**, ognuna con un
+  modello per rarità (l'occultamento solo dalle tre più alte):
+
+  | Slot | Famiglie |
+  |---|---|
+  | Armi | cannoni (combattimento), hangar (tetto dei caccia), interdizione (i mercantili non fuggono) |
+  | Difesa | scudi (tetto), rigenerazione, deflettori, corazza (danni subiti), schermi (mine, Quasar, pericoli) |
+  | Propulsione | propulsori (turni per warp), manovra (elusione degli agganci) |
+  | Computer | sensori, guerra elettronica (danni da NPC e caccia), analisi (fortuna del bottino), transponder (notorietà dei crimini) |
+  | Utility | stive, recupero (Leghe), occultamento, officina (caccia prodotti ogni ora) |
+
+  Potenziare un modulo lo porta alla rarità successiva **della sua famiglia**.
+  I moduli trovati come bottino hanno spesso **affissi** casuali (da 0–1 sui
+  Civili a 2–3 sui Precursori) che aggiungono un effetto e un epiteto al nome
+  («Railgun a massa dell'Assalto e della Fortuna»); il potenziamento li
+  conserva, riscalati sulla nuova rarità. Corazza e disturbo elettronico
+  insieme attenuano al massimo il 60% dei colpi, la schermatura il 90% dei
+  danni ambientali, l'elusione evita al massimo il 60% degli agganci.
 
 - **Combattimento** — motore a caccia con scudi (una nave senza caccia resta
   vulnerabile finché ha scudi da consumare), attacco nave contro nave con
@@ -438,7 +455,7 @@ php tests/run.php                # tutte
 php tests/run.php economica      # solo i file col nome che contiene "economica"
 ```
 
-Suite di integrazione senza dipendenze, 493 verifiche in 24 file: integrità
+Suite di integrazione senza dipendenze, 507 verifiche in 24 file: integrità
 economica, concorrenza, banca/contratti/Officina, combattimento, navigazione,
 nave e moduli, pianeti, porti, equipaggio, mondo, percorsi di gioco normali,
 universo, clock, sessioni e turni, difese, iscrizione e posta, immagini,
