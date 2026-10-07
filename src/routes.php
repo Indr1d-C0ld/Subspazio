@@ -120,6 +120,7 @@ $router->post('/gioco/missioni/invia', [MissionController::class, 'run'], $game)
 $router->get('/gioco/fazioni', [FactionController::class, 'index'], $game);
 $router->post('/gioco/fazioni/compra', [FactionController::class, 'buy'], $game);
 $router->post('/gioco/fazioni/ammenda', [FactionController::class, 'amnesty'], $game);
+$router->post('/gioco/fazioni/legge', [FactionController::class, 'ammendaLegge'], $game);
 
 // Scansione & frontiera (HTML)
 $router->post('/gioco/scansiona', [ScanController::class, 'scan'], $game);

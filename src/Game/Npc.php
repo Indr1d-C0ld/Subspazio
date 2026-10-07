@@ -76,6 +76,14 @@ final class Npc
 
         $mosse = [];
         foreach ($due as $npc) {
+            // Una squadra d'intercettazione insegue il suo ricercato, un salto
+            // alla volta lungo la rotta piu' breve.
+            if ($npc['kind'] === 'patrol' && $npc['target_player_id'] !== null) {
+                $dove = (int) (Database::first('SELECT sector_id FROM players WHERE id = ?', [(int) $npc['target_player_id']])['sector_id'] ?? 0);
+                $rotta = $dove > 0 ? Universe::shortestPath((int) $npc['sector_id'], $dove) : null;
+                $mosse[(int) $npc['id']] = $rotta !== null && count($rotta) > 1 ? (int) $rotta[1] : (int) $npc['sector_id'];
+                continue;
+            }
             // Universe::sector() qui non tocca il database: la cache e' gia' calda.
             $adj = self::destinazioniAmmesse($npc, $rotte[(int) $npc['sector_id']] ?? []);
             if ($adj === []) {
@@ -128,6 +136,10 @@ final class Npc
             if ($npc['kind'] === 'ferrengi') {
                 return $b >= Fasce::ferrengiDa();
             }
+            if ($npc['kind'] === 'patrol') {
+                // le ronde restano nelle fasce vicine a Sol
+                return $b <= Legge::rondeFinoA();
+            }
             if ($npc['kind'] === 'pirate' && $nascita !== null) {
                 return $b >= $nascita && $b <= $nascita + 1;
             }
@@ -170,7 +182,7 @@ final class Npc
             "SELECT n.*, p.id AS player_id, s.band AS settore_band FROM npcs n
              JOIN players p ON p.sector_id = n.sector_id
              JOIN sectors s ON s.id = n.sector_id
-             WHERE n.aggression > 0 AND s.is_fedspace = 0"
+             WHERE (n.aggression > 0 OR n.kind = 'patrol') AND s.is_fedspace = 0"
         );
         $seen = [];
         $n = 0;
@@ -181,11 +193,13 @@ final class Npc
             // Vicino a Sol gli ostili attaccano di rado, lontano quasi sempre.
             // Prima la probabilita' era una sola, il 65%, ovunque.
             $band = $r['settore_band'] !== null ? (int) $r['settore_band'] : Fasce::diSettore((int) $r['sector_id']);
-            if (mt_rand(1, 100) > Fasce::ingaggioPct($band)) {
+            $pattuglia = $r['kind'] === 'patrol';
+            if (mt_rand(1, 100) > ($pattuglia ? GameConfig::int('legge.ingaggio_pct', 70) : Fasce::ingaggioPct($band))) {
                 continue;
             }
             $player = Database::first('SELECT * FROM players WHERE id = ?', [$r['player_id']]);
-            if (Combat::treguaVale($player, $band)) {
+            // le pattuglie non razziano: la tregua dalle razzie non le ferma
+            if (!$pattuglia && Combat::treguaVale($player, $band)) {
                 continue;
             }
             $ship = PlayerService::ship((int) $player['ship_id']);

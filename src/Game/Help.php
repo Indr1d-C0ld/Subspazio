@@ -73,6 +73,7 @@ final class Help
         'classifica.comandanti' => 'Graduatoria per rating: una formula che pesa esperienza, ricchezza, kill, pianeti e altro. Ricalcolata dal tick.',
         'classifica.corp'       => 'Le corporazioni ordinate per rating aggregato dei membri.',
         'fazioni.reputazione'   => 'La tua reputazione con le 4 potenze (-100..+100, 5 livelli). Commercio, kill e assalti la muovono; c\'è rivalità fra fazioni.',
+        'fazioni.legge'         => 'Aggredire mercantili, porti, pianeti altrui, comandanti onesti o pattuglie alza la notorietà, che dimezza ogni giorno da sola e cresce più in fretta se sei recidivo. Sospetto, Ricercato (pattuglie e squadre federali ti cacciano, taglia sulla tua testa), Pericoloso (StarDock chiuso), Nemico pubblico. L\'ammenda azzera tutto, a caro prezzo.',
         'fazioni.emporio'       => 'Merce e hardware riservati: sbloccati man mano che sali di livello con la fazione.',
         'codex.home'            => 'L\'enciclopedia di bordo: si popola studiando relitti, anomalie e reperti che incontri in giro.',
         'registro.spostamenti'  => 'Lo storico dei tuoi warp e i settori che frequenti di più, ricostruiti dai log di movimento.',

@@ -4,6 +4,49 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-07 — Legge federale: notorietà, pattuglie, taglia
+
+Assaltare mercantili non costava niente: in una settimana un comandante ne ha
+abbattuti 22 e incassato 823.688 cr, con l'allineamento a −295 e la taglia
+ancora a zero (scattava solo uccidendo giocatori onesti). Nessuna autorità
+pattugliava lo spazio. *Deciso con l'autore*: notorietà a gradini.
+
+- **[src/Game/Legge.php](src/Game/Legge.php)** (nuovo) — crimini e notorietà.
+  Mercantile aggredito 15 punti (+30 se distrutto), porto 40, pianeta altrui
+  20 (bombardato 50), comandante onesto 25, pattuglia 80. La notorietà si legge
+  già decaduta (dimezza ogni 24 ore) e si aggiorna in una sola istruzione,
+  così due crimini insieme non si cancellano. Ogni crimine delle ultime 72 ore
+  pesa il 25% in più sul successivo. Gradini: Sospetto 25, Ricercato 100,
+  Pericoloso 250, Nemico pubblico 500. Un transponder contraffatto (modulo, nel
+  catalogo ampliato) toglie una parte dei punti.
+- **Pattuglie** — ronde federali nelle fasce I–III; per ogni ricercato una,
+  due o tre **squadre d'intercettazione** che partono a due o tre salti, tarate
+  sui caccia della sua nave (×0,7 / ×1,0 / ×1,4) e lo inseguono lungo la rotta
+  più breve ([src/Game/Npc.php](src/Game/Npc.php)). Le pattuglie fermano solo
+  i ricercati, ignorano la tregua dalle razzie e non razziano: **arrestano**
+  ([src/Game/Combat.php](src/Game/Combat.php)).
+- **Taglia** — da Ricercato, 300 cr per punto a chi abbatte il colpevole.
+  Arresto o abbattimento per la taglia riportano sotto la soglia di Ricercato:
+  altrimenti un complice poteva abbattere più volte lo stesso ricercato e
+  incassare di nuovo (trovato dalle prove).
+- **[src/Game/Faction.php](src/Game/Faction.php)** — da Pericoloso lo StarDock
+  chiude i servizi; abbattere una pattuglia costa reputazione federale doppia.
+- **Ammenda** — pagina Fazioni, da ovunque: azzera la notorietà a 400 cr per
+  punto, moltiplicati per la recidiva, e richiama le squadre.
+- **Interfaccia** — gradino nella barra di stato della plancia, sezione «Legge
+  federale» in Fazioni (notorietà, ore al perdono, taglia, recidiva, ammenda,
+  fedina penale), pattuglie segnate come «federale» nel settore
+  ([views/game/factions.php](views/game/factions.php),
+  [views/game/index.php](views/game/index.php)).
+- **[db/migrations/0054_legge.sql](db/migrations/0054_legge.sql)** — colonne
+  `players.notorieta`/`notorieta_at`, tabella `crimini`, NPC di tipo `patrol`
+  con `target_player_id`, 18 chiavi nella famiglia `legge`.
+- **[tests/legge.php](tests/legge.php)** (nuovo, 21 verifiche) — punti e
+  recidiva, decadimento, fedina dopo un assalto, pattuglie che lasciano
+  passare gli onesti e arrestano i ricercati anche nella Cintura, due squadre
+  tarate per un Pericoloso che si avvicinano di un salto, StarDock chiuso,
+  ammenda, taglia pagata una volta sola. Suite: 480 verifiche, 0 fallite.
+
 ## 2026-10-07 — Moduli potenziati nella loro famiglia; stive dei moduli usabili davvero
 
 Due difetti segnalati dall'autore.

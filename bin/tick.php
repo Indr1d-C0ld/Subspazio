@@ -72,6 +72,7 @@ $jobs = [
     //    muovono gia' sui confini nuovi.
     'fasce'              => static fn () => \App\Game\Fasce::allinea(),
     'npc'                => static fn () => Npc::tick(),
+    'legge'              => static fn () => \App\Game\Legge::tick(),
     'event'              => static fn () => Events::tick(),
     'features'           => static fn () => \App\Game\SectorFeatures::tick(),
     'factions'           => static fn () => \App\Game\Faction::tick(),

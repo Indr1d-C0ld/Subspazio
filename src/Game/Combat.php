@@ -106,6 +106,9 @@ final class Combat
         if (Ranks::isProtected($target)) {
             return self::err('Il bersaglio e\' sotto protezione novizio.');
         }
+        // Dare la caccia a un ricercato o a un malvagio e' legale; aggredire
+        // un comandante onesto e' un crimine.
+        $crimine = !Legge::ricercato($target) && !Ranks::isEvil((int) $target['alignment']);
 
         $turnCost = GameConfig::int('combat.attack_turn_cost', 2);
         $atkPlayer = TurnManager::sync($atkPlayer);
@@ -188,6 +191,7 @@ final class Combat
                     // La taglia sulla testa del bersaglio la paga la Federazione a chi
                     // lo abbatte. Prima restava un numero che nessuno incassava mai.
                     self::riscuotiTaglia((int) $target['id'], (int) $atkPlayer['id']);
+                    Legge::riscuoti((int) $target['id'], (int) $atkPlayer['id']);
                 }
                 Faction::onKillPlayer((int) $atkPlayer['id'], (int) $target['alignment']);
                 self::destroyShip($target);
@@ -218,6 +222,7 @@ final class Combat
                 );
                 Crew::awardKillXp((int) $target['id']);
                 self::riscuotiTaglia((int) $atkPlayer['id'], (int) $target['id']);
+                Legge::riscuoti((int) $atkPlayer['id'], (int) $target['id']);
                 self::destroyShip($atkPlayer);
                 Contracts::onPlayerKilled((int) $atkPlayer['id'], (int) $target['id']);
                 Live::alert((int) $target['id'], 'combat', 'Attacco respinto',
@@ -250,6 +255,10 @@ final class Combat
         }
         if (!$destroyedTarget) {
             Subsystems::maybeBreak((int) $tShip['id'], 'attacco di ' . $atkPlayer['handle'], $r['def_lost'] > max(1, (int) $r['def_ftr0']) * 0.3, true);
+        }
+
+        if ($crimine) {
+            Legge::crimine((int) $atkPlayer['id'], 'aggressione', $sectorId);
         }
 
         return [
@@ -383,6 +392,8 @@ final class Combat
             }
             throw $e;
         }
+
+        Legge::crimine((int) $atkPlayer['id'], 'porto', (int) $atkPlayer['sector_id']);
 
         return [
             'ok'             => true,
@@ -585,6 +596,11 @@ final class Combat
             throw $e;
         }
 
+        // assaltare il pianeta di un altro e' un crimine; bombardarlo, di piu'
+        if (!Planets::isOwn($p, $atkPlayer)) {
+            Legge::crimine((int) $atkPlayer['id'], $bombard && $cracked ? 'bombardamento' : 'pianeta', (int) $p['sector_id']);
+        }
+
         return [
             'ok'             => true,
             'kind'           => 'planet',
@@ -647,6 +663,12 @@ final class Combat
         $killed = $r['def_ftr'] <= 0 && $atkFtrLeft > 0;
         $destroyedAtk = $atkFtrLeft <= 0 && $r['att_shd'] <= 0 && $r['def_ftr'] > 0;
 
+        // Aggredire un civile o una pattuglia e' un crimine, anche senza abbatterli.
+        $crimini = match ($npc['kind']) {
+            'trader' => ['mercantile'],
+            'patrol' => ['pattuglia'],
+            default  => [],
+        };
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         $loot = 0;
@@ -690,6 +712,9 @@ final class Combat
                     (float) $npc['combat_rating'], (string) $npc['kind']);
                 Crew::awardKillXp((int) $atkPlayer['id']);
                 Faction::onKillNpc((int) $atkPlayer['id'], $npc['name'] === self::CACCIATORE ? 'hunter' : (string) $npc['kind']);
+                if ($npc['kind'] === 'trader') {
+                    $crimini[] = 'uccisione';
+                }
                 Database::run('DELETE FROM npcs WHERE id = ?', [$npcId]);
             } else {
                 Database::run('UPDATE npcs SET fighters = ?, shields = ? WHERE id = ?', [$r['def_ftr'], $r['def_shd'], $npcId]);
@@ -716,6 +741,10 @@ final class Combat
                 $pdo->rollBack();
             }
             throw $e;
+        }
+
+        foreach ($crimini as $c) {
+            Legge::crimine((int) $atkPlayer['id'], $c, (int) $npc['sector_id']);
         }
 
         return [
@@ -785,6 +814,15 @@ final class Combat
             return ['event' => $testo, 'destroyed' => false, 'raided' => true];
         }
 
+        if ($playerDead && $npc['kind'] === 'patrol') {
+            // Arresto: la nave e' perduta, la notorieta' si dimezza.
+            $d = self::destroyShip($player);
+            Legge::arresto((int) $player['id']);
+            $testo = "ARRESTATO: {$npc['name']} ti ha abbattuto nel settore {$npc['sector_id']}. La Federazione considera scontata la pena: torni sotto la soglia di ricercato. " . self::deathLine($d);
+            Live::alert((int) $player['id'], 'destroyed', 'Arrestato dalla Federazione', $testo, '/gioco/fazioni');
+            ShipLog::write((int) $player['id'], 'destroyed', 'alert', 'Arrestato dalla Federazione', $testo, (int) $npc['sector_id']);
+            return ['event' => $testo, 'destroyed' => true];
+        }
         if ($playerDead) {
             $d = self::destroyShip($player);
             Live::alert((int) $player['id'], 'destroyed', 'Nave distrutta da un NPC', "{$npc['name']} ti ha distrutto nel settore {$npc['sector_id']}.", '/gioco');
@@ -858,7 +896,7 @@ final class Combat
         // Ora si spende solo se qui c'e' davvero qualcuno che ingaggerebbe.
         $ostile = !$cloaked && (
             Database::first('SELECT 1 x FROM sector_fighters WHERE sector_id = ? AND owner_player_id <> ? LIMIT 1', [$sectorId, $pid]) !== null
-            || Database::first('SELECT 1 x FROM npcs WHERE sector_id = ? AND aggression > 0 LIMIT 1', [$sectorId]) !== null
+            || Database::first("SELECT 1 x FROM npcs WHERE sector_id = ? AND (aggression > 0 OR kind = 'patrol') LIMIT 1", [$sectorId]) !== null
         );
         $noEngage = $ostile && Crew::consumePending($pid, 'no_engage') !== null;
 
@@ -1021,11 +1059,11 @@ final class Combat
 
         // 3) NPC ostili nel settore
         $inTregua = self::treguaVale(Database::first('SELECT * FROM players WHERE id = ?', [$pid]) ?? $player, Fasce::diSettore($sectorId));
-        foreach ((($noEngage || $cloaked) ? [] : Database::all('SELECT * FROM npcs WHERE sector_id = ? AND aggression > 0', [$sectorId])) as $npc) {
+        foreach ((($noEngage || $cloaked) ? [] : Database::all("SELECT * FROM npcs WHERE sector_id = ? AND (aggression > 0 OR kind = 'patrol')", [$sectorId])) as $npc) {
             if (self::npcLasciaStare($npc, $player)) {
                 continue;
             }
-            if ($inTregua && $npc['name'] !== self::CACCIATORE) {
+            if ($inTregua && $npc['name'] !== self::CACCIATORE && $npc['kind'] !== 'patrol') {
                 $events[] = "{$npc['name']} ti ha gia' spogliato di recente: ti lascia passare.";
                 continue;
             }
@@ -1094,7 +1132,7 @@ final class Combat
     public static function razziaInveceDiDistruzione(array $npc): bool
     {
         $band = Fasce::diSettore((int) $npc['sector_id']);
-        return $band >= 1 && $band <= Fasce::razziaFinoA() && $npc['name'] !== self::CACCIATORE;
+        return $band >= 1 && $band <= Fasce::razziaFinoA() && $npc['name'] !== self::CACCIATORE && $npc['kind'] !== 'patrol';
     }
 
     /**
@@ -1181,6 +1219,10 @@ final class Combat
     public static function npcLasciaStare(array $npc, array $player): bool
     {
         $pid = (int) $player['id'];
+        if ($npc['kind'] === 'patrol') {
+            // le pattuglie fermano solo i ricercati
+            return !Legge::ricercato(Database::first('SELECT * FROM players WHERE id = ?', [$pid]) ?? $player);
+        }
         if ($npc['kind'] === 'ferrengi') {
             return Ranks::isEvil((int) ($player['alignment'] ?? 0))
                 || Faction::tierAtLeast($pid, 'ferrengi', 'friendly');

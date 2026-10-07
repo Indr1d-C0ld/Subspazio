@@ -34,6 +34,9 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
   </div>
   <?php endif; ?>
   <div><span class="k">Grado</span><span class="v"><?= e($rank) ?></span></div>
+  <?php $lgP = \App\Game\Legge::gradoDi($player); if ($lgP > 0): ?>
+  <div><span class="k">Legge</span><span class="v"><a class="pill legge-grado legge-<?= $lgP ?>" href="<?= e(url('/gioco/fazioni#legge')) ?>" title="<?= e(\App\Game\Legge::RIASSUNTI[$lgP]) ?>"><?= e(\App\Game\Legge::nome($lgP)) ?></a></span></div>
+  <?php endif; ?>
   <div><span class="k">Turni</span><span class="v" data-bind="turns"><?= (int) $player['turns'] ?></span></div>
   <div><span class="k">Crediti</span><span class="v" data-bind="credits"><?= number_format((int) $player['credits'], 0, ',', '.') ?></span></div>
   <div><span class="k">Nave</span><span class="v"><?php
@@ -358,7 +361,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
       <h2><span class="sec-ic">🛡️</span> Forze nel settore <span class="mut">caccia · mine · NPC</span><?= partial('help', ['key' => 'plancia.forze']) ?></h2>
       <?php foreach ($npcs as $n): ?>
         <p class="force-line">
-          <span class="pill <?= $n['kind'] === 'ferrengi' ? 'err' : ($n['kind'] === 'pirate' ? 'warn' : 'mut') ?>"><?= e($n['kind']) ?></span>
+          <span class="pill <?= $n['kind'] === 'ferrengi' ? 'err' : ($n['kind'] === 'pirate' ? 'warn' : ($n['kind'] === 'patrol' ? 'ok' : 'mut')) ?>"><?= e(['ferrengi' => 'ferrengi', 'pirate' => 'pirata', 'trader' => 'mercantile', 'patrol' => 'federale'][$n['kind']] ?? $n['kind']) ?></span>
           <strong><?= e($n['name']) ?></strong> — <?= number_format($n['fighters'], 0, ',', '.') ?> caccia
           <?php if (!$look['is_fedspace']): ?>
           <form method="post" action="<?= e(url('/gioco/attacca/npc')) ?>" class="inline">

@@ -161,6 +161,11 @@ final class Faction
                 self::adjust($playerId, 'fed', -$g, 'abbattuto un cacciatore federale', false);
                 self::adjust($playerId, 'frontier', (int) round($g / 2), 'abbattuto un cacciatore federale');
             })(),
+            // Una pattuglia federale abbattuta: la Federazione non dimentica.
+            'patrol' => (function () use ($playerId, $g) {
+                self::adjust($playerId, 'fed', -2 * $g, 'abbattuta una pattuglia federale', false);
+                self::adjust($playerId, 'frontier', (int) round($g / 2), 'abbattuta una pattuglia federale');
+            })(),
             'pirate' => (function () use ($playerId, $g) {
                 self::adjust($playerId, 'fed', $g, 'colpito un pirata');
                 self::adjust($playerId, 'frontier', $g, 'colpito un pirata');
@@ -213,6 +218,12 @@ final class Faction
     /** Se la Federazione è ostile, i servizi StarDock sono revocati. */
     public static function stardockBlocked(int $playerId): ?string
     {
+        // Dal gradino Pericoloso la legge chiude lo StarDock, qualunque sia la reputazione.
+        $g = Legge::grado(Legge::puntiDi($playerId));
+        if ($g >= 3) {
+            return 'Sei ' . mb_strtolower(Legge::nome($g)) . ' per la Federazione: lo StarDock ti ha chiuso i servizi. '
+                . 'Aspetta che la notorieta\' cali o paga l\'ammenda dalla pagina Fazioni.';
+        }
         if (self::value($playerId, 'fed') <= GameConfig::int('faction.tier_hostile', -60)) {
             return 'La Federazione ti ha revocato l\'accesso ai servizi dello StarDock. '
                 . 'Rialza la reputazione o paga un\'ammenda dalla pagina Fazioni.';

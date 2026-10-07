@@ -10,6 +10,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Game\Ctx;
 use App\Game\Faction;
+use App\Game\Legge;
 use App\Game\Shipyard;
 use App\Game\TurnManager;
 
@@ -32,6 +33,16 @@ final class FactionController
             'offers'   => Faction::offers($pid),
             'log'      => Database::all('SELECT * FROM faction_log WHERE player_id = ? ORDER BY id DESC LIMIT 15', [$pid]),
             'blocked'  => Faction::stardockBlocked($pid),
+            'bandoRep' => Faction::value($pid, 'fed') <= \App\Game\GameConfig::int('faction.tier_hostile', -60),
+            'legge'    => [
+                'punti'   => Legge::puntiDi($pid),
+                'grado'   => Legge::grado(Legge::puntiDi($pid)),
+                'costo'   => Legge::costoAmmenda($pid),
+                'taglia'  => Legge::taglia($player),
+                'ore'     => Legge::oreAlPerdono(Legge::puntiDi($pid)),
+                'recenti' => Legge::recenti($pid),
+                'fedina'  => Legge::fedina($pid),
+            ],
         ]));
     }
 
@@ -49,6 +60,16 @@ final class FactionController
         $res = Faction::amnesty(Ctx::$player);
         Session::flash($res['ok'] ? 'success' : 'error', $res['ok']
             ? "Ammenda pagata ({$res['cost']} cr): la Federazione riapre i servizi StarDock."
+            : $res['error']);
+        return redirect('/gioco/fazioni');
+    }
+
+    /** L'ammenda che azzera la notorieta': si paga da ovunque, anche con lo StarDock chiuso. */
+    public function ammendaLegge(Request $request): Response
+    {
+        $res = Legge::ammenda(Ctx::$player);
+        Session::flash($res['ok'] ? 'success' : 'error', $res['ok']
+            ? 'Ammenda pagata (' . number_format($res['cost'], 0, ',', '.') . ' cr): la Federazione chiude il tuo fascicolo e richiama le squadre.'
             : $res['error']);
         return redirect('/gioco/fazioni');
     }

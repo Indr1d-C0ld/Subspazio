@@ -6,6 +6,8 @@
 /** @var list<array<string,mixed>> $offers */
 /** @var list<array<string,mixed>> $log */
 /** @var string|null $blocked */
+/** @var bool $bandoRep */
+/** @var array<string,mixed> $legge */
 
 use App\Game\Faction;
 
@@ -27,13 +29,44 @@ $max = \App\Game\GameConfig::int('faction.max', 100);
 <?php if ($blocked !== null): ?>
   <div class="alert err">
     <?= e($blocked) ?>
-    <?php if ($at_dock): ?>
+    <?php if ($at_dock && $bandoRep): ?>
       <form method="post" action="<?= e(url('/gioco/fazioni/ammenda')) ?>" class="inline">
         <?= csrf_field() ?><button class="btn xs" type="submit">Paga l'ammenda (<?= number_format(\App\Game\GameConfig::int('faction.amnesty_cost', 15000), 0, ',', '.') ?> cr)</button>
       </form>
     <?php endif; ?>
   </div>
 <?php endif; ?>
+
+<?php $lg = (int) $legge['grado']; ?>
+<section class="panel legge-panel legge-<?= $lg ?>" id="legge">
+  <h2><span class="sec-ic">⚖️</span> Legge federale<?= partial('help', ['key' => 'fazioni.legge']) ?></h2>
+  <p class="legge-stato"><span class="pill legge-grado legge-<?= $lg ?>"><?= e(\App\Game\Legge::nome($lg)) ?></span>
+    notorietà <strong><?= number_format((float) $legge['punti'], 1, ',', '.') ?></strong>
+    <?php if ((float) $legge['ore'] > 0): ?><span class="mut">· torni sotto la soglia di ricercato fra circa <?= (int) ceil((float) $legge['ore']) ?> ore</span><?php endif; ?></p>
+  <p class="hint"><?= e(\App\Game\Legge::RIASSUNTI[$lg]) ?></p>
+  <?php if ((int) $legge['taglia'] > 0): ?>
+    <p>Taglia federale sulla tua testa: <strong><?= number_format((int) $legge['taglia'], 0, ',', '.') ?> cr</strong>, a chi ti abbatte.</p>
+  <?php endif; ?>
+  <?php if ((int) $legge['recenti'] > 0): ?>
+    <p class="hint">Recidiva: <?= (int) $legge['recenti'] ?> crimini nelle ultime <?= \App\Game\GameConfig::int('legge.recidiva_ore', 72) ?> ore, ognuno pesa sul successivo.</p>
+  <?php endif; ?>
+  <?php if ((int) $legge['costo'] > 0): ?>
+    <form method="post" action="<?= e(url('/gioco/fazioni/legge')) ?>" class="inline"
+          data-confirm="Pagare <?= number_format((int) $legge['costo'], 0, ',', '.') ?> cr per azzerare la notorietà?">
+      <?= csrf_field() ?><button class="btn xs" type="submit">Paga l'ammenda e chiudi il fascicolo (<?= number_format((int) $legge['costo'], 0, ',', '.') ?> cr)</button>
+    </form>
+  <?php endif; ?>
+  <?php if ($legge['fedina'] !== []): ?>
+    <details class="legge-fedina"><summary>Fedina penale</summary>
+      <ul class="note-list">
+        <?php foreach ($legge['fedina'] as $c): ?>
+          <li><?= e(\App\Game\Legge::ETICHETTE[$c['kind']] ?? $c['kind']) ?> · +<?= number_format((float) $c['punti'], 1, ',', '.') ?>
+            <span class="mut"><?= $c['sector_id'] ? 'settore ' . (int) $c['sector_id'] . ' · ' : '' ?><?= e(date('d/m H:i', strtotime((string) $c['created_at']))) ?></span></li>
+        <?php endforeach; ?>
+      </ul>
+    </details>
+  <?php endif; ?>
+</section>
 
 <?php foreach ($factions as $f): $v = (int) ($rep[$f['ckey']] ?? 0);
   $tier = Faction::tier($v);
