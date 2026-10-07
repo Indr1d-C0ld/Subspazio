@@ -362,7 +362,9 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
       <?php foreach ($npcs as $n): ?>
         <p class="force-line">
           <span class="pill <?= $n['kind'] === 'ferrengi' ? 'err' : ($n['kind'] === 'pirate' ? 'warn' : ($n['kind'] === 'patrol' ? 'ok' : 'mut')) ?>"><?= e(['ferrengi' => 'ferrengi', 'pirate' => 'pirata', 'trader' => 'mercantile', 'patrol' => 'federale'][$n['kind']] ?? $n['kind']) ?></span>
-          <strong><?= e($n['name']) ?></strong> — <?= number_format($n['fighters'], 0, ',', '.') ?> caccia<?php if ((int) ($n['scorta'] ?? 0) > 0): ?> <span class="mut">(di cui <?= number_format((int) $n['scorta'], 0, ',', '.') ?> di scorta)</span><?php endif; ?>
+          <?php if (!empty($n['elite'])): ?><span class="pill err" title="Comandante d'élite: molto più forte, bottino garantito">élite</span><?php endif; ?>
+          <?php $inFlotta = count(array_filter($npcs, static fn ($o) => ($o['flotta'] ?? 0) === ($n['flotta'] ?? -1))); ?>
+          <strong><?= e($n['name']) ?></strong><?= $inFlotta > 1 ? ' <span class="mut">· flotta di ' . $inFlotta . '</span>' : '' ?> — <?= number_format($n['fighters'], 0, ',', '.') ?> caccia<?php if ((int) ($n['scorta'] ?? 0) > 0): ?> <span class="mut">(di cui <?= number_format((int) $n['scorta'], 0, ',', '.') ?> di scorta)</span><?php endif; ?>
           <?php if (!$look['is_fedspace']): ?>
           <form method="post" action="<?= e(url('/gioco/attacca/npc')) ?>" class="inline">
             <?= csrf_field() ?><input type="hidden" name="npc" value="<?= (int) $n['id'] ?>">

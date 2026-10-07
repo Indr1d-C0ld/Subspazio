@@ -59,10 +59,17 @@ final class CombatController
                 . (!empty($res['soccorso']) ? ' Ha fatto in tempo a chiamare soccorso: una pattuglia federale e\' in arrivo.' : ''));
         } elseif ($res['destroyed_self']) {
             Session::flash('error', "{$res['npc_name']} ti ha distrutto. Capsula allo StarDock.");
-        } elseif (!empty($res['raided'])) {
+        } elseif (!empty($res['raided']) && is_array($res['raided'])) {
             Session::flash('error', Combat::testoRazzia(['name' => $res['npc_name']], $res['raided']));
         } else {
             Session::flash('error', "Scontro con {$res['npc_name']} ({$res['rounds']} round): persi {$res['attacker_lost']} caccia, inflitti -{$res['defender_lost']}.");
+        }
+        if (!empty($res['fleet_events'])) {
+            // la flotta interviene: si accoda al messaggio dello scontro
+            $chiave = $res['destroyed_self'] || !empty($res['raided']) ? 'error' : 'success';
+            $base = (string) ($_SESSION['_flash_next'][$chiave] ?? $_SESSION['_flash_next']['success'] ?? $_SESSION['_flash_next']['error'] ?? '');
+            unset($_SESSION['_flash_next']['success'], $_SESSION['_flash_next']['error']);
+            Session::flash('error', trim($base . ' La flotta interviene: ' . implode(' ', $res['fleet_events'])));
         }
         return redirect('/gioco');
     }

@@ -218,6 +218,55 @@ return static function (): void {
               WHERE sf.kind = 'hazard' AND sf.depleted = 0 AND s.band < ?", [Fasce::pericoliDa()]
         )['n']);
 
+        Esito::sezione('Nemici — ripidi lontano da Sol, in flotta, con le loro elite');
+
+        $okV = true;
+        for ($i = 0; $i < 4; $i++) {
+            $id = Npc::spawnOne('pirate', 5);
+            $npcIds[] = (int) $id;
+            $f = (int) Database::first('SELECT fighters FROM npcs WHERE id = ?', [$id])['fighters'];
+            $okV = $okV && $f >= 25000 && $f <= 90000;
+            foreach (Database::all('SELECT id FROM npcs WHERE flotta_id = ?', [$id]) as $g) {
+                $npcIds[] = (int) $g['id'];
+            }
+        }
+        // Prima: 4.500-11.000 caccia, un'ammiraglia da 50.000 li spazzava via.
+        Esito::verifica('un predone dell\'Orlo ha 25.000-90.000 caccia', $okV);
+        Esito::verifica('vicino a Sol nessuno viaggia in flotta', Fasce::flottaPct(1) === 0 && Fasce::flottaPct(2) === 0);
+
+        Esito::scenario('una flotta si muove insieme, e senza capo si scioglie');
+        $s5 = $settoreDi(5);
+        $capo = $npcFinto($s5, 5, 30000);
+        Database::run('UPDATE npcs SET last_move_at = DATE_SUB(NOW(), INTERVAL 1 DAY) WHERE id = ?', [(int) $capo['id']]);
+        Npc::gregari((int) $capo['id'], 2);
+        $greg = array_map('intval', array_column(Database::all('SELECT id FROM npcs WHERE flotta_id = ?', [(int) $capo['id']]), 'id'));
+        array_push($npcIds, ...$greg);
+        (new ReflectionMethod(Npc::class, 'move'))->invoke(null);
+        $dove = Database::all('SELECT sector_id FROM npcs WHERE id IN (' . implode(',', array_merge([(int) $capo['id']], $greg)) . ')');
+        Esito::verifica('il capo e i suoi due gregari sono nello stesso settore',
+            count($greg) === 2 && count(array_unique(array_column($dove, 'sector_id'))) === 1);
+        Database::run('DELETE FROM npcs WHERE id = ?', [(int) $capo['id']]);
+        (new ReflectionMethod(Npc::class, 'move'))->invoke(null);
+        Esito::uguale('morto il capo, i gregari tornano liberi', 0,
+            (int) Database::first('SELECT COUNT(*) n FROM npcs WHERE flotta_id = ?', [(int) $capo['id']])['n']);
+
+        Esito::scenario('un comandante d\'elite nell\'Orlo');
+        $el = Npc::spawnElite(5, false);
+        $npcIds[] = (int) $el;
+        $e = Database::first('SELECT * FROM npcs WHERE id = ?', [$el]);
+        foreach (Database::all('SELECT id FROM npcs WHERE flotta_id = ?', [$el]) as $g) {
+            $npcIds[] = (int) $g['id'];
+        }
+        [, $fz] = Fasce::ferrengiCaccia(5);
+        $molt = \App\Game\GameConfig::float('elite.molt_caccia', 1.5);
+        Esito::verifica('e\' un Ferrengi da ' . $molt . ' volte il massimo della fascia', $e['kind'] === 'ferrengi' && (int) $e['elite'] === 1
+            && (int) $e['fighters'] === (int) round($fz * $molt), (string) $e['fighters']);
+        Esito::uguale('con due gregari', 2, (int) Database::first('SELECT COUNT(*) n FROM npcs WHERE flotta_id = ?', [$el])['n']);
+        [$k9] = Finti::comandante(0, [], $s5);
+        $mod = \App\Game\Loot::grant((int) $k9['id'], 'npc', true, Fasce::eliteRarita(5));
+        Esito::verifica('e il suo bottino garantito e\' almeno Xeno', $mod !== null && in_array($mod['rarity'], ['xeno', 'precursor'], true),
+            (string) ($mod['rarity'] ?? '-'));
+
         Esito::sezione('Plancia — il salto verso il pericolo si annuncia');
 
         $sol = (int) Database::first('SELECT id FROM sectors WHERE is_stardock = 1 LIMIT 1')['id'];

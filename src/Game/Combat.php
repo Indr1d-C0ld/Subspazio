@@ -726,7 +726,7 @@ final class Combat
                 // lo si incontra.
                 $exp = (int) round($exp * Fasce::xpMult(
                     $npc['band'] !== null ? (int) $npc['band'] : Fasce::diSettore((int) $npc['sector_id'])
-                ));
+                ) * (!empty($npc['elite']) ? GameConfig::float('elite.molt_xp', 3) : 1));
                 $align = match ($npc['kind']) {
                     'ferrengi' => 20, 'pirate' => 10, default => GameConfig::int('combat.kill_good_alignment', -25),
                 };
@@ -736,6 +736,15 @@ final class Combat
                 );
                 $drops = Loot::rollKill((int) $atkPlayer['id'], 'npc', (int) $npc['sector_id'],
                     (float) $npc['combat_rating'], (string) $npc['kind']);
+                if (!empty($npc['elite'])) {
+                    // un comandante d'elite lascia sempre un modulo, almeno della
+                    // rarita' della sua fascia
+                    $eb = $npc['band'] !== null ? (int) $npc['band'] : Fasce::diSettore((int) $npc['sector_id']);
+                    if (($garantito = Loot::grant((int) $atkPlayer['id'], 'npc', $eb >= 4, Fasce::eliteRarita($eb))) !== null) {
+                        $drops['items'][] = $garantito;
+                    }
+                    Radio::system("ABBATTUTO — {$npc['name']} e' stato distrutto da {$atkPlayer['handle']} nel settore {$npc['sector_id']}.");
+                }
                 Crew::awardKillXp((int) $atkPlayer['id']);
                 Faction::onKillNpc((int) $atkPlayer['id'], $npc['name'] === self::CACCIATORE ? 'hunter' : (string) $npc['kind']);
                 if ($npc['kind'] === 'trader') {
@@ -773,6 +782,29 @@ final class Combat
             Legge::crimine((int) $atkPlayer['id'], $c, (int) $npc['sector_id']);
         }
 
+        // La flotta non sta a guardare: chi attacca una nave se la ritrova
+        // tutta addosso, una dopo l'altra, finche' regge.
+        $flottaEventi = [];
+        if (!$destroyedAtk && $razzia === null && in_array($npc['kind'], ['pirate', 'ferrengi'], true)) {
+            $capo = (int) ($npc['flotta_id'] ?? 0) ?: (int) $npc['id'];
+            foreach (Database::all(
+                'SELECT * FROM npcs WHERE (id = ? OR flotta_id = ?) AND id <> ? AND sector_id = ? ORDER BY id',
+                [$capo, $capo, (int) $npc['id'], (int) $npc['sector_id']]
+            ) as $compagno) {
+                $nave = PlayerService::ship((int) $atkShip['id']);
+                $pl = Database::first('SELECT * FROM players WHERE id = ?', [(int) $atkPlayer['id']]);
+                if ($nave === null || $nave['type_key'] === 'escape_pod' || (int) $pl['ship_id'] !== (int) $atkShip['id']) {
+                    break;
+                }
+                $out = self::npcEngagePlayer($compagno, $pl, $nave);
+                $flottaEventi[] = $out['event'];
+                if (!empty($out['destroyed']) || !empty($out['raided'])) {
+                    $destroyedAtk = !empty($out['destroyed']);
+                    break;
+                }
+            }
+        }
+
         return [
             'ok'             => true,
             'kind'           => 'npc',
@@ -786,6 +818,7 @@ final class Combat
             'raided'         => $razzia,
             'soccorso'       => $soccorso,
             'fled'           => false,
+            'fleet_events'   => $flottaEventi,
             'loot'           => $loot,
             'exp'            => $exp,
             'drops'          => $drops,

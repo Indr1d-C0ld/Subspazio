@@ -22,6 +22,9 @@ final class Npc
     private const FERRENGI_NAMES = ['Grubnash', 'Vek Tarr', 'Ssora', 'Krul', 'Nix Ferro', 'Ombra di Cygnus', 'Draak', 'Vorlok'];
     private const PIRATE_NAMES   = ['Sciacallo', 'Lama Nera', 'Corvo', 'Randagio', 'Cicatrice', 'Fantasma', 'Avvoltoio'];
     private const TRADER_NAMES   = ['Mercuria', 'Buon Affare', 'Via della Seta', 'Peregrina', 'Fortuna', 'Rotta d\'Oro'];
+    /** Comandanti d'elite: uno o due per fascia, molto piu' forti, con bottino garantito. */
+    private const ELITE_PIRATI   = ['Kragg il Macellaio', 'la Vedova Rossa', 'il Conte di Sirio', 'Mastino di Orione', 'Sette Lame', 'la Cicogna Nera'];
+    private const ELITE_FERRENGI = ['Daimon Grokk', 'Nagus Vorlath', 'il Liquidatore Brisk', 'Daimon Tarvek', 'Ombra di Ferenginar'];
 
     /** @return list<array<string,mixed>> */
     public static function inSector(int $sectorId): array
@@ -33,6 +36,8 @@ final class Npc
             'ship'     => $n['ship_type'],
             'fighters' => (int) $n['fighters'],
             'scorta'   => (int) ($n['scorta'] ?? 0),
+            'elite'    => (bool) ($n['elite'] ?? false),
+            'flotta'   => (int) ($n['flotta_id'] ?? 0) ?: (int) $n['id'],
             'hostile'  => (int) $n['aggression'] > 0,
         ], Database::all('SELECT * FROM npcs WHERE sector_id = ? ORDER BY id', [$sectorId]));
     }
@@ -58,8 +63,14 @@ final class Npc
     private static function move(): int
     {
         $interval = GameConfig::int('npc.move_interval_min', 3);
+        // Una flotta senza capo si scioglie: ognuno torna a muoversi da se'.
+        Database::run(
+            'UPDATE npcs f LEFT JOIN npcs l ON l.id = f.flotta_id SET f.flotta_id = NULL
+             WHERE f.flotta_id IS NOT NULL AND l.id IS NULL'
+        );
+        // Chi e' in flotta non si muove da solo: segue il capo (sotto).
         $due = Database::all(
-            'SELECT * FROM npcs WHERE last_move_at < DATE_SUB(NOW(), INTERVAL ? MINUTE) LIMIT 200',
+            'SELECT * FROM npcs WHERE last_move_at < DATE_SUB(NOW(), INTERVAL ? MINUTE) AND flotta_id IS NULL LIMIT 200',
             [$interval]
         );
         if ($due === []) {
@@ -104,7 +115,14 @@ final class Npc
             $mosse[(int) $npc['id']] = $pick;
         }
 
-        return self::applicaMosse($mosse);
+        $n = self::applicaMosse($mosse);
+        // le flotte viaggiano insieme
+        Database::run(
+            'UPDATE npcs f JOIN npcs l ON l.id = f.flotta_id
+                SET f.sector_id = l.sector_id, f.last_move_at = l.last_move_at
+              WHERE f.sector_id <> l.sector_id'
+        );
+        return $n;
     }
 
     /**
@@ -251,6 +269,18 @@ final class Npc
             $n++;
         }
 
+        // Comandanti d'elite: quanti ne vuole ogni fascia, uno alla volta e con
+        // calma (elite.rinascita_pct per battito), cosi' abbatterne uno lascia
+        // la fascia tranquilla per un po'.
+        for ($b = 1; $b <= Fasce::MAX; $b++) {
+            $vivi = (int) (Database::first('SELECT COUNT(*) c FROM npcs WHERE elite = 1 AND band = ? AND flotta_id IS NULL', [$b])['c'] ?? 0);
+            if ($vivi < Fasce::elitePerFascia($b) && mt_rand(1, 100) <= GameConfig::int('elite.rinascita_pct', 2)) {
+                if (self::spawnElite($b) !== null) {
+                    $n++;
+                }
+            }
+        }
+
         foreach ([
             ['ferrengi', GameConfig::int('npc.ferrengi_target', 40)],
             ['trader', GameConfig::int('npc.trader_target', 30)],
@@ -331,7 +361,74 @@ final class Npc
                 $aggr,
             ]
         );
-        return Database::lastInsertId();
+        $id = Database::lastInsertId();
+        // Dalla Frontiera in fuori gli ostili possono viaggiare in flotta.
+        if ($kind !== 'trader' && mt_rand(1, 100) <= Fasce::flottaPct($pb)) {
+            self::gregari($id, mt_rand(1, 3));
+        }
+        return $id;
+    }
+
+    /**
+     * Gregari di una flotta: navi piu' piccole del capo (40-70% dei suoi
+     * caccia), nello stesso settore, che lo seguono e combattono con lui.
+     */
+    public static function gregari(int $capoId, int $quanti): int
+    {
+        $c = Database::first('SELECT * FROM npcs WHERE id = ?', [$capoId]);
+        if ($c === null) {
+            return 0;
+        }
+        for ($i = 0; $i < $quanti; $i++) {
+            $f = (int) round((int) $c['fighters'] * mt_rand(40, 70) / 100);
+            $nome = $c['kind'] === 'ferrengi'
+                ? 'Ferrengi ' . self::FERRENGI_NAMES[array_rand(self::FERRENGI_NAMES)]
+                : 'Predone ' . self::PIRATE_NAMES[array_rand(self::PIRATE_NAMES)];
+            Database::run(
+                'INSERT INTO npcs (kind, name, ship_type, sector_id, home_sector, band, flotta_id, fighters, shields, combat_rating, credits, cargo_ore, cargo_org, cargo_equ, aggression, last_move_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?)',
+                [$c['kind'], $nome, 'missile_frigate', (int) $c['sector_id'], $c['home_sector'], $c['band'], $capoId, $f,
+                 (int) round($f * mt_rand(12, 28) / 100), round((float) $c['combat_rating'] - 0.1, 2),
+                 (int) round((int) $c['credits'] * 0.4), (int) $c['aggression'], $c['last_move_at']]
+            );
+        }
+        return $quanti;
+    }
+
+    /**
+     * Un comandante d'elite: il massimo della fascia per elite.molt_caccia,
+     * rating piu' alto, cassa ricca, e dalla Frontiera in fuori due gregari
+     * (vicino a Sol nessuno viaggia in flotta). Annunciato via radio: si sa che
+     * c'e', e dove comincia a cacciare.
+     */
+    public static function spawnElite(int $band, bool $annuncia = true): ?int
+    {
+        $kind = $band >= Fasce::ferrengiDa() ? 'ferrengi' : 'pirate';
+        [$sector, $home, $band] = self::spawnSector($kind, $band);
+        if ($sector === null) {
+            return null;
+        }
+        [, $z] = $kind === 'ferrengi' ? Fasce::ferrengiCaccia($band) : Fasce::predoniCaccia($band);
+        [, $cz] = Fasce::creditiNpc($band);
+        $ftr = (int) round($z * GameConfig::float('elite.molt_caccia', 1.5));
+        $nomi = $kind === 'ferrengi' ? self::ELITE_FERRENGI : self::ELITE_PIRATI;
+        $nome = $nomi[array_rand($nomi)];
+        Database::run(
+            'INSERT INTO npcs (kind, name, ship_type, sector_id, home_sector, band, elite, fighters, shields, combat_rating, credits, cargo_ore, cargo_org, cargo_equ, aggression)
+             VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, 100)',
+            [$kind, $nome, 'havoc_gunstar', $sector, $home, $band, $ftr, (int) round($ftr * 0.3),
+             round(Fasce::predoniRating($band) + 0.6, 2), (int) round($cz * GameConfig::float('elite.molt_crediti', 4)),
+             mt_rand(50, 200) * $band, mt_rand(50, 200) * $band, mt_rand(50, 200) * $band]
+        );
+        $id = Database::lastInsertId();
+        if (Fasce::flottaPct($band) > 0) {
+            self::gregari($id, 2);
+        }
+        if ($annuncia) {
+            Radio::system("AVVISTAMENTO — {$nome} caccia in " . Fasce::etichetta($band)
+            . ' con la sua flotta (' . number_format($ftr, 0, ',', '.') . ' caccia). Bottino garantito a chi lo abbatte.');
+        }
+        return $id;
     }
 
     /** @return array{0:?int,1:?int,2:int} settore di spawn, settore natale, fascia */

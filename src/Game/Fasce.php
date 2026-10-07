@@ -178,7 +178,7 @@ final class Fasce
 
     public static function xpMult(int $band): float
     {
-        return $band <= 0 ? 1.0 : (float) self::voce(GameConfig::str('fasce.xp_mult', '0.5,0.75,1,1.5,2'), $band);
+        return $band <= 0 ? 1.0 : (float) self::voce(GameConfig::str('fasce.xp_mult', '0.5,0.75,1.2,2,3'), $band);
     }
 
     /** Moltiplicatore della probabilita' di recuperare un modulo. */
@@ -195,12 +195,12 @@ final class Fasce
     /** @return array{0:int,1:int} */
     public static function predoniCaccia(int $band): array
     {
-        return self::intervallo(GameConfig::str('fasce.predoni_caccia', '80-250,250-650,700-1800,1800-4500,4500-11000'), max(1, $band));
+        return self::intervallo(GameConfig::str('fasce.predoni_caccia', '80-250,250-650,1500-5000,6000-25000,25000-90000'), max(1, $band));
     }
 
     public static function predoniRating(int $band): float
     {
-        return (float) self::voce(GameConfig::str('fasce.predoni_rating', '0.7,0.85,1.0,1.2,1.4'), max(1, $band));
+        return (float) self::voce(GameConfig::str('fasce.predoni_rating', '0.7,0.85,1.1,1.4,1.8'), max(1, $band));
     }
 
     /** Prima fascia in cui nascono e si muovono i Ferrengi. */
@@ -212,13 +212,13 @@ final class Fasce
     /** @return array{0:int,1:int} */
     public static function ferrengiCaccia(int $band): array
     {
-        return self::intervallo(GameConfig::str('fasce.ferrengi_caccia', '1500-3500,2000-4500,2500-6000,3500-8000,6000-14000'), max(1, $band));
+        return self::intervallo(GameConfig::str('fasce.ferrengi_caccia', '1500-3500,2000-4500,8000-20000,15000-50000,50000-160000'), max(1, $band));
     }
 
     /** @return array{0:int,1:int} crediti a bordo di un predone di questa fascia */
     public static function creditiNpc(int $band): array
     {
-        return self::intervallo(GameConfig::str('fasce.crediti_npc', '800-3000,2500-8000,6000-20000,15000-50000,40000-120000'), max(1, $band));
+        return self::intervallo(GameConfig::str('fasce.crediti_npc', '800-3000,2500-8000,8000-25000,20000-70000,60000-200000'), max(1, $band));
     }
 
     /** @return array{0:int,1:int} ricchezza di relitti, depositi, anomalie e giacimenti */
@@ -277,6 +277,25 @@ final class Fasce
             }
         }
         return $out;
+    }
+
+    /** Probabilita' (%) che un ostile di questa fascia nasca in flotta. */
+    public static function flottaPct(int $band): int
+    {
+        return $band <= 0 ? 0 : (int) self::voce(GameConfig::str('fasce.flotta_pct', '0,0,20,40,60'), $band);
+    }
+
+    /** Quanti comandanti d'elite vivono in questa fascia. */
+    public static function elitePerFascia(int $band): int
+    {
+        return $band <= 0 ? 0 : (int) self::voce(GameConfig::str('elite.per_fascia', '0,1,1,1,2'), $band);
+    }
+
+    /** Rarita' minima del modulo garantito da un comandante d'elite. */
+    public static function eliteRarita(int $band): string
+    {
+        $r = (string) self::voce(GameConfig::str('elite.rarita', 'civ,mil,exp,xeno,xeno'), max(1, $band));
+        return in_array($r, Loot::RARITIES, true) ? $r : 'civ';
     }
 
     /** @return array{0:int,1:int} caccia della scorta di un mercantile */

@@ -4,6 +4,38 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-07 — Nemici: fasce ripide, flotte, comandanti d'élite
+
+Anche nell'Orlo gli ostili arrivavano al massimo a 11.000 caccia (predoni) e
+14.000 (Ferrengi): un'ammiraglia da 50.000 li spazzava via ovunque.
+*Deciso con l'autore*: fasce ripide, flotte ed élite; vicino a Sol tutto come
+prima.
+
+- **[db/migrations/0056_nemici.sql](db/migrations/0056_nemici.sql)**,
+  **[src/Game/Fasce.php](src/Game/Fasce.php)** — predoni 1.500–5.000 in
+  Frontiera, 6.000–25.000 nelle Marche, 25.000–90.000 nell'Orlo (rating fino
+  a 1,8); Ferrengi 15.000–50.000 e 50.000–160.000; crediti a bordo ed
+  esperienza (fino a ×3) in proporzione. La popolazione ostile rinasce con le
+  forze nuove.
+- **Flotte** ([src/Game/Npc.php](src/Game/Npc.php)) — dalla Frontiera un
+  ostile nasce in flotta con il 20/40/60% di probabilità, con uno-tre gregari
+  al 40–70% della sua forza. I gregari non si muovono da soli: seguono il capo,
+  e senza capo la flotta si scioglie. In
+  [src/Game/Combat.php](src/Game/Combat.php) chi attacca una nave della
+  flotta si ritrova addosso le altre, una dopo l'altra, finché regge.
+- **Comandanti d'élite** — uno per fascia dalla II, due nell'Orlo; nascono con
+  calma (2% per battito) e la radio li annuncia. Una volta e mezza il massimo
+  della fascia (nella prima stesura due volte e mezza: un'élite Ferrengi
+  dell'Orlo arrivava a 400.000 caccia, imbattibile anche per l'Interdictor),
+  rating +0,6, cassa ×4, esperienza ×3, modulo garantito di rarità minima per
+  fascia, gregari dalla Frontiera.
+- **Interfaccia** — nel settore l'etichetta «élite» e la dimensione della
+  flotta; dopo un attacco il messaggio racconta l'intervento della flotta.
+- **[tests/fasce.php](tests/fasce.php)** — forza dei predoni dell'Orlo,
+  nessuna flotta vicino a Sol, flotta che si muove insieme e si scioglie senza
+  capo, élite dell'Orlo con gregari, modulo garantito almeno Xeno. Le prove non
+  annunciano nulla sulla radio del gioco. Suite: 493 verifiche, 0 fallite.
+
 ## 2026-10-07 — Mercantili scortati, in fuga, che chiamano soccorso
 
 Un mercantile aveva in media 322 caccia, non reagiva e portava circa 58.000 cr

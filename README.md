@@ -70,9 +70,17 @@ testi o artwork della door proprietaria.
   |---|---|---|---|---|
   | I · Cintura di Sol | 80–250 | 15% | +0% | razzia |
   | II · Anello dei Coloni | 250–650 | 30% | +5% | razzia |
-  | III · Frontiera | 700–1.800 | 45% | +10% | distruzione |
-  | IV · Marche Remote | 1.800–4.500 + Ferrengi | 60% | +15% | distruzione |
-  | V · Orlo del Buio | 4.500–11.000 + Ferrengi | 75% | +20% | distruzione |
+  | III · Frontiera | 1.500–5.000 | 45% | +10% | distruzione |
+  | IV · Marche Remote | 6.000–25.000 + Ferrengi 15.000–50.000 | 60% | +15% | distruzione |
+  | V · Orlo del Buio | 25.000–90.000 + Ferrengi 50.000–160.000 | 75% | +20% | distruzione |
+
+  Dalla Frontiera gli ostili possono viaggiare in **flotte** di due-quattro
+  navi (20% / 40% / 60%) che si muovono insieme; chi ne attacca una se le
+  ritrova tutte addosso, una dopo l'altra. In ogni fascia dalla II vive almeno
+  un **comandante d'élite** (due nell'Orlo): una volta e mezza il massimo della
+  fascia, rating più alto, cassa quadrupla, esperienza tripla e un modulo
+  **garantito** (almeno Militare in II, Sperimentale in III, Xeno in IV-V);
+  la radio ne annuncia l'avvistamento e l'abbattimento.
 
   Ogni predone nasce in una fascia che ne fissa forza e crediti a bordo, e si
   muove solo nella sua o una più in fuori, **mai verso Sol**; i Ferrengi vivono
@@ -80,7 +88,7 @@ testi o artwork della door proprietaria.
   prime due fasce chi perde viene **razziato, non distrutto**: i predoni
   prendono il carico e il 10% dei crediti a bordo (che ritrova chi li abbatte),
   la nave resta senza caccia né scudi, e per 30 minuti i predoni di quelle fasce
-  lo lasciano stare. Con la distanza crescono anche esperienza (da ×0,5 a ×2),
+  lo lasciano stare. Con la distanza crescono anche esperienza (da ×0,5 a ×3),
   probabilità di bottino e **rarità dei moduli** (nella Cintura quasi solo
   civili, nell'Orlo sperimentali, xeno e precursori), ricchezza di relitti,
   depositi, anomalie e giacimenti, difficoltà e premi delle missioni away. I
@@ -332,7 +340,7 @@ La configurazione sta su **due livelli distinti**, e la differenza conta:
 | **Gioco** | tabella `game_config` | bilanciamento e regole: costi, probabilità, soglie, tempi | dal pannello `/admin/gioco` o da console, **a caldo** |
 
 Il primo richiede accesso al server ed è materia di installazione. Il secondo è
-il pannello di regolazione del gioco: 306 chiavi, tutte modificabili senza
+il pannello di regolazione del gioco: 313 chiavi, tutte modificabili senza
 riavviare nulla e senza toccare il codice.
 
 ### Livello 1 — il file di configurazione
@@ -374,7 +382,7 @@ php bin/console.php config:get combat          # solo la famiglia
 php bin/console.php config:set newbie.protect_hours 72
 ```
 
-Le 306 chiavi per famiglia:
+Le 313 chiavi per famiglia:
 
 | Famiglia | N. | Cosa regola |
 |---|---|---|
@@ -384,7 +392,8 @@ Le 306 chiavi per famiglia:
 | `mercanti` | 7 | scorta dei mercantili per fascia (caccia e rating), quota di contanti, probabilità di fuga, probabilità di soccorso per fascia, durata e forza della pattuglia di soccorso |
 | `legge` | 18 | soglie dei gradini di notorietà, dimezzamento, peso di ogni crimine, recidiva, taglia e ammenda per punto, squadre e loro forza per gradino, ronde e loro fasce, probabilità d'ingaggio delle pattuglie |
 | `faction` | 22 | guadagni e perdite di reputazione (quella da commercio in proporzione al valore scambiato), soglie dei tier, ammenda, cacciatori di taglie (e loro tetto), decadimento |
-| `fasce` | 20 | soglie delle cinque fasce (frazioni del raggio della galassia), per ciascuna: predoni (quanti, caccia, rating), Ferrengi, crediti a bordo, probabilità d'ingaggio, esperienza, premio dei porti, probabilità e rarità del bottino, ricchezza delle feature, difficoltà delle missioni; razzie (fino a quale fascia, quota di crediti, tregua), prima fascia dei pericoli, avviso sui salti |
+| `elite` | 6 | comandanti d'élite per fascia, moltiplicatori di caccia, crediti ed esperienza, probabilità di rinascita, rarità minima del modulo garantito |
+| `fasce` | 21 | soglie delle cinque fasce (frazioni del raggio della galassia), per ciascuna: predoni (quanti, caccia, rating), Ferrengi, crediti a bordo, probabilità d'ingaggio, esperienza, premio dei porti, probabilità e rarità del bottino, ricchezza delle feature, difficoltà delle missioni; razzie (fino a quale fascia, quota di crediti, tregua), prima fascia dei pericoli, avviso sui salti |
 | `loot` | 16 | probabilità di drop per sorgente, rarità (in PvP), doppio drop, recupero in Leghe, costi di potenziamento |
 | `hardware` | 18 | listino del Cantiere: sonde, mine, capsula, scanner, transwarp, occultamento, Genesi, laser |
 | `combat` | 13 | costo in turni dell'attacco, danni di caccia e mine, taglie, bottino, assalto ai porti |
@@ -429,7 +438,7 @@ php tests/run.php                # tutte
 php tests/run.php economica      # solo i file col nome che contiene "economica"
 ```
 
-Suite di integrazione senza dipendenze, 486 verifiche in 24 file: integrità
+Suite di integrazione senza dipendenze, 493 verifiche in 24 file: integrità
 economica, concorrenza, banca/contratti/Officina, combattimento, navigazione,
 nave e moduli, pianeti, porti, equipaggio, mondo, percorsi di gioco normali,
 universo, clock, sessioni e turni, difese, iscrizione e posta, immagini,
