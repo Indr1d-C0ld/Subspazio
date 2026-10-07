@@ -13,6 +13,27 @@ use App\Core\Database;
  */
 final class ShipStats
 {
+    /**
+     * Stive aggiunte dai moduli installati e funzionanti. La riga di `ships`
+     * contiene solo le stive dello scafo e quelle comprate.
+     */
+    public static function bonusStiva(int $shipId): int
+    {
+        $n = 0;
+        try {
+            foreach (Database::all(
+                'SELECT sm.rolled, it.effects FROM ship_modules sm JOIN item_types it ON it.ckey = sm.item_key
+                 WHERE sm.ship_id = ? AND sm.broken_at IS NULL',
+                [$shipId]
+            ) as $m) {
+                $eff = self::decode($m['rolled']) ?: self::decode($m['effects']) ?: [];
+                $n += (int) ($eff['cargo_bonus'] ?? 0);
+            }
+        } catch (\Throwable) {
+        }
+        return $n;
+    }
+
     /** ordine di forza degli scanner */
     private const SCANNER_RANK = ['none' => 0, 'density' => 1, 'holo' => 2];
 
@@ -89,7 +110,13 @@ final class ShipStats
             $ship['turns_per_warp'] = max(1, (int) $ship['turns_per_warp'] - (int) $sum['warp_turn_reduction']);
         }
         if (!empty($sum['cargo_bonus'])) {
+            // Le stive del modulo si aggiungono alla capacita' e al tetto
+            // mostrato. Chi misura lo spazio libero deve passare da
+            // Economy::capacita(): la riga grezza in tabella non le contiene.
             $ship['holds_total'] = (int) $ship['holds_total'] + (int) $sum['cargo_bonus'];
+            if (isset($ship['max_holds'])) {
+                $ship['max_holds'] = (int) $ship['max_holds'] + (int) $sum['cargo_bonus'];
+            }
         }
         if (!empty($sum['max_shields_pct']) && isset($ship['max_shields'])) {
             $ship['max_shields'] = (int) round((int) $ship['max_shields'] * (1 + $sum['max_shields_pct'] / 100));

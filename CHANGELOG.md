@@ -4,6 +4,48 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-07 — Moduli potenziati nella loro famiglia; stive dei moduli usabili davvero
+
+Due difetti segnalati dall'autore.
+
+**Potenziamento.** L'Officina sceglieva a caso un modello della rarità
+superiore nella stessa *categoria*: una Stiva ausiliaria diventava un Braccio
+recuperatore, uno Scanner di densità una Guerra elettronica.
+
+- **[db/migrations/0053_famiglie_moduli.sql](db/migrations/0053_famiglie_moduli.sql)**
+  — colonna `item_types.family`: ogni modulo appartiene a una famiglia
+  (cannoni, scudi, rigenerazione, deflettori, propulsori, sensori, guerra
+  elettronica, analisi, stive, recupero, occultamento).
+- **[src/Game/Modules.php](src/Game/Modules.php)** — il modulo sale alla prima
+  rarità superiore della sua famiglia (`prossimoDellaFamiglia()`); se la
+  famiglia salta un gradino si pagano tutti quelli attraversati
+  (`costoPotenziamento()`).
+- **[views/game/modules.php](views/game/modules.php)** — il bottone dice in
+  quale modello si trasforma il modulo e il costo vero, con conferma.
+
+**Stive dei moduli.** Il modulo aggiungeva stive solo alla nave «effettiva»
+mostrata a schermo; porto, pianeti, relitti, giacimenti, incontri, bottini e
+Officina rileggevano la riga grezza in tabella. Il numero saliva ma non si
+poteva caricare di più.
+
+- **[src/Game/ShipStats.php](src/Game/ShipStats.php)**,
+  **[src/Game/Economy.php](src/Game/Economy.php)** — `ShipStats::bonusStiva()`
+  e `Economy::capacita()`: stive totali, moduli compresi, da qualunque
+  rappresentazione della nave; il tetto mostrato sale con la capacità.
+- **[src/Game/Planets.php](src/Game/Planets.php)** (anche nella guardia SQL
+  dei trasferimenti), **[src/Game/Combat.php](src/Game/Combat.php)**,
+  **[src/Game/SectorFeatures.php](src/Game/SectorFeatures.php)**,
+  **[src/Game/Industry.php](src/Game/Industry.php)**,
+  **[src/Game/Encounters.php](src/Game/Encounters.php)** — tutti i punti che
+  misuravano lo spazio libero.
+- Un modulo di stiva non si toglie con le sue stive piene.
+
+**Prove** — [tests/nave_e_moduli.php](tests/nave_e_moduli.php): potenziamento
+nella famiglia, capacità 20 + 4 da riga grezza e nave effettiva, acquisto al
+porto delle 4 unità, rimozione rifiutata a stive piene. Con i file di prima
+falliscono tutte e tre le verifiche di comportamento. Suite: 459 verifiche, 0
+fallite.
+
 ## 2026-09-30 — Cambio nave: stive, caccia e scudi comprati passano alla nuova nave
 
 Passando da una Scout Marauder con 25 stive piene a una Merchant Cruiser, il

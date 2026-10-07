@@ -147,6 +147,36 @@ return static function (): void {
         $ered = Shipyard::eredita(['type_key' => 'interdictor', 'holds_total' => 10, 'fighters' => 100000, 'shields' => 1000],
             Database::first("SELECT * FROM ship_types WHERE ckey = 'scout_marauder'"));
         Esito::uguale('un Interdictor con i soli caccia di serie non incassa nulla', 0, $ered['rimborso']);
+
+        Esito::sezione('Officina — un modulo potenziato resta nella sua famiglia');
+
+        [$p9] = Finti::comandante(1_000_000, [], $sd);
+        Database::run('UPDATE players SET salvage = 100000 WHERE id = ?', [(int) $p9['id']]);
+        Database::run("INSERT INTO player_items (player_id, item_key, rolled, source) VALUES (?, 'u_stiva', '{\"cargo_bonus\":4}', 'shop')", [(int) $p9['id']]);
+        $pi = Database::lastInsertId();
+        $ru = Modules::upgrade($rileggi((int) $p9['id']), $pi);
+        $dopo = Database::first('SELECT it.family, it.rarity FROM player_items pi JOIN item_types it ON it.ckey = pi.item_key WHERE pi.id = ?', [$pi]);
+        // Prima: l'unico modulo Militare della categoria, il Braccio recuperatore.
+        Esito::verifica('la Stiva ausiliaria diventa un modulo di stiva', !empty($ru['ok']) && $dopo['family'] === 'stive',
+            ($ru['name'] ?? $ru['error'] ?? '') . ' / ' . $dopo['family']);
+
+        Esito::sezione('Stive dei moduli — si riempiono davvero');
+
+        [$q9, $qs9] = Finti::comandante(1_000_000, ['hold_ore' => 20], $sd);
+        Database::run('UPDATE ships SET holds_total = 20 WHERE id = ?', [(int) $qs9['id']]);
+        Database::run("INSERT INTO ship_modules (ship_id, slot, item_key, rolled) VALUES (?, 'utility', 'u_stiva', '{\"cargo_bonus\":4}')", [(int) $qs9['id']]);
+        $grezza = Database::first('SELECT * FROM ships WHERE id = ?', [(int) $qs9['id']]);
+        Esito::uguale('20 stive dello scafo + 4 del modulo', 24, \App\Game\Economy::capacita($grezza));
+        Esito::uguale('anche dalla nave effettiva', 24, \App\Game\Economy::capacita(PlayerService::ship((int) $qs9['id'])));
+        $porto = Database::first("SELECT p.sector_id FROM ports p JOIN sectors s ON s.id = p.sector_id WHERE p.ore_mode = 'sell' AND p.destroyed = 0 AND p.ore_stock > 10 LIMIT 1");
+        $riga = \App\Game\Economy::portAt((int) $porto['sector_id']);
+        // Prima: il porto rileggeva la nave grezza (20 stive, tutte piene) e non vendeva nulla.
+        Esito::uguale('al porto si comprano le 4 unita\' che ci stanno', 4,
+            min(4, \App\Game\Economy::maxQty($riga, $rileggi((int) $q9['id']), $grezza, 'ore', 'buy')));
+        Database::run('UPDATE ships SET hold_ore = 24 WHERE id = ?', [(int) $qs9['id']]);
+        $mid = (int) Database::first('SELECT id FROM ship_modules WHERE ship_id = ?', [(int) $qs9['id']])['id'];
+        $rr = Modules::remove($rileggi((int) $q9['id']), PlayerService::ship((int) $qs9['id']), $mid);
+        Esito::verifica('il modulo non si toglie con le sue stive piene', empty($rr['ok']), (string) ($rr['error'] ?? ''));
     } finally {
         Database::run("DELETE bk FROM bank_accounts bk JOIN players p ON p.id = bk.player_id WHERE p.handle LIKE '\\_\\_test\\_%'");
     }

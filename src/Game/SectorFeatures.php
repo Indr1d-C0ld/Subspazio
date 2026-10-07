@@ -405,7 +405,7 @@ final class SectorFeatures
             default           => ['hold_ore', 'ore'],
         };
         $fresh = Database::first('SELECT * FROM ships WHERE id = ?', [(int) $ship['id']]);
-        $room = (int) ($ship['holds_total'] ?? 0) - Economy::holdsUsed($fresh);
+        $room = Economy::capacita($ship) - Economy::holdsUsed($fresh);
         $cargo = max(0, min($room, (int) $f['richness'] * mt_rand(3, 8)));
 
         $pdo = Database::pdo();
@@ -453,7 +453,7 @@ final class SectorFeatures
             return ['ok' => false, 'error' => "Turni insufficienti (servono {$cost})."];
         }
         $fresh = Database::first('SELECT * FROM ships WHERE id = ?', [(int) $ship['id']]);
-        $room = (int) ($ship['holds_total'] ?? 0) - Economy::holdsUsed($fresh);
+        $room = Economy::capacita($ship) - Economy::holdsUsed($fresh);
         if ($room <= 0) {
             return ['ok' => false, 'error' => 'Stive piene: scarica prima di estrarre.'];
         }

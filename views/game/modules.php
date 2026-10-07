@@ -5,8 +5,6 @@
 /** @var array<string,int> $slots */
 /** @var list<array<string,mixed>> $installed */
 /** @var list<array<string,mixed>> $inventory */
-/** @var array<string,int> $up_credits */
-/** @var array<string,int> $up_salvage */
 
 $RARITY = ['civ' => 'Civile', 'mil' => 'Militare', 'exp' => 'Sperimentale', 'xeno' => 'Xeno', 'precursor' => 'Precursore'];
 $CATLBL = ['weapon' => 'Armi', 'defense' => 'Difesa', 'drive' => 'Propulsione', 'computer' => 'Computer', 'utility' => 'Utility'];
@@ -97,7 +95,7 @@ foreach ($installed as $m) {
       <?php foreach ($inventory as $it):
         $catUsed = (int) ($usedByCat[$it['category']] ?? 0);
         $catFree = $catUsed < (int) ($slots[$it['category']] ?? 0);
-        $nx = $NEXT[$it['rarity']] ?? null;
+        $prossimo = \App\Game\Modules::prossimoDellaFamiglia($it);
       ?>
         <li>
           <div class="mi-head">
@@ -114,11 +112,12 @@ foreach ($installed as $m) {
                 <?= csrf_field() ?><input type="hidden" name="item" value="<?= (int) $it['id'] ?>">
                 <button class="btn xs" type="submit"<?= $catFree ? '' : ' disabled' ?>><?= $catFree ? 'Installa' : 'Slot pieni' ?></button>
               </form>
-              <?php if ($nx): ?>
-                <form method="post" action="<?= e(url('/gioco/moduli/potenzia')) ?>" class="inline">
+              <?php if ($prossimo !== null): [$upCr, $upMat] = \App\Game\Modules::costoPotenziamento((string) $it['rarity'], (string) $prossimo['rarity']); ?>
+                <form method="post" action="<?= e(url('/gioco/moduli/potenzia')) ?>" class="inline"
+                      data-confirm="Potenziare <?= e($it['name']) ?> in <?= e($prossimo['name']) ?> per <?= number_format($upCr, 0, ',', '.') ?> cr e <?= $upMat ?> Leghe?">
                   <?= csrf_field() ?><input type="hidden" name="item" value="<?= (int) $it['id'] ?>">
-                  <button class="btn xs ghost" type="submit">Potenzia → <?= e($RARITY[$nx]) ?>
-                    <?php if (isset($up_credits[$it['rarity']])): ?>(<?= number_format($up_credits[$it['rarity']], 0, ',', '.') ?> cr + <?= (int) ($up_salvage[$it['rarity']] ?? 0) ?> Leghe)<?php endif; ?>
+                  <button class="btn xs ghost" type="submit" title="Resta nella sua famiglia: stessa funzione, valori più alti">Potenzia → <?= e($prossimo['name']) ?> [<?= e($RARITY[$prossimo['rarity']] ?? $prossimo['rarity']) ?>]
+                    (<?= number_format($upCr, 0, ',', '.') ?> cr + <?= $upMat ?> Leghe)
                   </button>
                 </form>
               <?php endif; ?>

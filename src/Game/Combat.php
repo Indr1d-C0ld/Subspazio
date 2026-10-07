@@ -330,7 +330,7 @@ final class Combat
             if ($bust) {
                 $loot = (int) floor((int) $port['credits'] * GameConfig::float('combat.loot_pct', 0.5));
                 $ship = Database::first('SELECT * FROM ships WHERE id = ?', [$atkShip['id']]);
-                $room = (int) $ship['holds_total'] - Economy::holdsUsed($ship);
+                $room = Economy::capacita($ship) - Economy::holdsUsed($ship);
                 foreach (Economy::COMMODITIES as $c) {
                     $pf = Economy::prefix($c);
                     if ($room <= 0) {
@@ -503,7 +503,7 @@ final class Combat
                 if ($cracked) {
                     $loot = (int) floor((int) $p['credits'] * GameConfig::float('combat.loot_pct', 0.5));
                     $ship = Database::first('SELECT * FROM ships WHERE id = ?', [$atkShip['id']]);
-                    $room = (int) $ship['holds_total'] - Economy::holdsUsed($ship);
+                    $room = Economy::capacita($ship) - Economy::holdsUsed($ship);
                     foreach ([['stock_ore', 'ore', 'hold_ore'], ['stock_org', 'organics', 'hold_organics'], ['stock_equ', 'equipment', 'hold_equipment']] as [$sc, $cl, $hc]) {
                         if ($room <= 0) {
                             break;
@@ -661,7 +661,7 @@ final class Combat
 
             if ($killed) {
                 $ship = Database::first('SELECT * FROM ships WHERE id = ?', [$atkShip['id']]);
-                $room = (int) $ship['holds_total'] - Economy::holdsUsed($ship);
+                $room = Economy::capacita($ship) - Economy::holdsUsed($ship);
                 foreach ([['cargo_ore', 'hold_ore'], ['cargo_org', 'hold_organics'], ['cargo_equ', 'hold_equipment']] as [$nc, $hc]) {
                     $take = min($room, (int) $npc[$nc]);
                     if ($take > 0) {

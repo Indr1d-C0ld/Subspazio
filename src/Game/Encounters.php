@@ -297,12 +297,12 @@ final class Encounters
     private static function freeHolds(int $playerId): int
     {
         $s = Database::first(
-            "SELECT s.holds_total,
+            "SELECT s.id, s.holds_total,
                     (s.hold_ore + s.hold_organics + s.hold_equipment + s.hold_colonists) AS used
              FROM ships s JOIN players p ON p.ship_id = s.id WHERE p.id = ?",
             [$playerId]
         );
-        return $s === null ? 0 : max(0, (int) $s['holds_total'] - (int) $s['used']);
+        return $s === null ? 0 : max(0, (int) $s['holds_total'] + ShipStats::bonusStiva((int) $s['id']) - (int) $s['used']);
     }
 
     private static function officerSkill(int $playerId, string $role): int
@@ -396,7 +396,7 @@ final class Encounters
         if (!empty($eff['cargo']) && is_array($eff['cargo'])) {
             $map = ['ore' => 'hold_ore', 'organics' => 'hold_organics', 'equipment' => 'hold_equipment', 'colonists' => 'hold_colonists'];
             $s = Database::first("SELECT holds_total, hold_ore, hold_organics, hold_equipment, hold_colonists FROM ships WHERE id = ?", [$shipId]);
-            $room = max(0, (int) $s['holds_total'] - ((int) $s['hold_ore'] + (int) $s['hold_organics'] + (int) $s['hold_equipment'] + (int) $s['hold_colonists']));
+            $room = max(0, (int) $s['holds_total'] + ShipStats::bonusStiva($shipId) - ((int) $s['hold_ore'] + (int) $s['hold_organics'] + (int) $s['hold_equipment'] + (int) $s['hold_colonists']));
             foreach ($eff['cargo'] as $k => $q) {
                 if (!isset($map[$k])) {
                     continue;

@@ -30,7 +30,7 @@ final class Modules
     {
         return Database::all(
             'SELECT pi.id, pi.item_key, pi.rolled, pi.broken_at, pi.source, pi.acquired_at,
-                    it.name, it.category, it.rarity, it.effects, it.base_salvage, it.descr
+                    it.name, it.category, it.family, it.rarity, it.effects, it.base_salvage, it.descr
              FROM player_items pi JOIN item_types it ON it.ckey = pi.item_key
              WHERE pi.player_id = ?
              ORDER BY FIELD(it.rarity,\'precursor\',\'xeno\',\'exp\',\'mil\',\'civ\'), it.category, pi.id',
@@ -136,6 +136,14 @@ final class Modules
                 $pdo->rollBack();
                 return ['ok' => false, 'error' => 'Modulo non installato su questa nave.'];
             }
+            // Un modulo di stiva non si toglie con le sue stive piene: il
+            // carico resterebbe a bordo senza posto.
+            $nave = Database::first('SELECT * FROM ships WHERE id = ? FOR UPDATE', [(int) $ship['id']]);
+            $eccesso = Economy::holdsUsed($nave) - Economy::capacita($nave);
+            if ($eccesso > 0) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => "Senza questo modulo il carico non ci sta: scarica prima {$eccesso} unita'."];
+            }
             Database::run(
                 'INSERT INTO player_items (player_id, item_key, rolled, broken_at, source) VALUES (?, ?, ?, ?, ?)',
                 [(int) $player['id'], $m['item_key'], $m['rolled'], $m['broken_at'], 'shop']
@@ -196,7 +204,7 @@ final class Modules
             return ['ok' => false, 'error' => 'L\'officina moduli è solo allo StarDock.'];
         }
         $it = Database::first(
-            'SELECT pi.id, pi.rolled, it.ckey, it.name, it.category, it.rarity, it.effects
+            'SELECT pi.id, pi.rolled, it.ckey, it.name, it.category, it.family, it.rarity, it.effects
              FROM player_items pi JOIN item_types it ON it.ckey = pi.item_key
              WHERE pi.id = ? AND pi.player_id = ?',
             [$itemId, (int) $player['id']]
@@ -204,24 +212,13 @@ final class Modules
         if ($it === null) {
             return ['ok' => false, 'error' => 'Modulo non trovato nell\'inventario.'];
         }
-        $order = Loot::RARITIES;
-        $ci = array_search($it['rarity'], $order, true);
-        if (!is_int($ci) || $ci >= count($order) - 1) {
-            return ['ok' => false, 'error' => 'Questo modulo è già al massimo della rarità.'];
-        }
-        $next = $order[$ci + 1];
-
-        // un modello di destinazione nella stessa categoria e fascia superiore
-        $target = Database::first(
-            'SELECT ckey, name, effects FROM item_types WHERE category = ? AND rarity = ? ORDER BY RAND() LIMIT 1',
-            [$it['category'], $next]
-        );
+        $target = self::prossimoDellaFamiglia($it);
         if ($target === null) {
-            return ['ok' => false, 'error' => 'Nessun modello superiore disponibile in questa categoria.'];
+            return ['ok' => false, 'error' => "{$it['name']} è già il modello più avanzato della sua famiglia."];
         }
+        $next = (string) $target['rarity'];
 
-        $costCr  = self::tierCost('loot.upgrade_cost_credits', (string) $it['rarity']);
-        $costMat = self::tierCost('loot.upgrade_cost_salvage', (string) $it['rarity']);
+        [$costCr, $costMat] = self::costoPotenziamento((string) $it['rarity'], $next);
         if ((int) $player['credits'] < $costCr) {
             return ['ok' => false, 'error' => "Servono {$costCr} cr."];
         }
@@ -248,6 +245,57 @@ final class Modules
         }
         return ['ok' => true, 'name' => $target['name'], 'rarity' => $next,
                 'label' => Loot::RARITY_LABEL[$next] ?? $next, 'cost' => $costCr, 'mat' => $costMat];
+    }
+
+    /**
+     * Il modello che segue nella stessa famiglia: la prima rarita' superiore
+     * che la famiglia possiede. Prima si sceglieva a caso nella stessa
+     * categoria, e una Stiva ausiliaria poteva diventare un Braccio
+     * recuperatore.
+     *
+     * @param array<string,mixed> $it riga con family e rarity
+     * @return array<string,mixed>|null
+     */
+    public static function prossimoDellaFamiglia(array $it): ?array
+    {
+        if (empty($it['family'])) {
+            return null;
+        }
+        $order = Loot::RARITIES;
+        $ci = array_search($it['rarity'], $order, true);
+        if (!is_int($ci)) {
+            return null;
+        }
+        foreach (array_slice($order, $ci + 1) as $r) {
+            $t = Database::first(
+                'SELECT ckey, name, rarity, effects FROM item_types WHERE family = ? AND rarity = ? ORDER BY ckey LIMIT 1',
+                [$it['family'], $r]
+            );
+            if ($t !== null) {
+                return $t;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Crediti e Leghe per salire da una rarita' a un'altra: se la famiglia
+     * salta un gradino, si pagano tutti quelli attraversati.
+     *
+     * @return array{0:int,1:int}
+     */
+    public static function costoPotenziamento(string $da, string $a): array
+    {
+        $order = Loot::RARITIES;
+        $cr = 0;
+        $mat = 0;
+        $i0 = array_search($da, $order, true);
+        $i1 = array_search($a, $order, true);
+        for ($i = is_int($i0) ? $i0 : 0; is_int($i1) && $i < $i1; $i++) {
+            $cr  += self::tierCost('loot.upgrade_cost_credits', $order[$i]);
+            $mat += self::tierCost('loot.upgrade_cost_salvage', $order[$i]);
+        }
+        return [$cr, $mat];
     }
 
     private static function tierCost(string $key, string $rarity): int

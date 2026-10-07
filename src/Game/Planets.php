@@ -264,13 +264,13 @@ final class Planets
             if ($qty > (int) $p[$col]) {
                 return ['ok' => false, 'error' => 'Coloni nella categoria insufficienti.'];
             }
-            $room = (int) $ship['holds_total'] - Economy::holdsUsed($ship);
+            $room = Economy::capacita($ship) - Economy::holdsUsed($ship);
             if ($qty > $room) {
                 return ['ok' => false, 'error' => 'Stive insufficienti.'];
             }
             if (!self::trasferisci([
                 ["UPDATE planets SET {$col} = {$col} - ? WHERE id = ? AND {$col} >= ?", [$qty, $planetId, $qty]],
-                ['UPDATE ships SET hold_colonists = hold_colonists + ? WHERE id = ? AND ' . self::STIVE_LIBERE, [$qty, $ship['id'], $qty]],
+                ['UPDATE ships SET hold_colonists = hold_colonists + ? WHERE id = ? AND ' . self::STIVE_LIBERE, [$qty, $ship['id'], ShipStats::bonusStiva((int) $ship['id']), $qty]],
             ])) {
                 return ['ok' => false, 'error' => 'Coloni insufficienti o stive piene.'];
             }
@@ -327,13 +327,13 @@ final class Planets
             if ($qty > (int) $p[$stockCol]) {
                 return ['ok' => false, 'error' => 'Scorte del pianeta insufficienti.'];
             }
-            $room = (int) $ship['holds_total'] - Economy::holdsUsed($ship);
+            $room = Economy::capacita($ship) - Economy::holdsUsed($ship);
             if ($qty > $room) {
                 return ['ok' => false, 'error' => 'Stive insufficienti.'];
             }
             if (!self::trasferisci([
                 ["UPDATE planets SET {$stockCol} = {$stockCol} - ? WHERE id = ? AND {$stockCol} >= ?", [$qty, $planetId, $qty]],
-                ["UPDATE ships SET {$shipCol} = {$shipCol} + ? WHERE id = ? AND " . self::STIVE_LIBERE, [$qty, $ship['id'], $qty]],
+                ["UPDATE ships SET {$shipCol} = {$shipCol} + ? WHERE id = ? AND " . self::STIVE_LIBERE, [$qty, $ship['id'], ShipStats::bonusStiva((int) $ship['id']), $qty]],
             ])) {
                 return ['ok' => false, 'error' => 'Scorte del pianeta insufficienti o stive piene.'];
             }
@@ -595,12 +595,12 @@ final class Planets
             [$player['id'], TurnManager::gameDayStart()]
         )['s'] ?? 0);
         // usa un marcatore semplice: righe trade_log con port_id=0 = ritiri coloni
-        $room = (int) $ship['holds_total'] - Economy::holdsUsed($ship);
+        $room = Economy::capacita($ship) - Economy::holdsUsed($ship);
         $qty = min($qty, $room, max(0, $perDay - $taken));
         if ($qty <= 0) {
             return ['ok' => false, 'error' => 'Nessuno spazio o quota giornaliera coloni esaurita.'];
         }
-        if (Database::run('UPDATE ships SET hold_colonists = hold_colonists + ? WHERE id = ? AND ' . self::STIVE_LIBERE, [$qty, $ship['id'], $qty])->rowCount() === 0) {
+        if (Database::run('UPDATE ships SET hold_colonists = hold_colonists + ? WHERE id = ? AND ' . self::STIVE_LIBERE, [$qty, $ship['id'], ShipStats::bonusStiva((int) $ship['id']), $qty])->rowCount() === 0) {
             return ['ok' => false, 'error' => 'Stive piene.'];
         }
         Database::run(
@@ -646,8 +646,8 @@ final class Planets
         }
     }
 
-    /** Condizione SQL: la nave ha almeno ? stive libere. */
-    private const STIVE_LIBERE = 'holds_total - (hold_ore + hold_organics + hold_equipment + hold_colonists) >= ?';
+    /** Condizione SQL: la nave (piu' ? stive dei moduli) ha almeno ? stive libere. */
+    private const STIVE_LIBERE = 'holds_total + ? - (hold_ore + hold_organics + hold_equipment + hold_colonists) >= ?';
 
     /**
      * @param array<string,mixed> $player

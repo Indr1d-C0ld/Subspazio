@@ -247,7 +247,7 @@ final class Industry
                 return ['ok' => false, 'error' => 'Il carico di questo lavoro si riprende all\'Officina dello StarDock.'];
             }
             $nave = Database::first('SELECT * FROM ships WHERE id = ?', [(int) $player['ship_id']]);
-            $libere = (int) ($nave['holds_total'] ?? 0) - Economy::holdsUsed($nave ?? []);
+            $libere = ($nave !== null ? Economy::capacita($nave) : 0) - Economy::holdsUsed($nave ?? []);
             if ($libere < $carico) {
                 return ['ok' => false, 'error' => "Servono {$carico} stive libere per riprendere il carico (ne hai {$libere})."];
             }

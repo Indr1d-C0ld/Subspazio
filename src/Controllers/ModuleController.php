@@ -31,8 +31,6 @@ final class ModuleController
             'slots'      => ShipStats::slots((string) $ship['type_key']),
             'installed'  => Modules::installed((int) $ship['id']),
             'inventory'  => Modules::inventory((int) $player['id']),
-            'up_credits' => self::parseTiers(GameConfig::str('loot.upgrade_cost_credits', '')),
-            'up_salvage' => self::parseTiers(GameConfig::str('loot.upgrade_cost_salvage', '')),
             'recipes'    => Industry::recipes($player, $ship),
             'jobs'       => Industry::craftJobs((int) $player['id']),
             'max_jobs'   => GameConfig::int('craft.max_jobs', 3),
@@ -104,18 +102,5 @@ final class ModuleController
             ? "Potenziato a {$res['name']} [{$res['label']}] — {$res['cost']} cr + {$res['mat']} Leghe."
             : $res['error']);
         return redirect('/gioco/moduli');
-    }
-
-    /** @return array<string,int> */
-    private static function parseTiers(string $s): array
-    {
-        $out = [];
-        foreach (explode(',', $s) as $pair) {
-            $p = explode(':', trim($pair));
-            if (count($p) === 2) {
-                $out[$p[0]] = (int) $p[1];
-            }
-        }
-        return $out;
     }
 }

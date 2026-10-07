@@ -284,7 +284,7 @@ final class Economy
             if ($port["{$pf}_mode"] !== 'sell') {
                 return 0;
             }
-            $room = (int) $ship['holds_total'] - self::holdsUsed($ship);
+            $room = self::capacita($ship) - self::holdsUsed($ship);
             $cap1 = min($stock, max(0, $room));
             if ($cap1 <= 0) {
                 return 0;
@@ -325,6 +325,23 @@ final class Economy
     }
 
     /** @param array<string,mixed> $ship */
+    /**
+     * Stive totali della nave, moduli compresi. Accetta sia la nave effettiva
+     * (PlayerService::ship, che le ha gia' sommate) sia la riga grezza di
+     * `ships`, a cui aggiunge quelle dei moduli. Prima molti punti leggevano la
+     * riga grezza: un modulo di stiva alzava il numero a schermo ma al porto,
+     * nei pianeti e nei relitti quelle stive non si potevano riempire.
+     *
+     * @param array<string,mixed> $ship
+     */
+    public static function capacita(array $ship): int
+    {
+        if (array_key_exists('mod_effects', $ship)) {
+            return (int) ($ship['holds_total'] ?? 0);
+        }
+        return (int) ($ship['holds_total'] ?? 0) + (isset($ship['id']) ? ShipStats::bonusStiva((int) $ship['id']) : 0);
+    }
+
     public static function holdsUsed(array $ship): int
     {
         return (int) $ship['hold_ore'] + (int) $ship['hold_organics']
