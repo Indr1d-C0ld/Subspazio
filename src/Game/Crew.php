@@ -385,7 +385,7 @@ final class Crew
         return ['ok' => true, 'msg' => $msg, 'name' => $o['name']];
     }
 
-    private static function addPending(int $playerId, string $effect, float $mag, string $expires): void
+    public static function addPending(int $playerId, string $effect, float $mag, string $expires): void
     {
         // un solo effetto attivo per tipo
         Database::run('DELETE FROM crew_pending WHERE player_id = ? AND effect = ?', [$playerId, $effect]);

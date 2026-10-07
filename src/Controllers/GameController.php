@@ -51,6 +51,13 @@ final class GameController
         ]));
     }
 
+    public function usaConsumabile(Request $request): Response
+    {
+        $res = \App\Game\Consumabili::usa(Ctx::$player, $request->str('ckey'));
+        Session::flash($res['ok'] ? 'success' : 'error', $res['ok'] ? "{$res['name']}: {$res['msg']}" : $res['error']);
+        return redirect('/gioco');
+    }
+
     public function hideOnboarding(Request $request): Response
     {
         \App\Game\Onboarding::dismiss((int) Ctx::$player['id']);

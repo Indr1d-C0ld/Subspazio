@@ -573,6 +573,24 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
       </dl>
     </section>
 
+    <?php $consumabili = \App\Game\Consumabili::inventario((int) $player['id']); if ($consumabili !== []): ?>
+    <details class="tools" open>
+      <summary><span class="sec-ic">🎒</span> Consumabili<?= partial('help', ['key' => 'plancia.consumabili']) ?></summary>
+      <ul class="note-list">
+        <?php foreach ($consumabili as $c): ?>
+          <li class="nl-head">
+            <span><span class="rarity rarity-<?= e($c['rarita']) ?>">×<?= (int) $c['qty'] ?></span> <strong><?= e($c['nome']) ?></strong>
+              <span class="nl-note"><?= e($c['descr']) ?></span></span>
+            <form method="post" action="<?= e(url('/gioco/consumabili/usa')) ?>" class="inline">
+              <?= csrf_field() ?><input type="hidden" name="ckey" value="<?= e($c['ckey']) ?>">
+              <button class="btn xs" type="submit">Usa</button>
+            </form>
+          </li>
+        <?php endforeach; ?>
+      </ul>
+    </details>
+    <?php endif; ?>
+
     <details class="tools">
       <summary><span class="sec-ic">🖥️</span> Computer di bordo<?= partial('help', ['key' => 'plancia.computer']) ?></summary>
       <form method="get" action="<?= e(url('/gioco/rotta')) ?>" class="row">

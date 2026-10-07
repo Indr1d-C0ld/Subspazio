@@ -121,6 +121,7 @@ $router->get('/gioco/fazioni', [FactionController::class, 'index'], $game);
 $router->post('/gioco/fazioni/compra', [FactionController::class, 'buy'], $game);
 $router->post('/gioco/fazioni/ammenda', [FactionController::class, 'amnesty'], $game);
 $router->post('/gioco/fazioni/legge', [FactionController::class, 'ammendaLegge'], $game);
+$router->post('/gioco/consumabili/usa', [GameController::class, 'usaConsumabile'], $game);
 
 // Scansione & frontiera (HTML)
 $router->post('/gioco/scansiona', [ScanController::class, 'scan'], $game);

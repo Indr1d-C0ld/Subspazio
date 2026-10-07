@@ -59,6 +59,16 @@ testi o artwork della door proprietaria.
   insieme attenuano al massimo il 60% dei colpi, la schermatura il 90% dei
   danni ambientali, l'elusione evita al massimo il 60% degli agganci.
 
+  **Consumabili** monouso cadono dai nemici abbattuti (25% per la probabilità
+  di bottino della fascia, rarità secondo la fascia) e si usano dalla plancia:
+  nanoriparatori (scudi al massimo), container di caccia (un decimo del
+  tetto), carica EMP (nessun aggancio al prossimo ingresso ostile),
+  acceleratore di warp (salto gratuito), esca olografica (30 minuti senza
+  agganci da fermo), nucleo in sovraccarico (+25% al prossimo attacco), codice
+  di amnistia contraffatto (−60 di notorietà), sonda di recupero Precursore
+  (modulo garantito dal prossimo nemico). Non si sprecano: un nanoriparatore a
+  scudi pieni non si consuma.
+
 - **Combattimento** — motore a caccia con scudi (una nave senza caccia resta
   vulnerabile finché ha scudi da consumare), attacco nave contro nave con
   bottino ed esperienza, assalto ai porti con saccheggio, assalto ai pianeti
@@ -455,11 +465,11 @@ php tests/run.php                # tutte
 php tests/run.php economica      # solo i file col nome che contiene "economica"
 ```
 
-Suite di integrazione senza dipendenze, 507 verifiche in 24 file: integrità
+Suite di integrazione senza dipendenze, 518 verifiche in 25 file: integrità
 economica, concorrenza, banca/contratti/Officina, combattimento, navigazione,
 nave e moduli, pianeti, porti, equipaggio, mondo, percorsi di gioco normali,
 universo, clock, sessioni e turni, difese, iscrizione e posta, immagini,
-configurazione, schema, notifiche in tempo reale, fasce di rischio, legge federale, e le regole decise per mercato nero, uccisioni e
+configurazione, schema, notifiche in tempo reale, fasce di rischio, legge federale, bottino, e le regole decise per mercato nero, uccisioni e
 stagioni. Ogni correzione ha una prova costruita per fallire sul codice di
 prima. Le prove di concorrenza lanciano processi separati con una barriera
 comune (`tests/_corsa.php`): due richieste dello stesso giocatore nello stesso

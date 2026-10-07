@@ -146,6 +146,10 @@ final class Loot
                     'label'  => self::RARITY_LABEL[$item['rarity']] ?? $item['rarity'],
                 ];
             }
+            // e forse un consumabile
+            if (($c = Consumabili::tira($killerId, $band)) !== null) {
+                $out['consumabili'][] = $c;
+            }
         } catch (\Throwable) {
             // catalogo non migrato: solo materiale
         }
@@ -280,6 +284,9 @@ final class Loot
         }
         foreach ($drops['items'] ?? [] as $it) {
             $bits[] = "{$it['name']} [{$it['label']}]";
+        }
+        foreach ($drops['consumabili'] ?? [] as $c) {
+            $bits[] = $c['name'];
         }
         return $bits === [] ? '' : ' Recuperato: ' . implode(' · ', $bits) . '.';
     }

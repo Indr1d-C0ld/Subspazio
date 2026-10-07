@@ -4,6 +4,33 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-07 — Consumabili monouso
+
+*Deciso con l'autore*: oggetti da usare una volta, trovati come bottino.
+
+- **[src/Game/Consumabili.php](src/Game/Consumabili.php)** (nuovo) — otto
+  consumabili per rarità: nanoriparatori, container di caccia, carica EMP,
+  acceleratore di warp, esca olografica, nucleo in sovraccarico, codice di
+  amnistia contraffatto, sonda di recupero Precursore. Quelli che agiscono «al
+  prossimo» evento passano per gli effetti in attesa dell'equipaggio (gli
+  stessi delle abilità degli ufficiali). Non si sprecano: a scudi pieni, caccia
+  al tetto o notorietà zero l'uso è rifiutato e l'oggetto resta. Il consumo è
+  vincolato in SQL alla quantità.
+- **[src/Game/Loot.php](src/Game/Loot.php)** — dopo ogni abbattimento il 25%
+  (per la probabilità di bottino della fascia) di un consumabile, con la rarità
+  scelta dai pesi della fascia; i messaggi di bottino lo nominano.
+- **[src/Game/Npc.php](src/Game/Npc.php)** — l'esca ferma gli agganci da
+  fermo per 30 minuti.
+- **Plancia** — sezione «Consumabili» con descrizione e «Usa»
+  ([views/game/index.php](views/game/index.php),
+  [src/Controllers/GameController.php](src/Controllers/GameController.php),
+  [src/routes.php](src/routes.php), [src/Game/Help.php](src/Game/Help.php)).
+- **[db/migrations/0058_consumabili.sql](db/migrations/0058_consumabili.sql)**
+  — tabella `player_consumabili`, chiave `loot.consumabile_pct`.
+- **[tests/bottino.php](tests/bottino.php)** (nuovo) — accumulo, uso e
+  rifiuto dello spreco, effetti in attesa, amnistia, caduta nell'Orlo. Suite:
+  518 verifiche, 0 fallite.
+
 ## 2026-10-07 — Catalogo moduli: 88 modelli in 18 famiglie, affissi casuali
 
 Il catalogo aveva 23 moduli, uno per rarità e categoria: due moduli trovati

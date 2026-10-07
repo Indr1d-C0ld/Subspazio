@@ -225,7 +225,7 @@ final class Npc
             if ($ship === null || $ship['type_key'] === 'escape_pod') {
                 continue;
             }
-            if (Combat::elude($ship)) {
+            if (Combat::elude($ship) || Consumabili::escaAttiva((int) $player['id'])) {
                 continue;
             }
             // Stesse regole dell'ingresso nel settore: chi e' occultato non si
