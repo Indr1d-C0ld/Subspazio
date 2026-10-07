@@ -71,7 +71,7 @@ final class AdminGameController
             Session::flash('error', 'Conferma non valida: digita CHIUDI.');
             return redirect('/admin/gioco#stagione');
         }
-        $res = \App\Game\Season::close(Auth::id() ?? 0, $request->str('regen') === '1');
+        $res = \App\Game\Season::close(Auth::id() ?? 0, $request->str('regen') === '1', $request->str('totale') === '1');
         Session::flash('success', 'Stagione chiusa. Aperta la Stagione ' . $res['number'] . ' (snapshot ' . $res['snapshot'] . ' comandanti).');
         return redirect('/admin/gioco#stagione');
     }

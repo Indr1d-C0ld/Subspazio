@@ -4,6 +4,35 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-07 — Ripartenza totale a fine stagione
+
+L'autore ha chiesto di azzerare l'universo per tutti e ripartire con i
+bilanciamenti nuovi. La chiusura di stagione azzerava la ricchezza ma teneva
+moduli e ufficiali, e non conosceva i sistemi aggiunti in giornata.
+
+- **[src/Game/Season.php](src/Game/Season.php)** — `close()` accetta
+  `$totale`. Notorietà, fedina, tregue, consumabili, reperti, effetti in
+  attesa e incontri sospesi si azzerano **sempre**: sono stato della partita,
+  non progresso. Con la ripartenza totale si azzerano anche moduli (montati e
+  in inventario), ufficiali e reclute, missioni, progetti, collezioni,
+  corporazioni, registro di fazione e giornale di bordo; le navi riprendono il
+  nome del comandante. Restano account, nome, aspetto, traguardi e Codex. La
+  radio annuncia cosa riparte e cosa resta.
+- **Pannello admin** ([views/admin/game.php](views/admin/game.php),
+  [src/Controllers/AdminGameController.php](src/Controllers/AdminGameController.php))
+  — casella «ripartenza totale» accanto a «rigenera anche l'universo».
+- **Console** ([bin/console.php](bin/console.php)) — `season:close --conferma
+  [--rigenera] [--totale]`; senza `--conferma` mostra solo l'uso.
+- **[tests/regole_decise.php](tests/regole_decise.php)** — verifiche statiche
+  (la chiusura vera non si prova sul gioco vivo) sugli azzeramenti sempre e su
+  quelli della ripartenza totale. Suite: 534 verifiche, 0 fallite, eseguita
+  anche sulla galassia nuova.
+
+Sul gioco vivo: copia completa del database (70 tabelle) fuori dalla web root,
+poi chiusura della Stagione 2 nell'albo d'oro con ripartenza totale e galassia
+rigenerata (1.000 settori, 335 porti; fascia I con 68 settori e 23 porti),
+eseguita tenendo il lock del clock.
+
 ## 2026-10-07 — Reperti, collezioni e progetti d'Officina
 
 *Deciso con l'autore*: reperti da rivendere o collezionare, progetti che

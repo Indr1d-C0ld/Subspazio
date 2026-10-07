@@ -50,7 +50,16 @@ final class Season
      *
      * @return array{ok:bool, error?:string, number?:int, snapshot?:int, universe?:array}
      */
-    public static function close(int $actorUserId, bool $regenUniverse): array
+    /**
+     * Chiude la stagione e azzera il gioco per tutti.
+     *
+     * Con $totale la ripartenza e' completa: oltre alla ricchezza si azzerano
+     * anche moduli, ufficiali, progetti, collezioni e corporazioni, e restano
+     * solo account, nome, aspetto, traguardi e Codex. Notorieta', fedina,
+     * consumabili e reperti si azzerano in ogni caso: sono ricchezza e stato,
+     * non progresso.
+     */
+    public static function close(int $actorUserId, bool $regenUniverse, bool $totale = false): array
     {
         $season = self::current();
         $sid = (int) $season['id'];
@@ -92,12 +101,15 @@ final class Season
         GameConfig::set('season.number', (string) $nextNum);
 
         Radio::system("FINE STAGIONE {$season['number']} — vince {$winner}. Comincia la Stagione {$nextNum}: "
-            . 'crediti, navi, pianeti, materiali, tesori di corporazione e reputazione ripartono da zero; '
-            . 'restano traguardi, esperienza degli ufficiali e moduli, che tornano in inventario.');
+            . ($totale
+                ? 'ripartenza totale. Tutti ripartono dallo StarDock con la nave iniziale: crediti, navi, pianeti, moduli, '
+                  . 'ufficiali, corporazioni, reputazione e notorietà azzerati. Restano nome, aspetto e traguardi.'
+                : 'crediti, navi, pianeti, materiali, tesori di corporazione e reputazione ripartono da zero; '
+                  . 'restano traguardi, esperienza degli ufficiali e moduli, che tornano in inventario.'));
 
         // reset
         $wipePlanets = GameConfig::bool('season.wipe_planets', true) || $regenUniverse;
-        $wipeCorps = GameConfig::bool('season.wipe_corps', false);
+        $wipeCorps = GameConfig::bool('season.wipe_corps', false) || $totale;
         $dock = (int) (Database::first('SELECT id FROM sectors WHERE is_stardock = 1 LIMIT 1')['id'] ?? 1);
 
         $u = null;
@@ -166,25 +178,43 @@ final class Season
         $pdo->exec('TRUNCATE TABLE craft_jobs');
         $pdo->exec('TRUNCATE TABLE player_reputation');
 
-        // Moduli e ufficiali restano, come progresso del comandante. I moduli
-        // tornano in inventario (guasti compresi): la nave ridiventa lo scafo
-        // iniziale e quelli montati ne sforerebbero gli slot. Gli ufficiali oltre
-        // i posti del nuovo scafo vanno in panchina.
-        Database::run(
-            "INSERT INTO player_items (player_id, item_key, rolled, broken_at, source)
-             SELECT s.player_id, sm.item_key, sm.rolled, sm.broken_at, 'shop'
-               FROM ship_modules sm JOIN ships s ON s.id = sm.ship_id"
-        );
-        Database::run('DELETE FROM ship_modules');
-        foreach (Database::all('SELECT id FROM players') as $pl) {
-            Crew::adattaAlloScafo((int) $pl['id']);
+        // Notorieta', fedina, tregue, consumabili, reperti, effetti in attesa e
+        // incontri sospesi: stato della partita, si azzerano sempre.
+        Database::run('UPDATE players SET notorieta = 0, notorieta_at = NULL, tregua_npc_until = NULL');
+        foreach (['crimini', 'player_consumabili', 'player_reperti', 'crew_pending', 'player_encounters'] as $t) {
+            $pdo->exec("DELETE FROM {$t}");
+        }
+
+        if ($totale) {
+            // Ripartenza totale: anche il progresso del comandante riparte da zero.
+            $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
+            foreach (['ship_modules', 'player_items', 'officers', 'recruit_candidates', 'away_missions',
+                'away_mission_log', 'player_progetti', 'player_collezioni', 'faction_log', 'ship_log'] as $t) {
+                $pdo->exec("TRUNCATE TABLE {$t}");
+            }
+            $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
+            Database::run("UPDATE ships SET name = COALESCE(CONCAT('SS ', (SELECT handle FROM players p WHERE p.ship_id = ships.id)), name)");
+        } else {
+            // Moduli e ufficiali restano, come progresso del comandante. I moduli
+            // tornano in inventario (guasti compresi): la nave ridiventa lo scafo
+            // iniziale e quelli montati ne sforerebbero gli slot. Gli ufficiali oltre
+            // i posti del nuovo scafo vanno in panchina.
+            Database::run(
+                "INSERT INTO player_items (player_id, item_key, rolled, broken_at, source)
+                 SELECT s.player_id, sm.item_key, sm.rolled, sm.broken_at, 'shop'
+                   FROM ship_modules sm JOIN ships s ON s.id = sm.ship_id"
+            );
+            Database::run('DELETE FROM ship_modules');
+            foreach (Database::all('SELECT id FROM players') as $pl) {
+                Crew::adattaAlloScafo((int) $pl['id']);
+            }
         }
         GameConfig::set('combat.bounty_mult', '1');
         GameConfig::forget();
 
         Admin::audit($actorUserId, 'season.close', [
             'closed' => (int) $season['number'], 'opened' => $nextNum,
-            'winner' => $winner, 'regen_universe' => $regenUniverse,
+            'winner' => $winner, 'regen_universe' => $regenUniverse, 'totale' => $totale,
         ]);
 
         return ['ok' => true, 'number' => $nextNum, 'snapshot' => $pos, 'universe' => $u];

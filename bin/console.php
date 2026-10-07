@@ -207,6 +207,26 @@ try {
             out('Fatto. game.status = active.');
             break;
 
+        case 'season:close':
+            // Chiude la stagione e azzera il gioco per tutti. Irreversibile: si
+            // esegue solo con --conferma, e conviene una copia del database prima.
+            if (!in_array('--conferma', $args, true)) {
+                out('Uso: php bin/console.php season:close --conferma [--rigenera] [--totale]');
+                out('  --rigenera  galassia e porti nuovi');
+                out('  --totale    azzera anche moduli, ufficiali, progetti, collezioni e corporazioni');
+                exit(1);
+            }
+            $res = \App\Game\Season::close(0, in_array('--rigenera', $args, true), in_array('--totale', $args, true));
+            if (empty($res['ok'])) {
+                out('ERRORE: ' . ($res['error'] ?? '?'));
+                exit(1);
+            }
+            out("Stagione chiusa: aperta la {$res['number']}, {$res['snapshot']} comandanti nell'albo.");
+            if (!empty($res['universe'])) {
+                out('Universo: ' . json_encode($res['universe']));
+            }
+            break;
+
         case 'ports:generate':
             $pstats = PortGenerator::generate(in_array('--force', $args, true));
             foreach ($pstats as $k => $v) {

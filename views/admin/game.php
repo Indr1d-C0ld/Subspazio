@@ -125,12 +125,14 @@ $C = static fn (string $k = '') => e(url('/admin/gioco')) . ($k ? '#' . $k : '')
   <p>In corso: <strong>#<?= (int) $season['number'] ?> — <?= e($season['name']) ?></strong> (dal <?= e(fmt_date($season['started_at'])) ?>).</p>
   <p class="hint">Chiudendo la stagione: snapshot della top <?= e((string) \App\Game\GameConfig::int('season.snapshot_top', 25)) ?> nell'albo, poi
      tutti i comandanti ripartono da zero (crediti/turni/esperienza), navi e pianeti azzerati.
-     I traguardi restano. Universo rigenerato solo se spunti l'opzione.</p>
+     I traguardi restano. Universo rigenerato solo se spunti l'opzione; con «ripartenza totale» si azzerano anche
+     moduli, ufficiali, progetti, collezioni e corporazioni.</p>
   <form method="post" action="<?= e(url('/admin/gioco/stagione')) ?>" class="row"
         data-confirm="Chiudere la stagione <?= (int) $season['number'] ?>? Reset globale.">
     <?= csrf_field() ?>
     <label>Conferma (digita <code>CHIUDI</code>) <input type="text" name="confirm" autocomplete="off"></label>
     <label class="chk"><input type="checkbox" name="regen" value="1"> rigenera anche l'universo</label>
+    <label class="chk" title="Azzera anche moduli, ufficiali, progetti, collezioni e corporazioni: restano solo nome, aspetto, traguardi e Codex"><input type="checkbox" name="totale" value="1"> ripartenza totale</label>
     <button class="btn xs danger" type="submit">Chiudi stagione</button>
   </form>
 </section>

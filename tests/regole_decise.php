@@ -127,6 +127,15 @@ return static function (): void {
         ] as $cosa => $frammento) {
             Esito::verifica($cosa, str_contains($s, $frammento));
         }
+        // I sistemi del 07/10 sono stato della partita: si azzerano sempre.
+        // La ripartenza totale azzera anche il progresso (moduli, ufficiali,
+        // progetti, collezioni, corporazioni).
+        foreach (['notorieta = 0', "'crimini'", "'player_consumabili'", "'player_reperti'", "'crew_pending'"] as $frammento) {
+            Esito::verifica("azzerato sempre: {$frammento}", str_contains($s, $frammento));
+        }
+        foreach (["'ship_modules', 'player_items', 'officers'", "'player_progetti', 'player_collezioni'", "|| \$totale"] as $frammento) {
+            Esito::verifica("ripartenza totale: {$frammento}", str_contains($s, str_replace('\\$', '$', $frammento)));
+        }
     } finally {
         foreach ($contratti as $id) {
             Database::run('DELETE FROM contracts WHERE id = ?', [$id]);
