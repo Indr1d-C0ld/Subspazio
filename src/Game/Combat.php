@@ -745,6 +745,10 @@ final class Combat
                     if (($garantito = Loot::grant((int) $atkPlayer['id'], 'npc', $eb >= 4, Fasce::eliteRarita($eb))) !== null) {
                         $drops['items'][] = $garantito;
                     }
+                    // ...e dalla Frontiera in fuori un progetto d'Officina
+                    if (($pg = Reperti::tiraProgetto((int) $atkPlayer['id'], $eb, true)) !== null) {
+                        $drops['progetti'][] = $pg;
+                    }
                     Radio::system("ABBATTUTO — {$npc['name']} e' stato distrutto da {$atkPlayer['handle']} nel settore {$npc['sector_id']}.");
                 }
                 Crew::awardKillXp((int) $atkPlayer['id']);

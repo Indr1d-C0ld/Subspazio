@@ -65,5 +65,41 @@ return static function (): void {
     // 25% x 1,7 nell'Orlo = 42,5%: su 60 tiri, fra 10 e 45 con margine larghissimo
     Esito::verifica('nell\'Orlo cade spesso un consumabile', $trovati >= 10 && $trovati <= 45, "{$trovati} su 60");
 
+    Esito::sezione('Reperti — si vendono o si collezionano');
+
+    [$r] = Finti::comandante(0, [], $sd);
+    $rid = (int) $r['id'];
+    foreach (array_keys(array_filter(\App\Game\Reperti::CATALOGO, static fn ($x) => $x[3] === 'federazione')) as $k) {
+        \App\Game\Reperti::aggiungi($rid, $k);
+    }
+    \App\Game\Reperti::aggiungi($rid, 'medaglia_ammiraglio');
+    $v = \App\Game\Reperti::vendi($rileggi($rid), 'medaglia_ammiraglio', 1);
+    Esito::verifica('una medaglia in piu\' si vende allo StarDock per 1.500 cr', !empty($v['ok']) && (int) $rileggi($rid)['credits'] === 1500);
+    $c = \App\Game\Reperti::completa($rileggi($rid), 'federazione');
+    $dopo = $rileggi($rid);
+    Esito::verifica('la collezione completa paga 25.000 cr e 500 exp', !empty($c['ok']) && (int) $dopo['credits'] === 26500 && (int) $dopo['experience'] === 500,
+        (string) ($c['error'] ?? ''));
+    Esito::verifica('e un modulo almeno Militare', !empty($c['modulo']) && $c['modulo']['rarity'] !== 'civ', (string) ($c['modulo']['rarity'] ?? '-'));
+    Esito::uguale('consumando i cinque reperti', [], \App\Game\Reperti::posseduti($rid));
+    foreach (array_keys(array_filter(\App\Game\Reperti::CATALOGO, static fn ($x) => $x[3] === 'federazione')) as $k) {
+        \App\Game\Reperti::aggiungi($rid, $k);
+    }
+    Esito::verifica('una volta sola', empty(\App\Game\Reperti::completa($rileggi($rid), 'federazione')['ok']));
+
+    Esito::sezione('Progetti — sbloccano le ricette che altrimenti restano chiuse');
+
+    [$g, $gs] = Finti::comandante(10_000_000, [], $sd);
+    $gid = (int) $g['id'];
+    Esito::verifica('vicino a Sol non se ne trovano', \App\Game\Reperti::tiraProgetto($gid, 2, true) === null);
+    $chiuse = array_filter(\App\Game\Industry::recipes($rileggi($gid), PlayerService::ship((int) $gs['id'])), static fn ($x) => !empty($x['progetto']));
+    Esito::verifica('senza progetti le dieci ricette sono chiuse', count($chiuse) === 10 && array_filter($chiuse, static fn ($x) => $x['unlocked']) === []);
+    $pg = \App\Game\Reperti::tiraProgetto($gid, 5, true);
+    $aperte = array_filter(\App\Game\Industry::recipes($rileggi($gid), PlayerService::ship((int) $gs['id'])), static fn ($x) => !empty($x['progetto']) && $x['unlocked']);
+    Esito::verifica('un\'elite dell\'Orlo lascia un progetto, che apre la sua ricetta', $pg !== null && array_column($aperte, 'ckey') === [$pg['key']],
+        (string) ($pg['key'] ?? '-'));
+    $altra = array_values(array_filter(array_column($chiuse, 'ckey'), static fn ($k) => $k !== ($pg['key'] ?? '')))[0];
+    $rc = \App\Game\Industry::craft($rileggi($gid), PlayerService::ship((int) $gs['id']), $altra);
+    Esito::verifica('le altre restano chiuse anche forzando la richiesta', empty($rc['ok']) && str_contains((string) $rc['error'], 'progetto'), (string) ($rc['error'] ?? ''));
+
     Database::run("DELETE FROM crew_pending WHERE player_id IN (SELECT id FROM players WHERE handle LIKE '\\_\\_test\\_%')");
 };

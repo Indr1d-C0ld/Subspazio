@@ -352,6 +352,10 @@ final class SectorFeatures
                     }
                 }
             }
+            // nei relitti i reperti sono il doppio piu' frequenti
+            if (($rp = Reperti::tira((int) $player['id'], Fasce::diSettore((int) $f['sector_id']), 2.0)) !== null) {
+                $parts[] = "reperto: {$rp['name']}";
+            }
             if (mt_rand(1, 100) <= GameConfig::int('scan.wreck_officer_pct', 12)) {
                 $role = Crew::ROLES[array_rand(Crew::ROLES)];
                 $lvl = mt_rand(1, $deep ? 4 : 2);

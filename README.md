@@ -69,6 +69,17 @@ testi o artwork della door proprietaria.
   (modulo garantito dal prossimo nemico). Non si sprecano: un nanoriparatore a
   scudi pieni non si consuma.
 
+  **Reperti**: quindici oggetti rari in tre collezioni (Archivio della Prima
+  Federazione, Cimeli del Consorzio Ferrengi, Reliquie dei Precursori), dal
+  bottino (12% per la probabilità della fascia) e dai relitti (il doppio). Si
+  vendono all'antiquario dello StarDock (da 1.500 a 120.000 cr) o si tengono:
+  una collezione completa paga una volta sola 25.000 / 80.000 / 250.000 cr,
+  esperienza e un modulo almeno Militare / Sperimentale / Precursore.
+  **Progetti**: dieci ricette d'Officina per moduli Xeno e Precursore che si
+  sbloccano solo trovandone il progetto, garantito dai comandanti d'élite dalla
+  Frontiera in fuori e raro (3%) dagli altri nemici. Reperti e progetti stanno
+  nel Codex.
+
 - **Combattimento** — motore a caccia con scudi (una nave senza caccia resta
   vulnerabile finché ha scudi da consumare), attacco nave contro nave con
   bottino ed esperienza, assalto ai porti con saccheggio, assalto ai pianeti
@@ -367,7 +378,7 @@ La configurazione sta su **due livelli distinti**, e la differenza conta:
 | **Gioco** | tabella `game_config` | bilanciamento e regole: costi, probabilità, soglie, tempi | dal pannello `/admin/gioco` o da console, **a caldo** |
 
 Il primo richiede accesso al server ed è materia di installazione. Il secondo è
-il pannello di regolazione del gioco: 313 chiavi, tutte modificabili senza
+il pannello di regolazione del gioco: 316 chiavi, tutte modificabili senza
 riavviare nulla e senza toccare il codice.
 
 ### Livello 1 — il file di configurazione
@@ -409,7 +420,7 @@ php bin/console.php config:get combat          # solo la famiglia
 php bin/console.php config:set newbie.protect_hours 72
 ```
 
-Le 313 chiavi per famiglia:
+Le 316 chiavi per famiglia:
 
 | Famiglia | N. | Cosa regola |
 |---|---|---|
@@ -421,7 +432,7 @@ Le 313 chiavi per famiglia:
 | `faction` | 22 | guadagni e perdite di reputazione (quella da commercio in proporzione al valore scambiato), soglie dei tier, ammenda, cacciatori di taglie (e loro tetto), decadimento |
 | `elite` | 6 | comandanti d'élite per fascia, moltiplicatori di caccia, crediti ed esperienza, probabilità di rinascita, rarità minima del modulo garantito |
 | `fasce` | 21 | soglie delle cinque fasce (frazioni del raggio della galassia), per ciascuna: predoni (quanti, caccia, rating), Ferrengi, crediti a bordo, probabilità d'ingaggio, esperienza, premio dei porti, probabilità e rarità del bottino, ricchezza delle feature, difficoltà delle missioni; razzie (fino a quale fascia, quota di crediti, tregua), prima fascia dei pericoli, avviso sui salti |
-| `loot` | 16 | probabilità di drop per sorgente, rarità (in PvP), doppio drop, recupero in Leghe, costi di potenziamento |
+| `loot` | 19 | probabilità di drop per sorgente, rarità (in PvP), doppio drop, recupero in Leghe, costi di potenziamento, probabilità di consumabili, reperti e progetti |
 | `hardware` | 18 | listino del Cantiere: sonde, mine, capsula, scanner, transwarp, occultamento, Genesi, laser |
 | `combat` | 13 | costo in turni dell'attacco, danni di caccia e mine, taglie, bottino, assalto ai porti |
 | `planet` | 13 | capacità e produzione per tipo, crescita dei coloni, Citadel, Quasar (con livello massimo), bombardamento |
@@ -465,7 +476,7 @@ php tests/run.php                # tutte
 php tests/run.php economica      # solo i file col nome che contiene "economica"
 ```
 
-Suite di integrazione senza dipendenze, 518 verifiche in 25 file: integrità
+Suite di integrazione senza dipendenze, 527 verifiche in 25 file: integrità
 economica, concorrenza, banca/contratti/Officina, combattimento, navigazione,
 nave e moduli, pianeti, porti, equipaggio, mondo, percorsi di gioco normali,
 universo, clock, sessioni e turni, difese, iscrizione e posta, immagini,

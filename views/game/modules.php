@@ -175,7 +175,7 @@ foreach ($installed as $m) {
           ?>
         </span>
         <?php if (!$rc['unlocked']): ?>
-          <span class="pill mut">bloccata</span>
+          <span class="pill mut"><?= !empty($rc['progetto']) ? 'serve il progetto' : 'bloccata' ?></span>
         <?php else: ?>
           <form method="post" action="<?= e(url('/gioco/moduli/crafta')) ?>" class="inline">
             <?= csrf_field() ?><input type="hidden" name="recipe" value="<?= e($rc['ckey']) ?>">

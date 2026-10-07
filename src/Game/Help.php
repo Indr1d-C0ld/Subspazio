@@ -76,6 +76,7 @@ final class Help
         'fazioni.reputazione'   => 'La tua reputazione con le 4 potenze (-100..+100, 5 livelli). Commercio, kill e assalti la muovono; c\'è rivalità fra fazioni.',
         'fazioni.legge'         => 'Aggredire mercantili, porti, pianeti altrui, comandanti onesti o pattuglie alza la notorietà, che dimezza ogni giorno da sola e cresce più in fretta se sei recidivo. Sospetto, Ricercato (pattuglie e squadre federali ti cacciano, taglia sulla tua testa), Pericoloso (StarDock chiuso), Nemico pubblico. L\'ammenda azzera tutto, a caro prezzo.',
         'fazioni.emporio'       => 'Merce e hardware riservati: sbloccati man mano che sali di livello con la fazione.',
+        'codex.reperti'         => 'Reperti rari in tre collezioni: si vendono allo StarDock o si tengono per completare una collezione, che paga una volta sola. I progetti sbloccano ricette d\'Officina speciali.',
         'codex.home'            => 'L\'enciclopedia di bordo: si popola studiando relitti, anomalie e reperti che incontri in giro.',
         'registro.spostamenti'  => 'Lo storico dei tuoi warp e i settori che frequenti di più, ricostruiti dai log di movimento.',
         'giornale.home'         => 'Il registro di bordo completo e paginato. Aprendolo, segni come letto.',

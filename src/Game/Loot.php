@@ -146,9 +146,15 @@ final class Loot
                     'label'  => self::RARITY_LABEL[$item['rarity']] ?? $item['rarity'],
                 ];
             }
-            // e forse un consumabile
+            // e forse un consumabile, un reperto, un progetto
             if (($c = Consumabili::tira($killerId, $band)) !== null) {
                 $out['consumabili'][] = $c;
+            }
+            if (($rp = Reperti::tira($killerId, $band)) !== null) {
+                $out['reperti'][] = $rp;
+            }
+            if (($pg = Reperti::tiraProgetto($killerId, $band)) !== null) {
+                $out['progetti'][] = $pg;
             }
         } catch (\Throwable) {
             // catalogo non migrato: solo materiale
@@ -285,7 +291,7 @@ final class Loot
         foreach ($drops['items'] ?? [] as $it) {
             $bits[] = "{$it['name']} [{$it['label']}]";
         }
-        foreach ($drops['consumabili'] ?? [] as $c) {
+        foreach (array_merge($drops['consumabili'] ?? [], $drops['reperti'] ?? [], $drops['progetti'] ?? []) as $c) {
             $bits[] = $c['name'];
         }
         return $bits === [] ? '' : ' Recuperato: ' . implode(' · ', $bits) . '.';

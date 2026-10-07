@@ -4,6 +4,47 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-07 — Reperti, collezioni e progetti d'Officina
+
+*Deciso con l'autore*: reperti da rivendere o collezionare, progetti che
+sbloccano ricette speciali.
+
+- **[src/Game/Reperti.php](src/Game/Reperti.php)** (nuovo) — quindici reperti
+  in tre collezioni (Archivio della Prima Federazione, Cimeli del Consorzio
+  Ferrengi, Reliquie dei Precursori), da Civile a Precursore. Si vendono
+  all'antiquario dello StarDock al loro valore (1.500–120.000 cr) o si tengono:
+  una collezione completa consuma un esemplare per pezzo e paga **una volta
+  sola** (la chiave primaria lo garantisce anche con due richieste insieme)
+  25.000 / 80.000 / 250.000 cr, 500 / 1.500 / 4.000 exp e un modulo almeno
+  Militare / Sperimentale / Precursore.
+- **Progetti** — dieci ricette d'Officina nuove per moduli Xeno e Precursore
+  (Tela gravitica, Carapace, Pinne gravitiche, Firma camaleonte, Nido
+  riproduttivo; Matrice di forgiatura, Pelle di neutronio, Passo del fantasma,
+  Dominatore di segnali, Fabbrica Precursore) che restano chiuse finché non se
+  ne trova il progetto: garantito dai comandanti d'élite dalla Frontiera in
+  fuori ([src/Game/Combat.php](src/Game/Combat.php)), raro (3% per la
+  probabilità di bottino) dagli altri nemici
+  ([src/Game/Loot.php](src/Game/Loot.php)). L'Officina rifiuta la ricetta
+  anche a una richiesta fatta a mano
+  ([src/Game/Industry.php](src/Game/Industry.php)).
+- **Fonti** — reperti dal bottino di ogni abbattimento (12% per la probabilità
+  della fascia) e dai relitti (il doppio,
+  [src/Game/SectorFeatures.php](src/Game/SectorFeatures.php)).
+- **Codex** — sezione «Reperti e collezioni» con vendita e completamento, e
+  «Progetti d'Officina» con quelli sbloccati
+  ([views/game/codex.php](views/game/codex.php),
+  [src/Controllers/CodexController.php](src/Controllers/CodexController.php),
+  [src/routes.php](src/routes.php)); in officina le ricette chiuse dicono
+  «serve il progetto».
+- **[db/migrations/0059_reperti_progetti.sql](db/migrations/0059_reperti_progetti.sql)**
+  — tabelle `player_reperti`, `player_collezioni`, `player_progetti`, colonna
+  `recipes.progetto`, le dieci ricette, origine `collezione` per i moduli in
+  premio, chiavi `loot.reperto_pct` e `loot.progetto_pct`.
+- **[tests/bottino.php](tests/bottino.php)** — vendita allo StarDock,
+  collezione pagata una volta sola con modulo e reperti consumati, nessun
+  progetto vicino a Sol, ricette chiuse senza progetto e aperte col suo, rifiuto
+  anche a richiesta forzata. Suite: 527 verifiche, 0 fallite.
+
 ## 2026-10-07 — Consumabili monouso
 
 *Deciso con l'autore*: oggetti da usare una volta, trovati come bottino.

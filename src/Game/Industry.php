@@ -84,8 +84,9 @@ final class Industry
         }
         $fresh = Database::first('SELECT hold_ore, hold_equipment, hold_organics FROM ships WHERE id = ?', [(int) $ship['id']]);
         foreach ($rows as &$r) {
-            $r['unlocked'] = $r['min_faction'] === null
-                || Faction::tierAtLeast((int) $player['id'], (string) $r['min_faction'], (string) ($r['min_tier'] ?? 'friendly'));
+            $r['unlocked'] = ($r['min_faction'] === null
+                || Faction::tierAtLeast((int) $player['id'], (string) $r['min_faction'], (string) ($r['min_tier'] ?? 'friendly')))
+                && (empty($r['progetto']) || Reperti::haProgetto((int) $player['id'], (string) $r['ckey']));
             $r['affordable'] = (int) $player['credits'] >= (int) $r['cost_credits']
                 && (int) ($player['components'] ?? 0) >= (int) $r['cost_components']
                 && (int) ($player['crystals'] ?? 0) >= (int) $r['cost_crystals']
@@ -150,6 +151,9 @@ final class Industry
         if ($r['min_faction'] !== null
             && !Faction::tierAtLeast((int) $player['id'], (string) $r['min_faction'], (string) ($r['min_tier'] ?? 'friendly'))) {
             return ['ok' => false, 'error' => 'Reputazione di fazione insufficiente per questa ricetta.'];
+        }
+        if (!empty($r['progetto']) && !Reperti::haProgetto((int) $player['id'], $recipeKey)) {
+            return ['ok' => false, 'error' => 'Per questa ricetta serve il progetto: si trova abbattendo nemici dalla Frontiera in fuori.'];
         }
 
         $maxJobs = max(1, GameConfig::int('craft.max_jobs', 3));

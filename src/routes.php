@@ -131,6 +131,8 @@ $router->post('/gioco/deposito', [ScanController::class, 'harvest'], $game);
 $router->post('/gioco/anomalia', [ScanController::class, 'study'], $game);
 $router->post('/gioco/giacimento', [ScanController::class, 'mine'], $game);
 $router->get('/gioco/codex', [CodexController::class, 'index'], $game);
+$router->post('/gioco/reperti/vendi', [CodexController::class, 'vendi'], $game);
+$router->post('/gioco/reperti/collezione', [CodexController::class, 'collezione'], $game);
 
 // Combattimento e dispiegamento (HTML)
 $router->post('/gioco/attacca/nave', [CombatController::class, 'attackShip'], $game);
