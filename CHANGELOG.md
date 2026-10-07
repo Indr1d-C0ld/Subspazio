@@ -4,6 +4,36 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-07 — Mercantili scortati, in fuga, che chiamano soccorso
+
+Un mercantile aveva in media 322 caccia, non reagiva e portava circa 58.000 cr
+di contanti: un bottino senza rischio. *Deciso con l'autore*: scorte, fuga e
+soccorso.
+
+- **[src/Game/Npc.php](src/Game/Npc.php)**, **[src/Game/Fasce.php](src/Game/Fasce.php)**
+  — scorta armata per fascia (300–800 caccia nella Cintura, 800–2.500,
+  2.500–7.000, 7.000–20.000, 20.000–60.000 nell'Orlo) con rating da 0,9 a 1,6;
+  contanti al 30%; stive da 500 a 1.300 unità di merce.
+- **[src/Game/Combat.php](src/Game/Combat.php)** — sotto attacco il mercantile
+  può fuggire in un settore vicino prima dello scontro (35%, meno l'interdizione
+  della nave attaccante); l'aggressione resta un crimine e i turni sono spesi.
+- **[src/Game/Legge.php](src/Game/Legge.php)** — `chiamaSoccorso()`: con la
+  probabilità della fascia (100% nella Cintura, 30% nell'Orlo) parte una
+  **pattuglia di soccorso** a due o tre salti, forte almeno quanto i predoni
+  della fascia successiva e il 60% dei caccia dell'aggressore. Lo insegue per 30
+  minuti anche se non è ricercato; una nuova chiamata ne prolunga il servizio.
+- **Interfaccia** — nel settore la scorta di ogni mercantile; dopo l'attacco
+  il messaggio dice della fuga e del soccorso
+  ([views/game/index.php](views/game/index.php),
+  [src/Controllers/CombatController.php](src/Controllers/CombatController.php)).
+- **[db/migrations/0055_mercantili.sql](db/migrations/0055_mercantili.sql)** —
+  colonne `npcs.scorta` e `npcs.scade_at`, 7 chiavi `mercanti`; i mercantili
+  esistenti rinascono scortati.
+- **[tests/legge.php](tests/legge.php)** — scorta e contanti nell'Orlo,
+  soccorso che parte e insegue un aggressore non ricercato, fuga in un settore
+  adiacente, nessuna fuga con l'interdizione al massimo. Suite: 486 verifiche,
+  0 fallite.
+
 ## 2026-10-07 — Legge federale: notorietà, pattuglie, taglia
 
 Assaltare mercantili non costava niente: in una settimana un comandante ne ha

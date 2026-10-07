@@ -52,6 +52,7 @@ final class Legge
     ];
 
     public const PATTUGLIA = 'Pattuglia federale';
+    public const SOCCORSO = 'Pattuglia di soccorso';
     public const SQUADRA = 'Squadra d\'intercettazione';
 
     // --- notorieta' -----------------------------------------------------------
@@ -342,11 +343,11 @@ final class Legge
         foreach (Database::all('SELECT id, sector_id, ship_id, notorieta, notorieta_at FROM players WHERE notorieta > 0') as $pl) {
             $g = self::grado(self::punti($pl));
             $voluti = self::squadre($g);
-            $have = (int) (Database::first("SELECT COUNT(*) n FROM npcs WHERE kind = 'patrol' AND target_player_id = ?", [(int) $pl['id']])['n'] ?? 0);
+            $have = (int) (Database::first("SELECT COUNT(*) n FROM npcs WHERE kind = 'patrol' AND target_player_id = ? AND scade_at IS NULL", [(int) $pl['id']])['n'] ?? 0);
             $out['hunting'] += min($have, $voluti);
             if ($have > $voluti) {
                 $out['dismissed'] += Database::run(
-                    "DELETE FROM npcs WHERE kind = 'patrol' AND target_player_id = ? ORDER BY id DESC LIMIT " . ($have - $voluti),
+                    "DELETE FROM npcs WHERE kind = 'patrol' AND target_player_id = ? AND scade_at IS NULL ORDER BY id DESC LIMIT " . ($have - $voluti),
                     [(int) $pl['id']]
                 )->rowCount();
                 continue;
@@ -374,13 +375,46 @@ final class Legge
         }
 
         // squadre rimaste senza un ricercato da inseguire
-        foreach (Database::all("SELECT DISTINCT n.target_player_id pid FROM npcs n WHERE n.kind = 'patrol' AND n.target_player_id IS NOT NULL") as $r) {
+        foreach (Database::all("SELECT DISTINCT n.target_player_id pid FROM npcs n WHERE n.kind = 'patrol' AND n.target_player_id IS NOT NULL AND n.scade_at IS NULL") as $r) {
             $p = Database::first('SELECT id, notorieta, notorieta_at FROM players WHERE id = ?', [(int) $r['pid']]);
             if ($p === null || self::grado(self::punti($p)) < 2) {
-                $out['dismissed'] += Database::run("DELETE FROM npcs WHERE kind = 'patrol' AND target_player_id = ?", [(int) $r['pid']])->rowCount();
+                $out['dismissed'] += Database::run("DELETE FROM npcs WHERE kind = 'patrol' AND target_player_id = ? AND scade_at IS NULL", [(int) $r['pid']])->rowCount();
             }
         }
+        // pattuglie di soccorso a fine turno di servizio
+        $out['dismissed'] += Database::run("DELETE FROM npcs WHERE kind = 'patrol' AND scade_at IS NOT NULL AND scade_at < NOW()")->rowCount();
         return $out;
+    }
+
+    /**
+     * Un mercantile sotto attacco chiama soccorso: con la probabilita' della
+     * fascia, una pattuglia parte a due o tre salti e insegue l'aggressore,
+     * ricercato o no, per mercanti.soccorso_min minuti. Una seconda chiamata
+     * mentre la pattuglia e' in viaggio ne prolunga il servizio.
+     */
+    public static function chiamaSoccorso(int $aggressoreId, int $sectorId): bool
+    {
+        $band = Fasce::diSettore($sectorId);
+        if (mt_rand(1, 100) > Fasce::soccorsoPct($band)) {
+            return false;
+        }
+        $min = max(1, GameConfig::int('mercanti.soccorso_min', 30));
+        if (Database::run(
+            "UPDATE npcs SET scade_at = DATE_ADD(NOW(), INTERVAL ? MINUTE) WHERE kind = 'patrol' AND target_player_id = ? AND scade_at IS NOT NULL",
+            [$min, $aggressoreId]
+        )->rowCount() > 0) {
+            return true;
+        }
+        $dove = self::settoreDiPartenza($sectorId);
+        if ($dove === null) {
+            return false;
+        }
+        $sh = Database::first('SELECT ship_id FROM players WHERE id = ?', [$aggressoreId]);
+        $ship = $sh !== null ? PlayerService::ship((int) $sh['ship_id']) : null;
+        [, $z] = Fasce::predoniCaccia(min(Fasce::MAX, max(1, $band) + 1));
+        $ftr = max($z, (int) round((int) ($ship['fighters'] ?? 0) * GameConfig::float('mercanti.soccorso_forza', 0.6)));
+        self::nuovaPattuglia($dove, $aggressoreId, Fasce::diSettore($dove), $ftr, 1.5 + mt_rand(0, 30) / 100, null, $min);
+        return true;
     }
 
     /** Un settore a due o tre salti dal ricercato, fuori dalla Federazione se si puo'. */
@@ -410,15 +444,15 @@ final class Legge
         return $scelta === [] ? null : (int) $scelta[array_rand($scelta)];
     }
 
-    private static function nuovaPattuglia(int $sectorId, ?int $target, int $band, int $fighters, float $rating, ?int $shields = null): void
+    private static function nuovaPattuglia(int $sectorId, ?int $target, int $band, int $fighters, float $rating, ?int $shields = null, ?int $minuti = null): void
     {
         Database::run(
-            "INSERT INTO npcs (kind, name, ship_type, sector_id, home_sector, band, target_player_id, fighters, shields, combat_rating, credits, aggression)
-             VALUES ('patrol', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)",
+            "INSERT INTO npcs (kind, name, ship_type, sector_id, home_sector, band, target_player_id, scade_at, fighters, shields, combat_rating, credits, aggression)
+             VALUES ('patrol', ?, ?, ?, ?, ?, ?, IF(? IS NULL, NULL, DATE_ADD(NOW(), INTERVAL ? MINUTE)), ?, ?, ?, ?, 0)",
             [
-                $target === null ? self::PATTUGLIA : self::SQUADRA,
+                $target === null ? self::PATTUGLIA : ($minuti !== null ? self::SOCCORSO : self::SQUADRA),
                 $target === null ? 'missile_frigate' : 'havoc_gunstar',
-                $sectorId, $sectorId, $band, $target, $fighters,
+                $sectorId, $sectorId, $band, $target, $minuti, $minuti, $fighters,
                 $shields ?? (int) round($fighters * 0.25), round($rating, 2),
                 mt_rand(1000, 5000) * max(1, $band),
             ]

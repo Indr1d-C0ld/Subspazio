@@ -279,6 +279,23 @@ final class Fasce
         return $out;
     }
 
+    /** @return array{0:int,1:int} caccia della scorta di un mercantile */
+    public static function scortaMercanti(int $band): array
+    {
+        return self::intervallo(GameConfig::str('mercanti.scorta_caccia', '300-800,800-2500,2500-7000,7000-20000,20000-60000'), max(1, $band));
+    }
+
+    public static function scortaRating(int $band): float
+    {
+        return (float) self::voce(GameConfig::str('mercanti.scorta_rating', '0.9,1.0,1.2,1.4,1.6'), max(1, $band));
+    }
+
+    /** Probabilita' (%) che una richiesta di soccorso trovi una pattuglia. */
+    public static function soccorsoPct(int $band): int
+    {
+        return $band <= 0 ? 100 : (int) self::voce(GameConfig::str('mercanti.soccorso_pct', '100,90,75,50,30'), $band);
+    }
+
     /** La tregua dalle razzie protegge ancora questo comandante? */
     public static function inTregua(array $player): bool
     {

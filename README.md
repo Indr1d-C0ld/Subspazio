@@ -131,6 +131,14 @@ testi o artwork della door proprietaria.
   400 cr per punto, moltiplicati per la recidiva. Tutto regolabile nella
   famiglia `legge`.
 
+- **Mercantili** — viaggiano con una **scorta armata** proporzionata alla
+  fascia (da 300–800 caccia nella Cintura a 20.000–60.000 nell'Orlo), portano
+  pochi contanti (30%) e molta merce (da rivendere). Sotto attacco possono
+  **fuggire** in un settore vicino (35%, meno con un proiettore
+  d'interdizione) e lanciano una **richiesta di soccorso**: una pattuglia
+  parte a due o tre salti e insegue l'aggressore per 30 minuti, ricercato o no
+  (sempre nella Cintura, 30% nell'Orlo). Famiglia `mercanti`.
+
 - **Industria & produzione** — laser minerario per estrarre da un giacimento di
   asteroidi (minerale e Cristalli, a più passaggi); **raffineria** allo
   StarDock (minerale + equipaggiamento → Componenti); **ricette**
@@ -324,7 +332,7 @@ La configurazione sta su **due livelli distinti**, e la differenza conta:
 | **Gioco** | tabella `game_config` | bilanciamento e regole: costi, probabilità, soglie, tempi | dal pannello `/admin/gioco` o da console, **a caldo** |
 
 Il primo richiede accesso al server ed è materia di installazione. Il secondo è
-il pannello di regolazione del gioco: 299 chiavi, tutte modificabili senza
+il pannello di regolazione del gioco: 306 chiavi, tutte modificabili senza
 riavviare nulla e senza toccare il codice.
 
 ### Livello 1 — il file di configurazione
@@ -366,13 +374,14 @@ php bin/console.php config:get combat          # solo la famiglia
 php bin/console.php config:set newbie.protect_hours 72
 ```
 
-Le 299 chiavi per famiglia:
+Le 306 chiavi per famiglia:
 
 | Famiglia | N. | Cosa regola |
 |---|---|---|
 | `economy` | 23 | prezzi base regionali, deriva del mercato, sconto d'acquisto, ricarico di vendita, bande della contrattazione |
 | `scan` | 26 | costo in turni di scansione/sonda/raccolta/studio, densità delle feature in frontiera (fasce I–III) e frontiera profonda (IV–V), rese e bonus |
 | `crew` | 20 | costo di assunzione, livelli, lealtà, cure, costo e raffreddamento delle abilità, missioni away |
+| `mercanti` | 7 | scorta dei mercantili per fascia (caccia e rating), quota di contanti, probabilità di fuga, probabilità di soccorso per fascia, durata e forza della pattuglia di soccorso |
 | `legge` | 18 | soglie dei gradini di notorietà, dimezzamento, peso di ogni crimine, recidiva, taglia e ammenda per punto, squadre e loro forza per gradino, ronde e loro fasce, probabilità d'ingaggio delle pattuglie |
 | `faction` | 22 | guadagni e perdite di reputazione (quella da commercio in proporzione al valore scambiato), soglie dei tier, ammenda, cacciatori di taglie (e loro tetto), decadimento |
 | `fasce` | 20 | soglie delle cinque fasce (frazioni del raggio della galassia), per ciascuna: predoni (quanti, caccia, rating), Ferrengi, crediti a bordo, probabilità d'ingaggio, esperienza, premio dei porti, probabilità e rarità del bottino, ricchezza delle feature, difficoltà delle missioni; razzie (fino a quale fascia, quota di crediti, tregua), prima fascia dei pericoli, avviso sui salti |
@@ -420,7 +429,7 @@ php tests/run.php                # tutte
 php tests/run.php economica      # solo i file col nome che contiene "economica"
 ```
 
-Suite di integrazione senza dipendenze, 480 verifiche in 24 file: integrità
+Suite di integrazione senza dipendenze, 486 verifiche in 24 file: integrità
 economica, concorrenza, banca/contratti/Officina, combattimento, navigazione,
 nave e moduli, pianeti, porti, equipaggio, mondo, percorsi di gioco normali,
 universo, clock, sessioni e turni, difese, iscrizione e posta, immagini,

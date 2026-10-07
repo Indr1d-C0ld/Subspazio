@@ -64,7 +64,10 @@ return static function (): void {
         [$b, $bs] = Finti::comandante(0, ['fighters' => 20000, 'shields' => 1000], $s1);
         $pb = (int) $b['id'];
         $m = $npc('trader', $s1, 10);
-        $rb = Combat::attackNpc($rileggi($pb), PlayerService::ship((int) $bs['id']), (int) $m['id']);
+        // un proiettore d'interdizione al massimo: il mercantile non puo' fuggire
+        $inchiodata = PlayerService::ship((int) $bs['id']);
+        $inchiodata['mod_effects']['interdict_pct'] = 100;
+        $rb = Combat::attackNpc($rileggi($pb), $inchiodata, (int) $m['id']);
         $tipi = array_column(Database::all('SELECT kind FROM crimini WHERE player_id = ? ORDER BY id', [$pb]), 'kind');
         // Prima: nessuna conseguenza oltre all'allineamento.
         Esito::verifica('aggressione e uccisione finiscono nella fedina', !empty($rb['killed']) && $tipi === ['mercantile', 'uccisione'],
@@ -120,6 +123,57 @@ return static function (): void {
         Esito::uguale('notorieta\' a zero', 0.0, Legge::puntiDi($pd));
         Esito::uguale('e le squadre richiamate', 0,
             (int) Database::first("SELECT COUNT(*) n FROM npcs WHERE kind = 'patrol' AND target_player_id = ?", [$pd])['n']);
+
+        Esito::sezione('Mercantili — scortati, poveri di contanti, pronti a fuggire e a chiamare aiuto');
+
+        $okScorta = true;
+        for ($i = 0; $i < 4; $i++) {
+            $id = \App\Game\Npc::spawnOne('trader', 5);
+            $npcIds[] = (int) $id;
+            $t = Database::first('SELECT n.*, s.band sb FROM npcs n JOIN sectors s ON s.id = n.sector_id WHERE n.id = ?', [$id]);
+            [$ea, $ez] = \App\Game\Fasce::scortaMercanti((int) $t['sb']);
+            [, $cz] = \App\Game\Fasce::creditiNpc((int) $t['sb']);
+            $okScorta = $okScorta && (int) $t['scorta'] >= $ea && (int) $t['scorta'] <= $ez
+                && (int) $t['fighters'] >= (int) $t['scorta'] && (int) $t['credits'] <= $cz * 1.2 * 0.3 + 1;
+        }
+        // Prima: in media 322 caccia e circa 58.000 cr di contanti.
+        Esito::verifica('nell\'Orlo un mercantile ha 20.000-60.000 caccia di scorta e pochi contanti', $okScorta);
+
+        Esito::scenario('una nave che non puo\' affondare il colpo attacca finche\' il mercantile scappa');
+        [$g, $gs] = Finti::comandante(0, ['fighters' => 1, 'shields' => 1_000_000_000], $s1);
+        $pg = (int) $g['id'];
+        $preda = $npc('trader', $s1, 100);
+        $prima = Combat::attackNpc($rileggi($pg), PlayerService::ship((int) $gs['id']), (int) $preda['id'], 1);
+        $soccorso = Database::first("SELECT * FROM npcs WHERE kind = 'patrol' AND target_player_id = ? AND scade_at IS NOT NULL", [$pg]);
+        if ($soccorso !== null) {
+            $npcIds[] = (int) $soccorso['id'];
+        }
+        // nella Cintura di Sol la richiesta di soccorso trova sempre qualcuno
+        Esito::verifica('la richiesta di soccorso fa partire una pattuglia', !empty($prima['soccorso']) && $soccorso !== null);
+        Esito::verifica('che insegue l\'aggressore anche se non e\' ricercato',
+            $soccorso !== null && !Legge::ricercato($rileggi($pg)) && !Combat::npcLasciaStare($soccorso, $rileggi($pg)));
+        $fuggito = !empty($prima['fled']) ? $prima : null;
+        for ($i = 0; $i < 30 && $fuggito === null; $i++) {
+            $ri = Combat::attackNpc($rileggi($pg), PlayerService::ship((int) $gs['id']), (int) $preda['id'], 1);
+            if (!empty($ri['fled'])) {
+                $fuggito = $ri;
+            }
+        }
+        $dove = (int) Database::first('SELECT sector_id FROM npcs WHERE id = ?', [(int) $preda['id']])['sector_id'];
+        Esito::verifica('prima o poi scappa', $fuggito !== null);
+        Esito::verifica('in un settore adiacente', $fuggito !== null && $dove === (int) $fuggito['fled_to']
+            && in_array($dove, \App\Game\Universe::warpsFrom($s1), true));
+
+        Esito::scenario('con un proiettore d\'interdizione al massimo non scappa mai');
+        [$h, $hs] = Finti::comandante(0, ['fighters' => 1, 'shields' => 1_000_000_000], $s1);
+        $ferma = $npc('trader', $s1, 100);
+        $nave = PlayerService::ship((int) $hs['id']);
+        $nave['mod_effects']['interdict_pct'] = 100;
+        $mai = true;
+        for ($i = 0; $i < 20; $i++) {
+            $mai = $mai && empty(Combat::attackNpc($rileggi((int) $h['id']), $nave, (int) $ferma['id'], 1)['fled']);
+        }
+        Esito::verifica('venti assalti, nessuna fuga', $mai);
 
         Esito::sezione('Taglia — abbattere un ricercato rende');
 

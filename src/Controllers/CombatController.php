@@ -50,9 +50,13 @@ final class CombatController
         $res = Combat::attackNpc(Ctx::$player, Ctx::$ship, $request->int('npc'), $request->int('fighters'));
         if (empty($res['ok'])) {
             Session::flash('error', $res['error']);
+        } elseif (!empty($res['fled'])) {
+            Session::flash('error', "{$res['npc_name']} accende i motori e ti sfugge verso il settore {$res['fled_to']}."
+                . (!empty($res['soccorso']) ? ' Ha lanciato una richiesta di soccorso: una pattuglia federale e\' in arrivo.' : ''));
         } elseif ($res['killed']) {
             Session::flash('success', "{$res['npc_name']} distrutto ({$res['rounds']} round). Bottino "
-                . number_format($res['loot'], 0, ',', '.') . " cr, +{$res['exp']} exp." . Loot::describe($res['drops'] ?? []));
+                . number_format($res['loot'], 0, ',', '.') . " cr, +{$res['exp']} exp." . Loot::describe($res['drops'] ?? [])
+                . (!empty($res['soccorso']) ? ' Ha fatto in tempo a chiamare soccorso: una pattuglia federale e\' in arrivo.' : ''));
         } elseif ($res['destroyed_self']) {
             Session::flash('error', "{$res['npc_name']} ti ha distrutto. Capsula allo StarDock.");
         } elseif (!empty($res['raided'])) {

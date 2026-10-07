@@ -32,6 +32,7 @@ final class Npc
             'name'     => $n['name'],
             'ship'     => $n['ship_type'],
             'fighters' => (int) $n['fighters'],
+            'scorta'   => (int) ($n['scorta'] ?? 0),
             'hostile'  => (int) $n['aggression'] > 0,
         ], Database::all('SELECT * FROM npcs WHERE sector_id = ? ORDER BY id', [$sectorId]));
     }
@@ -299,23 +300,33 @@ final class Npc
                     $creds, 100,
                 ];
             })(),
+            // Un mercantile viaggia scortato, con la scorta proporzionata alla
+            // fascia, e porta pochi contanti e molta merce: prima aveva in
+            // media 322 caccia, non reagiva e valeva circa 58.000 cr in
+            // contanti, un bottino senza rischio.
             default => [
                 'Mercantile ' . self::TRADER_NAMES[array_rand(self::TRADER_NAMES)],
                 mt_rand(0, 1) ? 'merchant_freighter' : 'cargo_transport',
-                mt_rand(50, 700), 0.6,
-                (int) round($creds * 1.2), 0,
+                mt_rand(50, 700), Fasce::scortaRating($pb) + mt_rand(0, 15) / 100,
+                (int) round($creds * GameConfig::float('mercanti.contanti', 0.3)), 0,
             ],
         };
+        $scorta = 0;
+        if ($kind === 'trader') {
+            [$ea, $ez] = Fasce::scortaMercanti($pb);
+            $scorta = mt_rand($ea, $ez);
+            $ftr += $scorta;
+        }
         // scudi in proporzione ai caccia: un quinto, con un po' di varieta'
-        $shd = $kind === 'trader' ? mt_rand(50, 400) : (int) round($ftr * mt_rand(12, 28) / 100);
+        $shd = (int) round($ftr * mt_rand(12, 28) / 100);
         // i mercanti lontani viaggiano piu' carichi
-        $stiva = $kind === 'trader' ? 150 + 60 * $pb : 20 + 10 * $pb;
+        $stiva = $kind === 'trader' ? 300 + 200 * $pb : 20 + 10 * $pb;
 
         Database::run(
-            'INSERT INTO npcs (kind, name, ship_type, sector_id, home_sector, band, fighters, shields, combat_rating, credits, cargo_ore, cargo_org, cargo_equ, aggression)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO npcs (kind, name, ship_type, sector_id, home_sector, band, fighters, scorta, shields, combat_rating, credits, cargo_ore, cargo_org, cargo_equ, aggression)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
-                $kind, $name, $type, $sector, $home, $band, $ftr, $shd, round($rating, 2), $creds,
+                $kind, $name, $type, $sector, $home, $band, $ftr, $scorta, $shd, round($rating, 2), $creds,
                 mt_rand(0, $stiva), mt_rand(0, $stiva), mt_rand(0, $stiva),
                 $aggr,
             ]

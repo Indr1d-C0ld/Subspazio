@@ -652,6 +652,32 @@ final class Combat
         }
 
         Cloak::drop((int) $atkShip['id'], 'apertura del fuoco');
+
+        // Un mercantile sotto tiro chiama soccorso e, se puo', scappa prima
+        // dello scontro. Un proiettore d'interdizione toglie punti alla fuga.
+        $soccorso = false;
+        if ($npc['kind'] === 'trader') {
+            $soccorso = Legge::chiamaSoccorso((int) $atkPlayer['id'], (int) $npc['sector_id']);
+            $fuga = max(0, GameConfig::int('mercanti.fuga_pct', 35) - (int) ($atkShip['mod_effects']['interdict_pct'] ?? 0));
+            $verso = Universe::warpsFrom((int) $npc['sector_id']);
+            if ($verso !== [] && mt_rand(1, 100) <= $fuga) {
+                if (!Wallet::charge((int) $atkPlayer['id'], ['turns' => $turnCost])) {
+                    return self::err("Turni insufficienti (servono {$turnCost}).");
+                }
+                $dove = (int) $verso[array_rand($verso)];
+                Database::run('UPDATE npcs SET sector_id = ?, last_move_at = NOW() WHERE id = ?', [$dove, $npcId]);
+                Legge::crimine((int) $atkPlayer['id'], 'mercantile', (int) $npc['sector_id']);
+                return [
+                    'ok' => true, 'kind' => 'npc', 'fled' => true, 'fled_to' => $dove, 'soccorso' => $soccorso,
+                    'npc_name' => $npc['name'], 'npc_kind' => $npc['kind'], 'rounds' => 0,
+                    'attacker_lost' => 0, 'defender_lost' => 0, 'killed' => false, 'destroyed_self' => false,
+                    'raided' => null, 'loot' => 0, 'exp' => 0, 'drops' => ['items' => [], 'salvage' => 0],
+                    'player' => Database::first('SELECT * FROM players WHERE id = ?', [$atkPlayer['id']]),
+                    'ship'   => PlayerService::ship((int) $atkShip['id']),
+                ];
+            }
+        }
+
         $aM = (float) ($atkShip['combat_rating'] ?? 1.0);
         if ($ab = Crew::consumePending((int) $atkPlayer['id'], 'attack_bonus_pct')) {
             $aM *= 1 + $ab / 100;
@@ -758,6 +784,8 @@ final class Combat
             'killed'         => $killed,
             'destroyed_self' => $destroyedAtk,
             'raided'         => $razzia,
+            'soccorso'       => $soccorso,
+            'fled'           => false,
             'loot'           => $loot,
             'exp'            => $exp,
             'drops'          => $drops,
@@ -1220,7 +1248,10 @@ final class Combat
     {
         $pid = (int) $player['id'];
         if ($npc['kind'] === 'patrol') {
-            // le pattuglie fermano solo i ricercati
+            // le pattuglie fermano i ricercati, e chi hanno colto in flagrante
+            if (!empty($npc['target_player_id']) && (int) $npc['target_player_id'] === $pid) {
+                return false;
+            }
             return !Legge::ricercato(Database::first('SELECT * FROM players WHERE id = ?', [$pid]) ?? $player);
         }
         if ($npc['kind'] === 'ferrengi') {
