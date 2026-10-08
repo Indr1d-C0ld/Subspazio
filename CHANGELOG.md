@@ -4,6 +4,24 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-08 — Presentazione del gioco aggiornata
+
+La pagina iniziale e la presentazione su GitHub erano rimaste indietro di
+molte revisioni.
+
+- **[views/home.php](views/home.php)**, **[src/Controllers/HomeController.php](src/Controllers/HomeController.php)**
+  — nuova presentazione: la galassia a fasce, commercio, combattimento con
+  flotte ed élite, legge e pattuglie, 88 moduli con affissi, bottino e
+  collezioni, esplorazione e occultamento, equipaggio, pianeti e corporazioni,
+  fazioni, stagioni e traguardi, tempo reale. In alto stagione in corso,
+  settori e comandanti attivi. Il messaggio d'iscrizione diceva ancora che gli
+  account si attivano a mano: ora dice dell'autovalidazione via e-mail, o che
+  le iscrizioni sono chiuse se lo sono (e allora sparisce il bottone).
+- **README.md** — sezione «Il gioco in breve» in testa, prima delle meccaniche
+  dettagliate.
+- **Descrizione del repository su GitHub** — riscritta: citava ancora la skin
+  terminale, rimossa a settembre.
+
 ## 2026-10-08 — Traguardi: 109, a livelli, segreti, con contatori di carriera e titoli
 
 I traguardi erano 18, tutte soglie semplici, e non conoscevano niente di ciò

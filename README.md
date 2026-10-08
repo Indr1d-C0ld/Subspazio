@@ -4,6 +4,36 @@ Reinterpretazione web, multiutente e persistente della classica *door* per BBS
 **TradeWars 2002**: rotte commerciali, flotte, pianeti e corporazioni in un
 universo a settori con un clock interno.
 
+## Il gioco in breve
+
+Si parte allo StarDock di Sol con una Merchant Cruiser, mille crediti e un
+budget di turni al giorno. Attorno a Sol la galassia è divisa in **cinque
+fasce di rischio**: nella Cintura i predoni sono deboli e chi perde viene
+razziato, non distrutto; nell'Orlo del Buio i porti pagano il 20% in più, il
+bottino è raro, e le flotte Ferrengi superano i centomila caccia. Ogni viaggio
+verso l'esterno è una scommessa fra guadagno e rischio.
+
+- **Commerciare** fra porti a prezzi di domanda e offerta, contrattando, con la
+  banca e il mercato nero; contratti e taglie fra comandanti.
+- **Combattere** predoni, Ferrengi, flotte e comandanti d'élite, o altri
+  comandanti; assaltare porti e pianeti.
+- **Fare i conti con la legge**: chi aggredisce civili accumula notorietà, e
+  pattuglie e squadre federali tarate sulla sua nave gli danno la caccia. I
+  mercantili viaggiano scortati, fuggono e chiamano soccorso.
+- **Equipaggiare la nave** con 88 moduli in 18 famiglie, da Civile a
+  Precursore, con affissi casuali; consumabili monouso, reperti da collezionare,
+  progetti che sbloccano ricette d'Officina.
+- **Esplorare** relitti, anomalie e giacimenti; occultarsi con una riserva di
+  energia, sapendo che si può essere scoperti.
+- **Colonizzare** con i siluri Genesi, fortificare con Citadel e Quasar, unirsi
+  in corporazioni e alleanze; costruire reputazione con quattro fazioni.
+- **Lasciare il segno**: stagioni con classifica e albo d'oro, oltre cento
+  traguardi a livelli (alcuni segreti) con contatori di carriera che restano, e
+  titoli onorifici accanto al nome.
+
+Tutto in tempo reale nel browser, dal telefono come dal computer, anche come
+app installata. Ogni regola è regolabile dal pannello di amministrazione.
+
 Implementazione **originale** delle meccaniche di gioco: non contiene codice,
 testi o artwork della door proprietaria.
 

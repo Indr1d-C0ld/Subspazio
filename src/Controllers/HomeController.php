@@ -15,7 +15,7 @@ final class HomeController
     {
         $user = Auth::user();
 
-        $stats = ['status' => 'setup', 'sectors' => null, 'players' => null];
+        $stats = ['status' => 'setup', 'sectors' => null, 'players' => null, 'season' => null, 'registration' => 'verify'];
         try {
             $cfg = [];
             foreach (Database::all('SELECT ckey, cvalue FROM game_config') as $row) {
@@ -23,6 +23,8 @@ final class HomeController
             }
             $stats['status']  = $cfg['game.status'] ?? 'setup';
             $stats['sectors'] = $cfg['universe.sectors'] ?? null;
+            $stats['season']  = $cfg['season.number'] ?? null;
+            $stats['registration'] = $cfg['registration.open'] ?? 'verify';
             $stats['players'] = (int) (Database::first(
                 "SELECT COUNT(*) AS c FROM users WHERE status = 'active'"
             )['c'] ?? 0);
