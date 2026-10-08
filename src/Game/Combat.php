@@ -956,6 +956,24 @@ final class Combat
 
         $pid = (int) $player['id'];
         $cloaked = !empty($ship['cloaked']);
+        // Occultati, ma non invisibili: ogni ostile qui ha una probabilita' di
+        // scoprirti (piu' alta lontano da Sol, e per pattuglie ed elite);
+        // scoperto, l'occultamento cade e l'ingresso prosegue come per chiunque.
+        if ($cloaked) {
+            $effettiva = PlayerService::ship((int) $ship['id']) ?? $ship;
+            foreach (Database::all("SELECT * FROM npcs WHERE sector_id = ? AND (aggression > 0 OR kind = 'patrol')", [$sectorId]) as $osservatore) {
+                if (self::npcLasciaStare($osservatore, $player)) {
+                    continue;
+                }
+                if (Cloak::scoperta($effettiva, $osservatore)) {
+                    Cloak::drop((int) $ship['id'], "scoperta da {$osservatore['name']}");
+                    $cloaked = false;
+                    $ship['cloaked'] = 0;
+                    $events[] = "{$osservatore['name']} ti ha scoperto: l'occultamento cade.";
+                    break;
+                }
+            }
+        }
         $mine = static fn (int $ownerId): bool => $ownerId === $pid || Corp::areMates($pid, $ownerId);
         // «Negoziato» promette di evitare l'ingaggio al prossimo ingresso OSTILE.
         // Prima veniva consumato a qualunque ingresso fuori dalla Federazione,

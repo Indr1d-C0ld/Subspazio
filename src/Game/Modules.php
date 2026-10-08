@@ -333,6 +333,7 @@ final class Modules
                 'scanner'              => 'scanner ' . ($v === 'holo' ? 'olografico' : 'di densità'),
                 'scan_range'           => "+{$n} raggio scansione",
                 'cloak'                => 'occultamento',
+                'cloak_stealth_pct'    => "−{$n}% probabilità di essere scoperti occultati",
                 'salvage_bonus_pct'    => "+{$n}% Leghe",
                 'drop_luck_pct'        => "+{$n}% fortuna bottino",
                 'interdict_pct'        => "−{$n}% fuga dei bersagli",

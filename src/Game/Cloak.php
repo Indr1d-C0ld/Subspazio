@@ -40,6 +40,80 @@ final class Cloak
         return $scannerLevel === 'holo';
     }
 
+    // --- riserva di energia ------------------------------------------------
+
+    public static function caricaMax(): int
+    {
+        return max(1, GameConfig::int('cloak.carica_max', 8));
+    }
+
+    public static function ricaricaMin(): int
+    {
+        return max(1, GameConfig::int('cloak.ricarica_min', 10));
+    }
+
+    /**
+     * Cariche disponibili: il valore in tabella piu' una carica ogni
+     * cloak.ricarica_min minuti da quando e' stato scritto, fino al massimo.
+     *
+     * @param array<string,mixed> $ship riga con cloak_carica e cloak_carica_at
+     */
+    public static function carica(array $ship): int
+    {
+        $v = (int) ($ship['cloak_carica'] ?? self::caricaMax());
+        if (!empty($ship['cloak_carica_at'])) {
+            $v += intdiv(max(0, time() - (int) strtotime((string) $ship['cloak_carica_at'])), self::ricaricaMin() * 60);
+        }
+        return max(0, min(self::caricaMax(), $v));
+    }
+
+    /**
+     * Un salto occultato consuma una carica. Falso se la riserva e' vuota.
+     * La scrittura e' vincolata al valore letto: due salti insieme non
+     * consumano una carica sola.
+     */
+    public static function consuma(int $shipId): bool
+    {
+        $s = Database::first('SELECT cloak_carica, cloak_carica_at FROM ships WHERE id = ?', [$shipId]);
+        if ($s === null) {
+            return false;
+        }
+        $ora = self::carica($s);
+        if ($ora < 1) {
+            return false;
+        }
+        return Database::run(
+            'UPDATE ships SET cloak_carica = ?, cloak_carica_at = NOW() WHERE id = ? AND cloak_carica = ? AND cloak_carica_at <=> ?',
+            [$ora - 1, $shipId, $s['cloak_carica'], $s['cloak_carica_at']]
+        )->rowCount() > 0;
+    }
+
+    // --- rilevamento ------------------------------------------------------------
+
+    /** Probabilita' (%) che un aggancio scopra una nave occultata. */
+    public static function rilevamentoPct(array $ship, int $band, bool $vigile): float
+    {
+        $v = array_map('floatval', explode(',', GameConfig::str('cloak.rilevamento_pct', '5,10,20,30,40')));
+        $base = $band <= 0 ? 0.0 : ($v[max(1, min(count($v), $band)) - 1] ?? 0.0);
+        $pct = $base + ($vigile ? GameConfig::int('cloak.rilevamento_vigili', 20) : 0)
+            - (float) (($ship['mod_effects'] ?? [])['cloak_stealth_pct'] ?? 0);
+        return max(0.0, min(95.0, $pct));
+    }
+
+    /**
+     * L'aggancio di un NPC scopre la nave occultata? Pattuglie ed elite
+     * (vigili) hanno sensori migliori.
+     *
+     * @param array<string,mixed> $ship nave effettiva
+     * @param array<string,mixed> $npc
+     */
+    public static function scoperta(array $ship, array $npc): bool
+    {
+        $vigile = $npc['kind'] === 'patrol' || !empty($npc['elite']);
+        $p = self::rilevamentoPct($ship, Fasce::diSettore((int) $npc['sector_id']), $vigile);
+        return $p > 0 && mt_rand(1, 10000) <= $p * 100;
+    }
+
     /**
      * Attiva/disattiva. @return array{ok:bool, error?:string, cloaked?:bool}
      * @param array<string,mixed> $player @param array<string,mixed> $ship
@@ -52,6 +126,9 @@ final class Cloak
         if ($on === self::isActive($ship)) {
             return ['ok' => true, 'cloaked' => $on];
         }
+        if ($on && self::carica(Database::first('SELECT cloak_carica, cloak_carica_at FROM ships WHERE id = ?', [(int) $ship['id']]) ?? []) < 1) {
+            return ['ok' => false, 'error' => 'Riserva del dispositivo esaurita: una carica torna ogni ' . self::ricaricaMin() . ' minuti.'];
+        }
         if ($on && self::fedspaceForbidden()) {
             $sec = Universe::sector((int) $player['sector_id']);
             if ($sec !== null && (bool) $sec['is_fedspace']) {
@@ -62,7 +139,10 @@ final class Cloak
         ShipLog::write((int) $player['id'], 'system', 'info',
             $on ? 'Occultamento attivato' : 'Occultamento disattivato',
             $on
-                ? 'La nave sparisce dai sensori. Non funziona in Fedspace, non ti protegge da mine e Quasar, e cade se apri il fuoco o attracchi. +' . self::warpPenalty() . ' turno per warp.'
+                ? 'La nave sparisce dai sensori. Ogni salto consuma una carica della riserva; ogni aggancio puo\' scoprirti, '
+                  . 'piu\' facilmente lontano da Sol e contro pattuglie ed elite. Cade se apri il fuoco, commerci, attracchi a un '
+                  . 'pianeta, spogli un relitto, estrai o scansioni. Non funziona in Fedspace, non ferma mine e Quasar. +'
+                  . self::warpPenalty() . ' turno per warp.'
                 : 'La nave torna visibile.',
             (int) $player['sector_id']);
         return ['ok' => true, 'cloaked' => $on];

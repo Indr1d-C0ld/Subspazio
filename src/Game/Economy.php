@@ -535,8 +535,10 @@ final class Economy
             throw $e;
         }
 
+        Cloak::drop((int) $ship['id'], 'commercio al porto');
+
         return [
-            'ok'         => true,
+            'ok' => true,
             'total'      => $total,
             'unit'       => round($total / $qty, 2),
             'fair_total' => (int) round($fairUnit * $qty),

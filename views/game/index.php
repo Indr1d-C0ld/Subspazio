@@ -61,7 +61,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
   <div><span class="k">Caccia</span><span class="v"><?= number_format((int) $ship['fighters'], 0, ',', '.') ?></span></div>
   <div><span class="k">Scudi</span><span class="v"><?= number_format((int) $ship['shields'], 0, ',', '.') ?></span></div>
   <?php if (!empty($ship['cloaked'])): ?>
-  <div><span class="k">Occultamento</span><span class="v cloak-on">🌫 Occultato</span></div>
+  <div><span class="k">Occultamento</span><span class="v cloak-on">🌫 Occultato · <?= \App\Game\Cloak::carica($ship) ?>/<?= \App\Game\Cloak::caricaMax() ?></span></div>
   <?php endif; ?>
   <div><span class="k">Allineamento</span><span class="v"><?= e($align) ?></span></div>
   <div><span class="k">Settore</span><span class="v" data-bind="sector"><?= (int) $look['id'] ?></span></div>
@@ -517,10 +517,14 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
       <p class="hint">I sensori della Federazione impediscono l'occultamento in questo spazio:
          esci dallo spazio Fed per attivarlo.</p>
       <?php else: ?>
-      <p class="hint">Sparisci dai sensori — ti vede solo chi ha uno scanner olografico nel tuo
-         settore, e superi caccia e NPC senza ingaggio. +<?= \App\Game\Cloak::warpPenalty() ?>
-         turno per warp, niente Fedspace, non ferma mine né Quasar, cade se apri il fuoco,
-         dispieghi, attracchi allo StarDock o salti in Transwarp.</p>
+      <?php $carica = \App\Game\Cloak::carica($ship); ?>
+      <p class="cloak-riserva">Riserva <strong><?= $carica ?>/<?= \App\Game\Cloak::caricaMax() ?></strong>
+         <span class="mut">· un salto occultato consuma una carica, ne torna una ogni <?= \App\Game\Cloak::ricaricaMin() ?> minuti</span></p>
+      <p class="hint">Sparisci dai sensori: ti vede solo chi ha uno scanner olografico nel tuo settore, e gli ostili
+         possono non agganciarti. Ma ogni aggancio può scoprirti: il <?= (int) \App\Game\Cloak::rilevamentoPct($ship, (int) ($look['band'] ?? 1), false) ?>% qui,
+         di più lontano da Sol e contro pattuglie ed élite. +<?= \App\Game\Cloak::warpPenalty() ?> turno per warp, niente Fedspace,
+         non ferma mine né Quasar. Cade se apri il fuoco, dispieghi, commerci, attracchi a un pianeta, spogli un relitto,
+         estrai, scansioni, attracchi allo StarDock o salti in Transwarp, e quando la riserva si esaurisce.</p>
       <?php endif; ?>
     </details>
     <?php endif; ?>

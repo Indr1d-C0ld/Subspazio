@@ -51,6 +51,14 @@ testi o artwork della door proprietaria.
   | Computer | sensori, guerra elettronica (danni da NPC e caccia), analisi (fortuna del bottino), transponder (notorietà dei crimini) |
   | Utility | stive, recupero (Leghe), occultamento, officina (caccia prodotti ogni ora) |
 
+  L'**occultamento** è un attraversamento, non un rifugio: il dispositivo ha
+  una riserva di 8 cariche (una per salto, ne torna una ogni 10 minuti; a
+  riserva vuota la nave riappare), ogni aggancio può scoprire la nave (dal 5%
+  nella Cintura al 40% nell'Orlo, +20% contro pattuglie ed élite, meno coi
+  modelli rari del dispositivo), e qualunque interazione col settore —
+  commercio, mercato nero, pianeti, relitti, depositi, estrazione, anomalie,
+  scansione — lo fa cadere.
+
   Potenziare un modulo lo porta alla rarità successiva **della sua famiglia**.
   I moduli trovati come bottino hanno spesso **affissi** casuali (da 0–1 sui
   Civili a 2–3 sui Precursori) che aggiungono un effetto e un epiteto al nome
@@ -378,7 +386,7 @@ La configurazione sta su **due livelli distinti**, e la differenza conta:
 | **Gioco** | tabella `game_config` | bilanciamento e regole: costi, probabilità, soglie, tempi | dal pannello `/admin/gioco` o da console, **a caldo** |
 
 Il primo richiede accesso al server ed è materia di installazione. Il secondo è
-il pannello di regolazione del gioco: 316 chiavi, tutte modificabili senza
+il pannello di regolazione del gioco: 320 chiavi, tutte modificabili senza
 riavviare nulla e senza toccare il codice.
 
 ### Livello 1 — il file di configurazione
@@ -420,7 +428,7 @@ php bin/console.php config:get combat          # solo la famiglia
 php bin/console.php config:set newbie.protect_hours 72
 ```
 
-Le 316 chiavi per famiglia:
+Le 320 chiavi per famiglia:
 
 | Famiglia | N. | Cosa regola |
 |---|---|---|
@@ -446,7 +454,8 @@ Le 316 chiavi per famiglia:
 | `mail` | 4 | ritentativi, tetto giornaliero, messaggi per battito, potatura della coda |
 | `turns` | 4 | turni al giorno e ora del reset |
 | `season` | 4 | numero di stagione, dimensione dell'albo, cosa azzerare alla chiusura |
-| `contract`, `corp`, `eps`, `events`, `encounter`, `limpet`, `live`, `radio`, `rating`, `tick`, `bank`, `cloak`, `fednews`, `ranks` | 2–4 ciascuna | contratti e taglie, corporazioni, griglia di potenza, eventi globali, incontri a warp, mine limpet, stream SSE, radio, classifica, salute del clock, banca, occultamento, notiziario, soglie di allineamento |
+| `cloak` | 6 | occultamento: penalità di warp, divieto in Fedspace, riserva di cariche e ricarica, probabilità di essere scoperti per fascia e contro pattuglie ed élite |
+| `contract`, `corp`, `eps`, `events`, `encounter`, `limpet`, `live`, `radio`, `rating`, `tick`, `bank`, `fednews`, `ranks` | 2–4 ciascuna | contratti e taglie, corporazioni, griglia di potenza, eventi globali, incontri a warp, mine limpet, stream SSE, radio, classifica, salute del clock, banca, notiziario, soglie di allineamento |
 | `deploy`, `digest`, `game`, `limits`, `media`, `nav`, `newbie`, `onboarding`, `player`, `registration`, `security`, `shiplog`, `transwarp` | 1 ciascuna | tetto del pedaggio, rapporto di rientro, stato del gioco, freno sulle azioni, approvazione automatica delle immagini, autopilota, protezione novizio, ricompensa dei primi passi, dotazione iniziale, iscrizioni aperte/chiuse, lunghezza minima della password, capienza del giornale, costo del transwarp |
 
 Le più utili da conoscere subito:
@@ -476,7 +485,7 @@ php tests/run.php                # tutte
 php tests/run.php economica      # solo i file col nome che contiene "economica"
 ```
 
-Suite di integrazione senza dipendenze, 534 verifiche in 25 file: integrità
+Suite di integrazione senza dipendenze, 548 verifiche in 26 file: integrità
 economica, concorrenza, banca/contratti/Officina, combattimento, navigazione,
 nave e moduli, pianeti, porti, equipaggio, mondo, percorsi di gioco normali,
 universo, clock, sessioni e turni, difese, iscrizione e posta, immagini,

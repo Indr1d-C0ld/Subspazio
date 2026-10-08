@@ -243,6 +243,8 @@ final class SectorFeatures
             Codex::unlock((int) $player['id'], 'deep_space');
         }
 
+        Cloak::drop((int) $ship['id'], 'scansione attiva');
+
         return ['ok' => true, 'found' => $found, 'range' => $range, 'sectors' => count($sectors), 'by_kind' => $byKind];
     }
 
@@ -384,6 +386,7 @@ final class SectorFeatures
             }
             throw $e;
         }
+        Cloak::drop((int) $ship['id'], 'recupero da un relitto');
         return ['ok' => true, 'text' => implode(' · ', $parts), 'module' => $module, 'officer' => $officer, 'salvage' => $sal];
     }
 
@@ -439,6 +442,7 @@ final class SectorFeatures
         if ($cargo > 0) {
             $parts[] = "{$cargo} " . Economy::label($commodity);
         }
+        Cloak::drop((int) $ship['id'], 'raccolta di un deposito');
         return ['ok' => true, 'text' => implode(' · ', $parts)];
     }
 
@@ -523,6 +527,7 @@ final class SectorFeatures
             $parts[] = "+{$crystals} Cristalli";
         }
         $parts[] = ($newLeft > 0 ? "giacimento: {$newLeft} rimasti" : 'giacimento esaurito');
+        Cloak::drop((int) $ship['id'], 'estrazione mineraria');
         return ['ok' => true, 'text' => implode(' · ', $parts)];
     }
 
@@ -572,6 +577,7 @@ final class SectorFeatures
                 Database::run('UPDATE player_feature_state SET progress = ? WHERE player_id = ? AND feature_id = ? AND resolved = 0',
                     [$prog, (int) $player['id'], $featureId]);
                 $pdo->commit();
+                Cloak::drop((int) $ship['id'], 'studio di un\'anomalia');
                 return ['ok' => true, 'done' => false, 'text' => "Analisi in corso: {$prog}/{$need}" . ($hasSci ? ' (Scienziato: +bonus)' : '')];
             }
             // risolta
@@ -614,6 +620,7 @@ final class SectorFeatures
         if (!empty($module)) {
             $parts[] = "modulo: {$module['name']} [{$module['label']}]";
         }
+        Cloak::drop((int) $ship['id'], 'studio di un\'anomalia');
         return ['ok' => true, 'done' => true, 'text' => 'Anomalia risolta! ' . implode(' · ', $parts)];
     }
 

@@ -4,6 +4,41 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-08 — L'occultamento ha un prezzo
+
+Comprato una volta (35.000 cr), l'occultamento si accendeva gratis e durava
+per sempre, al costo di un turno in più a salto: invisibili a NPC, caccia
+schierati e pattuglie, si commerciava nei porti dell'Orlo col premio del 20%
+senza alcun rischio. *Deciso con l'autore*: tutte e tre le misure proposte.
+
+- **Interazioni che scoprono** — porto, mercato nero, Genesi, coloni, carico
+  e guarnigione dei pianeti, relitti, depositi, giacimenti, anomalie e
+  scansione fanno cadere l'occultamento, solo quando l'azione riesce
+  ([src/Game/Economy.php](src/Game/Economy.php),
+  [src/Game/BlackMarket.php](src/Game/BlackMarket.php),
+  [src/Game/Planets.php](src/Game/Planets.php),
+  [src/Game/SectorFeatures.php](src/Game/SectorFeatures.php)).
+- **Rilevamento** ([src/Game/Cloak.php](src/Game/Cloak.php)) — ogni aggancio,
+  all'ingresso ([src/Game/Combat.php](src/Game/Combat.php)) e al battito
+  ([src/Game/Npc.php](src/Game/Npc.php)), può scoprire la nave: 5/10/20/30/40%
+  dalla Cintura all'Orlo, +20% contro pattuglie ed élite. Scoperta, la nave
+  perde l'occultamento e l'aggancio procede come per chiunque. Il Mantello xeno
+  e il Velo di Precursore tolgono 15 e 30 punti (effetto nuovo
+  `cloak_stealth_pct`).
+- **Riserva di energia** — 8 cariche; ogni salto occultato ne consuma una
+  ([src/Game/Navigation.php](src/Game/Navigation.php)), ne torna una ogni 10
+  minuti; a riserva vuota la nave riappare e il dispositivo non si riaccende.
+  Il consumo è vincolato al valore letto.
+- **Interfaccia** — riserva e probabilità di scoperta nella plancia, guida e
+  aiuto aggiornati; cache `subspazio-v50`.
+- **[db/migrations/0060_occultamento.sql](db/migrations/0060_occultamento.sql)**
+  — colonne `ships.cloak_carica` e `cloak_carica_at`, effetti dei due modelli
+  rari, 4 chiavi `cloak`.
+- **[tests/occultamento.php](tests/occultamento.php)** (nuovo) — consumo della
+  riserva, riapparizione a riserva vuota, ricarica nel tempo, probabilità di
+  scoperta per fascia e con le contromisure, caduta dopo uno scambio e negli
+  altri punti d'interazione. Suite: 548 verifiche, 0 fallite.
+
 ## 2026-10-07 — Ripartenza totale a fine stagione
 
 L'autore ha chiesto di azzerare l'universo per tutti e ripartire con i

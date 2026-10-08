@@ -1261,3 +1261,5 @@ h1 .help, h2 .help, h3 .help, summary .help, legend .help, .side-stats .help { f
 .pill.legge-3, .pill.legge-4 { color: var(--err); border-color: color-mix(in srgb, var(--err) 60%, transparent); background: color-mix(in srgb, var(--err) 12%, transparent); }
 .legge-panel .legge-stato { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
 .legge-fedina summary { cursor: pointer; color: var(--accent); font-size: .85rem; margin-top: .5rem; }
+
+.cloak-riserva { margin: .4rem 0 0; font-size: .86rem; }

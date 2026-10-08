@@ -108,6 +108,8 @@ final class BlackMarket
         }
         Achievements::award((int) $player['id'], 'black_market');
 
+        Cloak::drop((int) $ship['id'], 'affare al mercato nero');
+
         return ['ok' => true, 'total' => $total, 'unit' => round($unit, 2), 'align' => $alignHit];
     }
 
@@ -154,6 +156,7 @@ final class BlackMarket
                 throw $e;
             }
             Achievements::award((int) $player['id'], 'black_market');
+            Cloak::drop((int) $ship['id'], 'affare al mercato nero');
             return ['ok' => true, 'cost' => $unit, 'align' => $alignBuy];
         }
 
@@ -194,6 +197,7 @@ final class BlackMarket
             throw $e;
         }
         Achievements::award((int) $player['id'], 'black_market');
+        Cloak::drop((int) $ship['id'], 'affare al mercato nero');
         return ['ok' => true, 'qty' => $qty, 'cost' => $cost, 'align' => $alignBuy];
     }
 

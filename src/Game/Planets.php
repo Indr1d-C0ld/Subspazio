@@ -203,6 +203,7 @@ final class Planets
         $id = Database::lastInsertId();
         Achievements::award((int) $player['id'], 'first_planet');
         Live::sector($sectorId, 'planet_new', null, "Un nuovo pianeta ({$name}) si e' formato nel settore");
+        Cloak::drop((int) $ship['id'], 'lancio di un siluro Genesi');
         return ['ok' => true, 'planet_id' => $id, 'name' => $name, 'type' => $type];
     }
 
@@ -275,6 +276,7 @@ final class Planets
                 return ['ok' => false, 'error' => 'Coloni insufficienti o stive piene.'];
             }
         }
+        Cloak::drop((int) $ship['id'], 'attracco a un pianeta');
         return ['ok' => true, 'moved' => $qty, 'bucket' => $bucket, 'dir' => $dir];
     }
 
@@ -348,6 +350,7 @@ final class Planets
                 return ['ok' => false, 'error' => 'Carico insufficiente.'];
             }
         }
+        Cloak::drop((int) $ship['id'], 'attracco a un pianeta');
         return ['ok' => true, 'moved' => $qty];
     }
 
@@ -571,6 +574,7 @@ final class Planets
                 return ['ok' => false, 'error' => "Guarnigione insufficiente o nave piena (massimo {$maxNave} caccia)."];
             }
         }
+        Cloak::drop((int) $ship['id'], 'attracco a un pianeta');
         return ['ok' => true, 'moved' => $qty, 'dir' => $dir];
     }
 
@@ -608,6 +612,7 @@ final class Planets
              VALUES (?, 0, ?, 'organics', 'buy', ?, 0, 0, 0)",
             [$player['id'], (int) $player['sector_id'], $qty]
         );
+        Cloak::drop((int) $ship['id'], 'imbarco di coloni');
         return ['ok' => true, 'loaded' => $qty, 'remaining_today' => max(0, $perDay - $taken - $qty)];
     }
 

@@ -75,9 +75,12 @@ $sec = static function (string $icon, string $title, string $body, string $class
 
   <?= $sec('🌫️', 'Occultamento & Transwarp',
       '<p>L\'<strong>occultamento</strong> (hardware Cantiere) ti toglie dai sensori: ti vede solo chi ha uno '
-    . 'scanner olografico nel tuo settore, e superi caccia e NPC senza ingaggio. In cambio: +' . \App\Game\Cloak::warpPenalty() . ' turno/i per warp, '
-    . 'vietato in spazio Federazione, non ferma mine né Quasar, e <strong>cade</strong> se apri il fuoco, attracchi '
-    . 'allo StarDock o salti in Transwarp. Attivalo dalla plancia, sezione «Armi e dispiegamento».</p>'
+    . 'scanner olografico nel tuo settore, e gli ostili possono non agganciarti. Ma è un attraversamento, non un rifugio: '
+    . 'il dispositivo ha una <strong>riserva</strong> di ' . \App\Game\Cloak::caricaMax() . ' cariche (una per salto, ne torna una ogni '
+    . \App\Game\Cloak::ricaricaMin() . ' minuti); ogni aggancio può <strong>scoprirti</strong> (dal 5% nella Cintura al 40% nell\'Orlo, '
+    . '+20% contro pattuglie ed élite, meno coi modelli rari del dispositivo); e <strong>cade</strong> se apri il fuoco, commerci, '
+    . 'attracchi a un pianeta, spogli un relitto, estrai, scansioni, attracchi allo StarDock o salti in Transwarp. '
+    . '+' . \App\Game\Cloak::warpPenalty() . ' turno/i per warp, vietato in spazio Federazione, non ferma mine né Quasar.</p>'
     . '<p>Il <strong>drive Transwarp</strong> salta in un colpo verso qualunque settore <em>già esplorato</em>, '
     . 'ignorando le rotte, a costo fisso in turni. Comando in plancia, «Computer di bordo».</p>') ?>
 

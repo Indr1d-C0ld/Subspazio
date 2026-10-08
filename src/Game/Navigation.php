@@ -247,6 +247,14 @@ final class Navigation
         $player['sector_id'] = $toSector;
         $player['total_warps'] = (int) $player['total_warps'] + 1;
 
+        // Ogni salto occultato consuma una carica della riserva; a riserva
+        // vuota la nave riappare prima di arrivare.
+        if (!empty($ship['cloaked']) && !Cloak::consuma((int) $ship['id'])) {
+            Cloak::drop((int) $ship['id'], 'riserva del dispositivo esaurita');
+            $ship['cloaked'] = 0;
+            $warpNote = trim(($warpNote ?? '') . ' Riserva di occultamento esaurita: la nave riappare.');
+        }
+
         return self::arrive($player, $ship, $from, $toSector, $cost, $warpNote);
     }
 

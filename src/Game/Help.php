@@ -28,7 +28,7 @@ final class Help
         'plancia.notiziario'    => 'Il bollettino della Federazione, composto dallo stato reale del gioco. Versione integrale nella Radio.',
         'plancia.sonda'         => 'Lancia una sonda in un settore adiacente per vederne contenuto e pericoli senza entrarci.',
         'plancia.armi'          => 'Attacchi, assalti ai porti e dispiegamento di caccia e mine nel settore. Vietato in spazio Federazione.',
-        'plancia.occultamento'  => 'Attiva/disattiva il dispositivo di occultamento (se installato). Da occultato sei fuori dai sensori ma più lento e disarmato.',
+        'plancia.occultamento'  => 'Il dispositivo ti toglie dai sensori, ma con una riserva di energia (una carica per salto, che si ricarica col tempo) e senza garanzie: ogni aggancio può scoprirti, più facilmente lontano da Sol. Qualunque interazione col settore (commercio, pianeti, relitti, estrazione, scansione) lo fa cadere.',
         'plancia.computer'      => 'Strumenti di navigazione: traccia una rotta, imposta il faro del settore e — se hai il drive — salta in Transwarp.',
         'plancia.consumabili'   => 'Oggetti monouso trovati abbattendo nemici: più spesso e più rari lontano da Sol. Si usano una volta, da qui.',
         'plancia.nota'          => 'Un\'etichetta e una nota private su questo settore; spunta «preferito» per ritrovarlo in fretta. Tutti i preferiti, anche di settori lontani, si modificano o rimuovono dal Registro rotte.',

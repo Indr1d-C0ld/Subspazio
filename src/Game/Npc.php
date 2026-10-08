@@ -231,8 +231,16 @@ final class Npc
             // Stesse regole dell'ingresso nel settore: chi e' occultato non si
             // vede, e le amicizie di fazione valgono anche fermi. Prima qui non
             // c'era ne' l'una ne' l'altra cosa.
-            if (!empty($ship['cloaked']) || Combat::npcLasciaStare($r, $player)) {
+            if (Combat::npcLasciaStare($r, $player)) {
                 continue;
+            }
+            // occultati, ma non invisibili: l'ostile puo' scoprirti
+            if (!empty($ship['cloaked'])) {
+                if (!Cloak::scoperta($ship, $r)) {
+                    continue;
+                }
+                Cloak::drop((int) $ship['id'], "scoperta da {$r['name']}");
+                $ship['cloaked'] = 0;
             }
             Combat::npcEngagePlayer($r, $player, $ship, true);
             $seen[$r['id']] = true;
