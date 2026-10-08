@@ -194,6 +194,7 @@ final class Combat
                     // lo abbatte. Prima restava un numero che nessuno incassava mai.
                     self::riscuotiTaglia((int) $target['id'], (int) $atkPlayer['id']);
                     Legge::riscuoti((int) $target['id'], (int) $atkPlayer['id']);
+                    Stats::add((int) $atkPlayer['id'], 'comandanti_abbattuti');
                 }
                 Faction::onKillPlayer((int) $atkPlayer['id'], (int) $target['alignment']);
                 self::destroyShip($target);
@@ -363,6 +364,7 @@ final class Combat
                     $align = (int) round($align * (1 - min(60, $as) / 100));
                 }
                 $exp = GameConfig::int('combat.exp_per_kill', 50) + (int) round($r['def_lost'] * GameConfig::float('combat.exp_per_fighter', 0.02));
+                Stats::add((int) $atkPlayer['id'], 'porti_espugnati');
                 Database::run(
                     'UPDATE players SET credits = credits + ?, port_busts = port_busts + 1, alignment = alignment + ?, experience = experience + ? WHERE id = ?',
                     [$loot, $align, $exp, $atkPlayer['id']]
@@ -755,6 +757,19 @@ final class Combat
                 Faction::onKillNpc((int) $atkPlayer['id'], $npc['name'] === self::CACCIATORE ? 'hunter' : (string) $npc['kind']);
                 if ($npc['kind'] === 'trader') {
                     $crimini[] = 'uccisione';
+                }
+                // contatori di carriera
+                $pk = (int) $atkPlayer['id'];
+                Stats::add($pk, match ($npc['kind']) {
+                    'pirate' => $npc['name'] === self::CACCIATORE ? 'cacciatori_abbattuti' : 'pirati_abbattuti',
+                    'ferrengi' => 'ferrengi_abbattuti', 'trader' => 'mercantili_abbattuti', 'patrol' => 'pattuglie_abbattute',
+                    default => 'npc_abbattuti',
+                });
+                if (!empty($npc['elite'])) {
+                    Stats::add($pk, 'elite_abbattute');
+                }
+                if (Fasce::diSettore((int) $npc['sector_id']) >= Fasce::MAX) {
+                    Stats::add($pk, 'abbattuti_orlo');
                 }
                 Database::run('DELETE FROM npcs WHERE id = ?', [$npcId]);
             } else {
@@ -1296,6 +1311,7 @@ final class Combat
             $preso['credits'] = $tolti;
         }
         Database::run('UPDATE ships SET fighters = 0, shields = 0 WHERE id = ?', [$shipId]);
+        Stats::add($pid, 'razzie_subite');
         Database::run(
             'UPDATE players SET tregua_npc_until = DATE_ADD(NOW(), INTERVAL ? MINUTE) WHERE id = ?',
             [Fasce::treguaMin(), $pid]
@@ -1371,6 +1387,7 @@ final class Combat
             return 0;
         }
         Wallet::credit($cacciatoreId, ['credits' => $taglia]);
+        Stats::add($cacciatoreId, 'taglie_riscosse');
         ShipLog::write($cacciatoreId, 'contract', 'info', 'Taglia federale riscossa',
             'La Federazione ha versato ' . number_format($taglia, 0, ',', '.') . ' cr per l\'abbattimento di un ricercato.');
         return $taglia;
@@ -1383,6 +1400,7 @@ final class Combat
     {
         $player = Database::first('SELECT * FROM players WHERE id = ?', [$player['id']]);
         $ship = Database::first('SELECT * FROM ships WHERE id = ?', [$player['ship_id']]);
+        Stats::add((int) $player['id'], 'navi_perse');
         $dock = (int) (Database::first('SELECT id FROM sectors WHERE is_stardock = 1 LIMIT 1')['id'] ?? 1);
         $hadPod = (int) $ship['escape_pod'] === 1;
         $lost = $hadPod ? 0 : (int) floor((int) $player['credits'] * 0.5);

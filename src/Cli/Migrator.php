@@ -81,7 +81,10 @@ final class Migrator
     /** @return list<string> */
     private function splitStatements(string $sql): array
     {
-        $lines = preg_split('/\R/', $sql) ?: [];
+        // Solo i ritorni a capo veri. Con \R (senza /u) PCRE riconosce anche il
+        // byte 0x85 come «a capo», e spezzava i caratteri UTF-8 che lo
+        // contengono: «∅» e «★» arrivavano al database mutilati.
+        $lines = preg_split('/\r\n|\n|\r/', $sql) ?: [];
         $clean = [];
         foreach ($lines as $line) {
             if (preg_match('/^\s*--/', $line)) {

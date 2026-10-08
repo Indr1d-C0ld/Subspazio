@@ -87,6 +87,7 @@ final class Reperti
             return null;
         }
         self::aggiungi($playerId, $k);
+        Stats::add($playerId, 'reperti_trovati');
         return ['key' => $k, 'name' => self::CATALOGO[$k][0], 'rarity' => self::CATALOGO[$k][1]];
     }
 
@@ -156,6 +157,7 @@ final class Reperti
             throw $e;
         }
         $modulo = Loot::grant($pid, 'collezione', true, $rarita);
+        Stats::add($pid, 'collezioni');
         return ['ok' => true, 'name' => $nome, 'credits' => $crediti, 'xp' => $xp, 'modulo' => $modulo];
     }
 
@@ -201,6 +203,7 @@ final class Reperti
         if (Database::run('INSERT IGNORE INTO player_progetti (player_id, recipe_key) VALUES (?, ?)', [$playerId, $k])->rowCount() === 0) {
             return null;
         }
+        Stats::add($playerId, 'progetti');
         $m = array_values(array_filter($mancanti, static fn ($x) => $x['ckey'] === $k))[0];
         return ['key' => $k, 'name' => 'Progetto: ' . $m['label'], 'rarity' => $m['rarity']];
     }

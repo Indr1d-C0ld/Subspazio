@@ -80,7 +80,7 @@ final class Help
         'codex.home'            => 'L\'enciclopedia di bordo: si popola studiando relitti, anomalie e reperti che incontri in giro.',
         'registro.spostamenti'  => 'Lo storico dei tuoi warp e i settori che frequenti di più, ricostruiti dai log di movimento.',
         'giornale.home'         => 'Il registro di bordo completo e paginato. Aprendolo, segni come letto.',
-        'traguardi.home'        => 'Obiettivi permanenti dell\'account: si sbloccano una volta e restano fra una stagione e l\'altra.',
+        'traguardi.home'        => 'Oltre cento obiettivi permanenti, in sette categorie e a livelli (bronzo, argento, oro, platino), alcuni segreti. Si sbloccano coi contatori di carriera, che restano fra una stagione e l\'altra. I punti danno titoli onorifici da mostrare accanto al nome.',
         'albo.home'             => 'L\'albo d\'oro: i comandanti che hanno chiuso in vetta le stagioni concluse.',
 
         // --- Identità -------------------------------------------

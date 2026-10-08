@@ -155,6 +155,9 @@ final class AwayMissions
 
         $rw = ShipStats::decode($m['rewards']) ?? [];
         $scale = ['triumph' => 1.5, 'success' => 1.0, 'partial' => 0.45, 'failure' => 0.0, 'disaster' => 0.0][$outcome];
+        if (in_array($outcome, ['triumph', 'success'], true)) {
+            Stats::add((int) $player['id'], 'missioni_riuscite');
+        }
         $parts = [];
         $credits = (int) round(($rw['credits'] ?? 0) * $scale);
         $salvage = (int) round(($rw['salvage'] ?? 0) * $scale);

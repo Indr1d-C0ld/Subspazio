@@ -25,7 +25,7 @@
           <?php else: ?>
             <?= partial('crest', ['crest' => $r['crest'] ?? null, 'color' => $r['color'] ?? null, 'size' => 22]) ?>
           <?php endif; ?>
-          <strong style="color:<?= e($r['color'] ?? '') ?>"><?= e($r['handle']) ?></strong>
+          <strong style="color:<?= e($r['color'] ?? '') ?>"><?= e($r['handle']) ?></strong><?= !empty($r['titolo']) ? ' <span class="titolo-chip">' . e($r['titolo']) . '</span>' : '' ?>
           <?php if (!empty($r['has_logo'])): ?>
             <?= partial('media_hover', ['id' => (int) $r['pid'], 'kind' => 'logo', 'size' => 28, 'alt' => 'logo di ' . $r['handle']]) ?>
           <?php endif; ?>

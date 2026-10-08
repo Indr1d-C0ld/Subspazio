@@ -1263,3 +1263,17 @@ h1 .help, h2 .help, h3 .help, summary .help, legend .help, .side-stats .help { f
 .legge-fedina summary { cursor: pointer; color: var(--accent); font-size: .85rem; margin-top: .5rem; }
 
 .cloak-riserva { margin: .4rem 0 0; font-size: .86rem; }
+
+/* Traguardi: livelli, avanzamento, segreti, titoli */
+.ach-liv { font-size: .64rem; text-transform: uppercase; letter-spacing: .08em; font-family: var(--font-mono);
+  padding: .05rem .4rem; border-radius: 999px; border: 1px solid var(--line); margin-left: .3rem; color: var(--ink-soft); }
+.ach.liv-bronzo .ach-liv  { color: #e0a878; border-color: rgba(224, 168, 120, .5); }
+.ach.liv-argento .ach-liv { color: #cfd8e3; border-color: rgba(207, 216, 227, .5); }
+.ach.liv-oro .ach-liv     { color: #ffcf6b; border-color: rgba(255, 207, 107, .55); }
+.ach.liv-platino .ach-liv { color: #b493ff; border-color: rgba(180, 147, 255, .6); }
+.ach.segreto { border-style: dashed; }
+.ach-bar { height: 4px; border-radius: 2px; background: var(--line-soft); margin: .45rem 0 .15rem; overflow: hidden; }
+.ach-bar > span { display: block; height: 100%; background: var(--accent); }
+.ach-titolo { color: var(--accent-2) !important; }
+.titolo-chip { font-size: .72rem; color: var(--accent-2); font-family: var(--font-mono); margin-left: .35rem; }
+.titolo-form { align-items: center; gap: .6rem; flex-wrap: wrap; }

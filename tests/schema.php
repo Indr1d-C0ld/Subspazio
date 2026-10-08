@@ -104,4 +104,11 @@ return static function (): void {
         $vecchie === 0,
         $vecchie > 0 ? "{$vecchie} righe da potare" : ''
     );
+
+    Esito::sezione('Migrazioni — i caratteri UTF-8 arrivano interi');
+    // Con \R senza /u, PCRE prendeva il byte 0x85 per un a capo e spezzava
+    // «∅» e «★»: la migrazione dei traguardi falliva con un'icona mutilata.
+    $split = new ReflectionMethod(\App\Cli\Migrator::class, 'splitStatements');
+    $st = $split->invoke(new \App\Cli\Migrator(sys_get_temp_dir()), "INSERT INTO t VALUES ('∅', '★');\nSELECT 1;");
+    Esito::verifica('due istruzioni, icone intatte', count($st) === 2 && str_contains($st[0], "'∅', '★'"), (string) json_encode($st, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE));
 };

@@ -25,6 +25,7 @@ $hasLogo   = \App\Game\MediaAsset::current('player', $pid, 'logo') !== null;
         <?= partial('crest', ['crest' => $idc['crest'], 'color' => $idc['color'], 'size' => 18, 'title' => $idc['title']]) ?>
       <?php endif; ?>
       <a href="<?= e(url('/gioco/profilo')) ?>" style="color:<?= e($idc['color']) ?>"><?= e($player['handle']) ?></a>
+      <?php if (!empty($player['titolo'])): ?><a class="titolo-chip" href="<?= e(url('/gioco/traguardi')) ?>"><?= e($player['titolo']) ?></a><?php endif; ?>
     </span>
   </div>
   <?php if ($hasLogo): ?>

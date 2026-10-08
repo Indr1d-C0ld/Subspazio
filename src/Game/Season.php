@@ -93,8 +93,20 @@ final class Season
             if ($pos <= 10) {
                 Achievements::award((int) $r['id'], 'season_top10');
             }
+            if ($pos <= 3) {
+                Stats::add((int) $r['id'], 'podi');
+            }
+            if ($pos === 1) {
+                Stats::add((int) $r['id'], 'vittorie');
+            }
         }
         $winner = $top[0]['handle'] ?? '(nessuno)';
+        // una stagione giocata fino alla chiusura, per chi ha fatto almeno un salto
+        Database::run(
+            "INSERT INTO player_stats (player_id, chiave, valore)
+             SELECT id, 'stagioni', 1 FROM players WHERE total_warps > 0
+             ON DUPLICATE KEY UPDATE valore = valore + 1"
+        );
 
         $nextNum = (int) $season['number'] + 1;
         Database::run('INSERT INTO seasons (number, name) VALUES (?, ?)', [$nextNum, "Stagione {$nextNum}"]);

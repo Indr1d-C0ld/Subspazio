@@ -59,6 +59,7 @@ final class Leaderboard
     {
         return array_map(static fn ($r) => [
             'handle'     => $r['handle'],
+            'titolo'     => $r['titolo'],
             'rating'     => (int) $r['rating'],
             'rank'       => Ranks::title((int) $r['experience']),
             'experience' => (int) $r['experience'],
@@ -75,7 +76,7 @@ final class Leaderboard
             'has_avatar' => !empty($r['avatar_path']) && MediaAsset::fileExists(['path' => $r['avatar_path']]),
             'has_logo'   => !empty($r['logo_path']) && MediaAsset::fileExists(['path' => $r['logo_path']]),
         ], Database::all(
-            "SELECT p.id, p.handle, p.rating, p.experience, p.kills, p.deaths, p.alignment,
+            "SELECT p.id, p.handle, p.titolo, p.rating, p.experience, p.kills, p.deaths, p.alignment,
                     p.color, p.crest,
                     c.tag AS corp_tag,
                     s.type_key AS ship_key, st.name AS ship_type_name,

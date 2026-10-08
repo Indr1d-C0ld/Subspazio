@@ -186,6 +186,8 @@ final class Legge
         $dopo = self::puntiDi($playerId);
         $g0 = self::grado($prima);
         $g1 = self::grado($dopo);
+        Stats::add($playerId, 'crimini');
+        Stats::max($playerId, 'gradino_max', $g1);
         if ($g1 > $g0) {
             $testo = 'La Federazione ti classifica ora come ' . mb_strtoupper(self::nome($g1)) . '. ' . self::RIASSUNTI[$g1];
             Live::alert($playerId, 'legge', 'Notorieta\': ' . self::nome($g1), $testo, '/gioco/fazioni');
@@ -230,6 +232,7 @@ final class Legge
             return 0;
         }
         Wallet::credit($cacciatoreId, ['credits' => $taglia]);
+        Stats::add($cacciatoreId, 'taglie_riscosse');
         ShipLog::write($cacciatoreId, 'contract', 'info', 'Taglia federale su un ricercato',
             'La Federazione ha versato ' . number_format($taglia, 0, ',', '.') . ' cr per l\'abbattimento di un ricercato.');
         return $taglia;
@@ -240,6 +243,7 @@ final class Legge
     {
         Database::run('UPDATE players SET notorieta = ?, notorieta_at = NOW() WHERE id = ?',
             [self::dopoLaPena(self::puntiDi($playerId)), $playerId]);
+        Stats::add($playerId, 'arresti');
     }
 
     /** Costo dell'ammenda che azzera la notorieta': cresce con la recidiva. */
@@ -286,6 +290,7 @@ final class Legge
             throw $e;
         }
         Database::run('DELETE FROM npcs WHERE kind = ? AND target_player_id = ?', ['patrol', $pid]);
+        Stats::add($pid, 'ammende_pagate');
         return ['ok' => true, 'cost' => $costo];
     }
 

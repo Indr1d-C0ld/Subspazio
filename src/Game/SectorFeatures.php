@@ -387,6 +387,7 @@ final class SectorFeatures
             throw $e;
         }
         Cloak::drop((int) $ship['id'], 'recupero da un relitto');
+        Stats::add((int) $player['id'], 'relitti_spogliati');
         return ['ok' => true, 'text' => implode(' · ', $parts), 'module' => $module, 'officer' => $officer, 'salvage' => $sal];
     }
 
@@ -528,6 +529,7 @@ final class SectorFeatures
         }
         $parts[] = ($newLeft > 0 ? "giacimento: {$newLeft} rimasti" : 'giacimento esaurito');
         Cloak::drop((int) $ship['id'], 'estrazione mineraria');
+        Stats::add((int) $player['id'], 'estrazioni');
         return ['ok' => true, 'text' => implode(' · ', $parts)];
     }
 
@@ -621,6 +623,7 @@ final class SectorFeatures
             $parts[] = "modulo: {$module['name']} [{$module['label']}]";
         }
         Cloak::drop((int) $ship['id'], 'studio di un\'anomalia');
+        Stats::add((int) $player['id'], 'anomalie_risolte');
         return ['ok' => true, 'done' => true, 'text' => 'Anomalia risolta! ' . implode(' · ', $parts)];
     }
 

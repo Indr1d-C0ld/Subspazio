@@ -180,6 +180,7 @@ $router->post('/gioco/corp/{dir}', [CorpController::class, 'treasury'], $game);
 
 // Meta: traguardi, albo, mercato nero, contratti
 $router->get('/gioco/traguardi', [MetaController::class, 'achievements'], $game);
+$router->post('/gioco/traguardi/titolo', [MetaController::class, 'titolo'], $game);
 $router->get('/gioco/albo', [MetaController::class, 'hall'], $game);
 $router->get('/gioco/mercato-nero', [MetaController::class, 'blackMarket'], $game);
 $router->post('/gioco/mercato-nero', [MetaController::class, 'bmAction'], $game);

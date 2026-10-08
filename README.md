@@ -226,10 +226,23 @@ testi o artwork della door proprietaria.
 
 - **Meta-gioco** — **stagioni** con ladder e albo d'oro. Alla chiusura
   ripartono da zero crediti, navi, pianeti, materiali, tesori delle
-  corporazioni, lavori d'Officina e reputazione; restano traguardi, ufficiali
-  e moduli (che tornano in inventario). L'universo si rigenera a scelta.
-  **Traguardi** verificati sullo stato o per evento. Banditi e sospesi non
-  compaiono in classifica né nell'albo.
+  corporazioni, lavori d'Officina, reputazione, notorietà, consumabili e
+  reperti; restano traguardi, ufficiali e moduli (che tornano in inventario).
+  Con la **ripartenza totale** si azzerano anche moduli, ufficiali, progetti,
+  collezioni e corporazioni. L'universo si rigenera a scelta. Banditi e sospesi
+  non compaiono in classifica né nell'albo.
+
+- **Traguardi** — **109**, in sette categorie (commercio, combattimento,
+  esplorazione, bottino, legge, sopravvivenza, carriera), a livelli bronzo /
+  argento / oro / platino, alcuni **segreti** (si scoprono solo ottenendoli).
+  Li sbloccano **contatori di carriera** che sopravvivono alle stagioni
+  (scambi e volume, nemici abbattuti per tipo, élite, salti e settori, fascia
+  più lontana, razzie subite, moduli trovati per rarità, collezioni, taglie,
+  gradino di notorietà…), con la barra d'avanzamento in pagina. Danno
+  **prestigio, non potere**: i punti sbloccano titoli onorifici (da
+  «Navigatore» a «Custode delle stelle») e alcuni traguardi un titolo proprio
+  («Nemico Pubblico», «Fenice», «Campione»…), da mostrare accanto al nome in
+  plancia, nei settori e in classifica.
 
 - **Giornale di bordo & rientro** — un **registro incidenti** persistente e
   sfogliabile per giocatore, con voce coerente all'ambientazione: scontri
@@ -485,7 +498,7 @@ php tests/run.php                # tutte
 php tests/run.php economica      # solo i file col nome che contiene "economica"
 ```
 
-Suite di integrazione senza dipendenze, 548 verifiche in 26 file: integrità
+Suite di integrazione senza dipendenze, 563 verifiche in 27 file: integrità
 economica, concorrenza, banca/contratti/Officina, combattimento, navigazione,
 nave e moduli, pianeti, porti, equipaggio, mondo, percorsi di gioco normali,
 universo, clock, sessioni e turni, difese, iscrizione e posta, immagini,

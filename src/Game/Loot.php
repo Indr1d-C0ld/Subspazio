@@ -139,6 +139,7 @@ final class Loot
                     'INSERT INTO player_items (player_id, item_key, rolled, source) VALUES (?, ?, ?, ?)',
                     [$killerId, $item['ckey'], json_encode($rolled, JSON_UNESCAPED_UNICODE), $source]
                 );
+                self::contaModulo($killerId, (string) $item['rarity'], $rolled);
                 $out['items'][] = [
                     'key'    => $item['ckey'],
                     'name'   => self::nomeConAffissi((string) $item['name'], $rolled),
@@ -203,11 +204,20 @@ final class Loot
                 'INSERT INTO player_items (player_id, item_key, rolled, source) VALUES (?, ?, ?, ?)',
                 [$playerId, $row['ckey'], json_encode($rolled, JSON_UNESCAPED_UNICODE), $source]
             );
+            self::contaModulo($playerId, (string) $row['rarity'], $rolled);
             return ['key' => $row['ckey'], 'name' => self::nomeConAffissi((string) $row['name'], $rolled), 'rarity' => $row['rarity'],
                     'label' => self::RARITY_LABEL[$row['rarity']] ?? $row['rarity']];
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    /** Contatori di carriera per un modulo trovato. @param array<string,mixed> $rolled */
+    private static function contaModulo(int $playerId, string $rarity, array $rolled): void
+    {
+        Stats::add($playerId, 'moduli_trovati');
+        Stats::add($playerId, 'moduli_' . $rarity);
+        Stats::max($playerId, 'affissi_max', count((array) ($rolled['_affissi'] ?? [])));
     }
 
     // --- affissi ---------------------------------------------------------------

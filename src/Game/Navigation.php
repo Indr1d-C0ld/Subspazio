@@ -53,7 +53,7 @@ final class Navigation
         }
 
         $playersHere = Database::all(
-            "SELECT p.id, p.handle, p.alignment, p.protected_until, p.color, p.crest,
+            "SELECT p.id, p.handle, p.titolo, p.alignment, p.protected_until, p.color, p.crest,
                     t.name AS ship_type, s.type_key AS ship_key, s.cloaked,
                     ma.path AS avatar_path, ml.path AS logo_path
              FROM players p
@@ -71,6 +71,7 @@ final class Navigation
         $playersHere = array_map(static fn ($o) => [
             'id'         => (int) $o['id'],
             'handle'     => $o['handle'],
+            'titolo'     => $o['titolo'],
             'ship_type'  => $o['ship_type'],
             'ship_key'   => $o['ship_key'],
             'cloaked'    => (bool) $o['cloaked'],
@@ -225,11 +226,14 @@ final class Navigation
                     [(int) ($ship['max_shields'] ?? 0) ?: 999999, $regen, (int) $ship['id']]
                 );
             }
-            Database::run(
+            // rowCount 1 = settore mai visto prima, 2 = aggiornato
+            if (Database::run(
                 'INSERT INTO player_visited_sectors (player_id, sector_id) VALUES (?, ?)
                  ON DUPLICATE KEY UPDATE last_seen = NOW(), visits = visits + 1',
                 [(int) $player['id'], $toSector]
-            );
+            )->rowCount() === 1) {
+                Stats::add((int) $player['id'], 'settori_scoperti');
+            }
             Database::run(
                 'INSERT INTO move_log (player_id, from_sector, to_sector, turns_spent, mode)
                  VALUES (?, ?, ?, ?, ?)',
@@ -249,10 +253,14 @@ final class Navigation
 
         // Ogni salto occultato consuma una carica della riserva; a riserva
         // vuota la nave riappare prima di arrivare.
-        if (!empty($ship['cloaked']) && !Cloak::consuma((int) $ship['id'])) {
-            Cloak::drop((int) $ship['id'], 'riserva del dispositivo esaurita');
-            $ship['cloaked'] = 0;
-            $warpNote = trim(($warpNote ?? '') . ' Riserva di occultamento esaurita: la nave riappare.');
+        if (!empty($ship['cloaked'])) {
+            if (Cloak::consuma((int) $ship['id'])) {
+                Stats::add((int) $player['id'], 'salti_occultati');
+            } else {
+                Cloak::drop((int) $ship['id'], 'riserva del dispositivo esaurita');
+                $ship['cloaked'] = 0;
+                $warpNote = trim(($warpNote ?? '') . ' Riserva di occultamento esaurita: la nave riappare.');
+            }
         }
 
         return self::arrive($player, $ship, $from, $toSector, $cost, $warpNote);
@@ -323,11 +331,14 @@ final class Navigation
                 $ship['cloaked'] = 0;
             }
             Database::run('UPDATE ships SET sector_id = ? WHERE id = ?', [$toSector, (int) $ship['id']]);
-            Database::run(
+            // rowCount 1 = settore mai visto prima, 2 = aggiornato
+            if (Database::run(
                 'INSERT INTO player_visited_sectors (player_id, sector_id) VALUES (?, ?)
                  ON DUPLICATE KEY UPDATE last_seen = NOW(), visits = visits + 1',
                 [(int) $player['id'], $toSector]
-            );
+            )->rowCount() === 1) {
+                Stats::add((int) $player['id'], 'settori_scoperti');
+            }
             Database::run(
                 'INSERT INTO move_log (player_id, from_sector, to_sector, turns_spent, mode) VALUES (?, ?, ?, ?, ?)',
                 [(int) $player['id'], $from, $toSector, $cost, 'transwarp']
@@ -357,6 +368,8 @@ final class Navigation
      */
     private static function arrive(array $player, array $ship, int $from, int $toSector, int $cost, ?string $warpNote): array
     {
+        Stats::add((int) $player['id'], 'salti');
+        Stats::max((int) $player['id'], 'fascia_max', Fasce::diSettore($toSector));
         $handle = (string) $player['handle'];
         // Una nave occultata non si annuncia. La scheda del settore la nascondeva
         // gia', ma questi due eventi dicevano a tutti chi era entrato e con quale

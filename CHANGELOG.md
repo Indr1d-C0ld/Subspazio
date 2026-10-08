@@ -4,6 +4,54 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-08 — Traguardi: 109, a livelli, segreti, con contatori di carriera e titoli
+
+I traguardi erano 18, tutte soglie semplici, e non conoscevano niente di ciò
+che è arrivato dopo. *Deciso con l'autore*: prestigio, non potere.
+
+- **[db/migrations/0061_traguardi.sql](db/migrations/0061_traguardi.sql)** —
+  91 traguardi nuovi (109 in tutto) in sette categorie, a livelli bronzo /
+  argento / oro / platino, sei segreti; tabella `player_stats` dei contatori
+  di carriera; colonne `achievements.categoria/livello/segreto/contatore/
+  soglia/titolo` e `players.titolo`. Rieseguibile (`IF NOT EXISTS`): la prima
+  stesura si era fermata a metà per un'icona (vedi sotto).
+- **[src/Game/Stats.php](src/Game/Stats.php)** (nuovo) — contatori che
+  sopravvivono alle stagioni (somma e massimo), alimentati dagli eventi di
+  gioco in [src/Game/Economy.php](src/Game/Economy.php),
+  [src/Game/Combat.php](src/Game/Combat.php),
+  [src/Game/Navigation.php](src/Game/Navigation.php),
+  [src/Game/Legge.php](src/Game/Legge.php),
+  [src/Game/Loot.php](src/Game/Loot.php),
+  [src/Game/SectorFeatures.php](src/Game/SectorFeatures.php),
+  [src/Game/Reperti.php](src/Game/Reperti.php),
+  [src/Game/Consumabili.php](src/Game/Consumabili.php),
+  [src/Game/Modules.php](src/Game/Modules.php),
+  [src/Game/Industry.php](src/Game/Industry.php),
+  [src/Game/AwayMissions.php](src/Game/AwayMissions.php),
+  [src/Game/Crew.php](src/Game/Crew.php),
+  [src/Game/Planets.php](src/Game/Planets.php),
+  [src/Game/BlackMarket.php](src/Game/BlackMarket.php) e
+  [src/Game/Season.php](src/Game/Season.php) (stagioni giocate, podi,
+  vittorie).
+- **[src/Game/Achievements.php](src/Game/Achievements.php)** — traguardi letti
+  dai contatori con una soglia; titoli onorifici per punti (Navigatore 50 …
+  Custode delle stelle 1.800) e titoli dati da singoli traguardi; scelta del
+  titolo, con rifiuto di quelli non guadagnati.
+- **Interfaccia** — pagina dei traguardi per categoria, con livelli, barre
+  d'avanzamento, segreti coperti, scelta del titolo e prossimo titolo
+  ([views/game/achievements.php](views/game/achievements.php),
+  [src/Controllers/MetaController.php](src/Controllers/MetaController.php));
+  titolo accanto al nome in plancia, nei settori e in classifica.
+- **[src/Cli/Migrator.php](src/Cli/Migrator.php)** — il caricatore delle
+  migrazioni divideva le righe con `\R` senza modalità UTF-8: PCRE prende allora
+  il byte 0x85 per un «a capo» e spezzava i caratteri che lo contengono
+  («∅», «★»). Ora riconosce solo i ritorni a capo veri
+  ([tests/schema.php](tests/schema.php) lo verifica).
+- **[tests/traguardi.php](tests/traguardi.php)** (nuovo) — catalogo, nessun
+  traguardo irraggiungibile (ogni contatore letto ha chi lo incrementa),
+  contatori da uno scambio e da un salto, sblocco per soglia, titoli. Suite:
+  563 verifiche, 0 fallite.
+
 ## 2026-10-08 — L'occultamento ha un prezzo
 
 Comprato una volta (35.000 cr), l'occultamento si accendeva gratis e durava

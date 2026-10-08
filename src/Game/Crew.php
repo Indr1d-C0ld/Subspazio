@@ -218,6 +218,7 @@ final class Crew
             }
             throw $e;
         }
+        Stats::add((int) $player['id'], 'ufficiali_assunti');
         return ['ok' => true, 'name' => $c['name'], 'role' => $c['role'], 'assigned' => (bool) $doAssign, 'cost' => (int) $c['cost']];
     }
 

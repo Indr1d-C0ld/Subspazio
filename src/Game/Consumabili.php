@@ -169,6 +169,7 @@ final class Consumabili
             }
             throw $e;
         }
+        Stats::add($pid, 'consumabili_usati');
         return ['ok' => true, 'name' => $nome, 'msg' => $msg];
     }
 }

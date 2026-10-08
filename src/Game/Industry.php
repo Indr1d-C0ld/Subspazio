@@ -312,6 +312,7 @@ final class Industry
                 }
                 Database::run("INSERT INTO player_items (player_id, item_key, source) VALUES (?, ?, 'shop')",
                     [$pid, (string) $j['item_key']]);
+                Stats::add($pid, 'moduli_prodotti');
                 ShipLog::write($pid, 'system', 'info',
                     "Officina: {$j['item_name']} completato",
                     "La fabbricazione di «{$j['item_name']}» è terminata. Il modulo è nell'inventario, pronto da installare allo StarDock.");

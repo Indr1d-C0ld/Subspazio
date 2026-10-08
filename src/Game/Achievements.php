@@ -8,10 +8,83 @@ use App\Core\Database;
 
 /**
  * Traguardi: alcuni verificati sullo stato (evaluate), altri assegnati da
- * un evento (award). Persistono attraverso i reset di stagione.
+ * un evento (award), i piu' letti dai contatori di carriera (Stats) con una
+ * soglia. Persistono attraverso i reset di stagione, come i contatori.
+ *
+ * Danno prestigio, non potere: punti, livelli (bronzo, argento, oro,
+ * platino) e titoli onorifici da mostrare accanto al nome. Nessun vantaggio
+ * in partita, cosi' ogni stagione resta alla pari.
  */
 final class Achievements
 {
+    public const CATEGORIE = [
+        'commercio'     => 'Commercio',
+        'combattimento' => 'Combattimento',
+        'esplorazione'  => 'Esplorazione',
+        'bottino'       => 'Bottino',
+        'legge'         => 'Legge',
+        'sopravvivenza' => 'Sopravvivenza',
+        'carriera'      => 'Carriera',
+    ];
+
+    /** Titoli che si sbloccano coi punti totali. */
+    public const TITOLI_PUNTI = [
+        50   => 'Navigatore',
+        150  => 'Veterano delle rotte',
+        300  => 'Lupo dello spazio',
+        500  => 'Leggenda della Cintura',
+        800  => 'Ammiraglio d\'onore',
+        1200 => 'Mito dell\'Orlo',
+        1800 => 'Custode delle stelle',
+    ];
+
+    /**
+     * Titoli disponibili: quelli dei punti raggiunti e quelli dati da
+     * traguardi ottenuti.
+     *
+     * @return list<string>
+     */
+    public static function titoliDisponibili(int $playerId): array
+    {
+        $punti = self::points($playerId);
+        $out = [];
+        foreach (self::TITOLI_PUNTI as $soglia => $t) {
+            if ($punti >= $soglia) {
+                $out[] = $t;
+            }
+        }
+        foreach (Database::all(
+            'SELECT a.titolo FROM player_achievements pa JOIN achievements a ON a.ckey = pa.ckey
+              WHERE pa.player_id = ? AND a.titolo IS NOT NULL ORDER BY a.sort_order',
+            [$playerId]
+        ) as $r) {
+            $out[] = (string) $r['titolo'];
+        }
+        return array_values(array_unique($out));
+    }
+
+    /** Il prossimo titolo per punti, se ce n'e' uno: [punti necessari, titolo]. */
+    public static function prossimoTitolo(int $playerId): ?array
+    {
+        $punti = self::points($playerId);
+        foreach (self::TITOLI_PUNTI as $soglia => $t) {
+            if ($punti < $soglia) {
+                return [$soglia, $t];
+            }
+        }
+        return null;
+    }
+
+    /** Sceglie il titolo da mostrare (null = nessuno). @param array<string,mixed> $player */
+    public static function scegliTitolo(array $player, ?string $titolo): array
+    {
+        $titolo = $titolo === null || trim($titolo) === '' ? null : trim($titolo);
+        if ($titolo !== null && !in_array($titolo, self::titoliDisponibili((int) $player['id']), true)) {
+            return ['ok' => false, 'error' => 'Questo titolo non l\'hai ancora guadagnato.'];
+        }
+        Database::run('UPDATE players SET titolo = ? WHERE id = ?', [$titolo, (int) $player['id']]);
+        return ['ok' => true, 'titolo' => $titolo];
+    }
     /** @return list<array<string,mixed>> */
     public static function all(): array
     {
@@ -64,7 +137,7 @@ final class Achievements
         $checks = self::stateChecks();
         $todo = array_diff(array_keys($checks), array_keys($have));
         if ($todo === []) {
-            return [];
+            return self::evaluateContatori($playerId, $have);
         }
 
         $p = Database::first('SELECT credits, kills, deaths, port_busts, experience FROM players WHERE id = ?', [$playerId]);
@@ -103,6 +176,27 @@ final class Achievements
                 if (self::award($playerId, $ckey)) {
                     $new[] = $ckey;
                 }
+            }
+        }
+        return array_merge($new, self::evaluateContatori($playerId, $have));
+    }
+
+    /**
+     * Traguardi letti dai contatori di carriera: ogni contatore oltre la
+     * soglia sblocca il suo.
+     *
+     * @param array<string,string> $have
+     * @return list<string>
+     */
+    public static function evaluateContatori(int $playerId, ?array $have = null): array
+    {
+        $have ??= self::earned($playerId);
+        $stats = Stats::di($playerId);
+        $new = [];
+        foreach (Database::all('SELECT ckey, contatore, soglia FROM achievements WHERE contatore IS NOT NULL') as $a) {
+            if (!isset($have[$a['ckey']]) && ($stats[$a['contatore']] ?? 0) >= (int) $a['soglia']
+                && self::award($playerId, (string) $a['ckey'])) {
+                $new[] = (string) $a['ckey'];
             }
         }
         return $new;

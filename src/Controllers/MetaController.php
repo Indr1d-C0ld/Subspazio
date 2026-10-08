@@ -26,7 +26,19 @@ final class MetaController
             'all'    => Achievements::all(),
             'earned' => Achievements::earned((int) $player['id']),
             'points' => Achievements::points((int) $player['id']),
+            'stats'  => \App\Game\Stats::di((int) $player['id']),
+            'titoli' => Achievements::titoliDisponibili((int) $player['id']),
+            'prossimo' => Achievements::prossimoTitolo((int) $player['id']),
         ]));
+    }
+
+    public function titolo(Request $request): Response
+    {
+        $res = Achievements::scegliTitolo(Ctx::$player, $request->str('titolo'));
+        Session::flash($res['ok'] ? 'success' : 'error', $res['ok']
+            ? ($res['titolo'] === null ? 'Nessun titolo accanto al tuo nome.' : "Ora ti presenti come «{$res['titolo']}».")
+            : $res['error']);
+        return redirect('/gioco/traguardi');
     }
 
     public function hall(Request $request): Response

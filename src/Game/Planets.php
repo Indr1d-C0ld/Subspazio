@@ -204,6 +204,7 @@ final class Planets
         Achievements::award((int) $player['id'], 'first_planet');
         Live::sector($sectorId, 'planet_new', null, "Un nuovo pianeta ({$name}) si e' formato nel settore");
         Cloak::drop((int) $ship['id'], 'lancio di un siluro Genesi');
+        Stats::add((int) $player['id'], 'pianeti_creati');
         return ['ok' => true, 'planet_id' => $id, 'name' => $name, 'type' => $type];
     }
 

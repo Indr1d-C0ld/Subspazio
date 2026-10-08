@@ -536,6 +536,11 @@ final class Economy
         }
 
         Cloak::drop((int) $ship['id'], 'commercio al porto');
+        Stats::add((int) $player['id'], 'scambi');
+        Stats::add((int) $player['id'], 'volume_commercio', (int) $total);
+        if ((int) ($port['band'] ?? 0) >= Fasce::MAX) {
+            Stats::add((int) $player['id'], 'scambi_orlo');
+        }
 
         return [
             'ok' => true,

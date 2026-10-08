@@ -252,6 +252,7 @@ final class Modules
             }
             throw $e;
         }
+        Stats::add((int) $player['id'], 'potenziamenti');
         return ['ok' => true, 'name' => Loot::nomeConAffissi((string) $target['name'], $rolled), 'rarity' => $next,
                 'label' => Loot::RARITY_LABEL[$next] ?? $next, 'cost' => $costCr, 'mat' => $costMat];
     }
