@@ -4,6 +4,19 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-09 — Radio recuperata e comunicato corretto
+
+- **[db/migrations/0068_comunicato_ripristino.sql](db/migrations/0068_comunicato_ripristino.sql)** —
+  il comunicato della Federazione diceva persi i messaggi radio e gli avvisi
+  dal 7 ottobre. Nessun avviso era andato perso, e gli 11 messaggi radio
+  cancellati dalla chiusura accidentale della Stagione 3 sono stati rimessi
+  in onda dal backup delle 10:35 (registro di amministrazione:
+  `radio.restore`). Le correzioni di bordo raccontano anche il sesto audit,
+  e «bottino» diventa «moduli». Cambia solo se il testo è ancora quello del
+  0066, quindi un comunicato riscritto dal pannello resta com'è. Niente punti
+  e virgola nel testo: il migratore divide le istruzioni su quelli.
+- **README.md**, **docs/roadmap.md** — il bilancio dell'incidente.
+
 ## 2026-10-09 — Sesto audit: notiziario in radio, omicidi, mercantili, abilità
 
 - **[db/migrations/0067_radio_testo.sql](db/migrations/0067_radio_testo.sql)** —
