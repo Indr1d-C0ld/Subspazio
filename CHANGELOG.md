@@ -4,6 +4,16 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-09 — La guida di gioco spiega legge e taglie
+
+- **[views/game/guide.php](views/game/guide.php)** — nuova sezione «Legge &
+  taglie», coi numeri presi dalla configurazione: peso dei crimini, recidiva,
+  dimezzamento, chi si attacca senza colpa, gradini con le soglie; la taglia
+  da Ricercato pagata dal ricercato (crediti a bordo, poi banca; al verde non
+  rende nulla), lo stesso per la taglia da uccisioni; ammenda e mercato nero.
+  In «Combattimento»: la nave di soccorso abbattuta non vale esperienza né
+  bottino.
+
 ## 2026-10-09 — La presentazione racconta le nuove regole sulle taglie
 
 - **[views/home.php](views/home.php)** — voce «La legge»: la taglia la paga il

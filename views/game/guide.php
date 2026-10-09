@@ -64,9 +64,45 @@ $sec = static function (string $icon, string $title, string $body, string $class
     . 'invece che distrutto (vedi «Fasce di rischio»). Se ti distruggono sopravvivi in <strong>capsula di salvataggio</strong> '
     . 'allo StarDock: perdi carico e moduli installati (in parte recuperati in Leghe). Dei crediti a bordo, chi ti abbatte '
     . 'ne prende metà; senza <strong>capsula di salvataggio</strong> ne perdi anche metà di quelli rimasti, con la capsula nulla. '
-    . 'Se sei a secco chiedi una nave di soccorso al Cantiere. '
+    . 'Se sei a secco chiedi una nave di soccorso al Cantiere: finché non ne compri una vera, chi la abbatte non ne ricava '
+    . 'né esperienza né bottino, come da una capsula. '
     . 'Puoi dispiegare <strong>caccia</strong> e <strong>mine</strong> nei settori. '
     . '<a href="' . e(url('/gioco/battaglie')) . '">Registro battaglie</a></p>') ?>
+
+  <?php
+  // Anche qui i numeri vengono dalla configurazione.
+  $soglieLegge = \App\Game\Legge::soglie();
+  $effettiGradi = [
+      1 => 'la Federazione ti tiene d\'occhio',
+      2 => 'pattuglie a vista, una squadra d\'intercettazione ti caccia, taglia sulla testa',
+      3 => 'due squadre, StarDock chiuso',
+      4 => 'tre squadre pesanti, in ogni fascia',
+  ];
+  $righeLegge = '';
+  foreach ($effettiGradi as $g => $effetto) {
+      $righeLegge .= '<tr><td>' . e(\App\Game\Legge::nome($g)) . '</td><td>' . (int) $soglieLegge[$g - 1] . '</td><td>' . e($effetto) . '</td></tr>';
+  }
+  $crimini = [];
+  foreach (\App\Game\Legge::ETICHETTE as $k => $etichetta) {
+      $crimini[] = e(mb_strtolower($etichetta)) . ' ' . \App\Game\Legge::peso($k);
+  }
+  $perPunto = \App\Game\GameConfig::int('legge.taglia_per_punto', 300);
+  ?>
+  <?= $sec('⚖️', 'Legge & taglie',
+      '<p>Aggredire chi non ti ha fatto niente alza la <strong>notorietà</strong>: ' . implode(', ', $crimini) . ' punti. '
+    . 'Ogni crimine delle ultime ' . \App\Game\GameConfig::int('legge.recidiva_ore', 72) . ' ore fa pesare il successivo il '
+    . (int) round(100 * \App\Game\GameConfig::float('legge.recidiva_passo', 0.25)) . '% in più; la notorietà si dimezza da sola ogni '
+    . \App\Game\GameConfig::int('legge.dimezza_ore', 24) . ' ore. Pirati, Ferrengi, ricercati e comandanti fuorilegge si possono attaccare senza colpa.</p>'
+    . '<div class="table-wrap"><table class="tbl compact"><thead><tr><th>Gradino</th><th>Da</th><th>Cosa succede</th></tr></thead><tbody>'
+    . $righeLegge . '</tbody></table></div>'
+    . '<p>Da Ricercato hai una <strong>taglia</strong> di ' . number_format($perPunto, 0, ',', '.') . ' cr per punto, e la '
+    . '<strong>paghi tu</strong>: chi ti abbatte la incassa, confiscata prima dai tuoi crediti a bordo e poi dal tuo conto in banca, '
+    . 'fino all\'importo. Se non hai nulla, non incassa nulla: la Federazione non mette crediti di tasca sua. Lo stesso vale per la '
+    . 'taglia che si accumula uccidendo comandanti onesti (il ' . (int) round(100 * \App\Game\GameConfig::float('combat.bounty_pct', 0.1))
+    . '% di ogni bottino). Abbattuto o arrestato da una pattuglia, torni sotto la soglia di Ricercato.</p>'
+    . '<p>L\'<strong>ammenda</strong> azzera tutto, da ovunque: ' . number_format(\App\Game\GameConfig::int('legge.ammenda_per_punto', 400), 0, ',', '.')
+    . ' cr per punto, di più se sei recidivo. Il mercato nero ripulisce la taglia da uccisioni. '
+    . '<a href="' . e(url('/gioco/fazioni')) . '">Fazioni</a> · <a href="' . e(url('/gioco/mercato-nero')) . '">Mercato nero</a></p>', 'guide-wide') ?>
 
   <?= $sec('🛠️', 'Cantiere & hardware',
       '<p>Allo StarDock compri <strong>navi</strong> (con permuta), potenzi stive/caccia/scudi e installi hardware: '
