@@ -42,6 +42,9 @@ $router->post('/login', [AuthController::class, 'login'], ['guest']);
 $router->get('/registrati', [AuthController::class, 'showRegister'], ['guest']);
 $router->post('/registrati', [AuthController::class, 'register'], ['guest']);
 $router->post('/logout', [AuthController::class, 'logout'], ['auth']);
+
+// Tema grafico: per tutti, anche prima dell'accesso (CSRF come ogni POST)
+$router->post('/tema', [\App\Controllers\TemaController::class, 'scegli']);
 $router->get('/attesa', [AuthController::class, 'pending'], ['auth']);
 
 // Autovalidazione dell'indirizzo: e' la porta d'ingresso, non c'e' piu'

@@ -1,0 +1,177 @@
+/* =============================================================================
+   Tema «Neon» — la Los Angeles del 2019 di Blade Runner.
+
+   Notte viola, pioggia che scende di sbieco, insegne magenta e ciano che
+   bruciano sul vetro bagnato. Titoli in Audiowide con il bagliore del gas,
+   testo in Chakra Petch. Il marchio in alto ha il suo sfarfallio da insegna
+   (fermo per chi chiede meno movimento).
+   ============================================================================= */
+
+@font-face {
+  font-family: "Audiowide";
+  src: url("../../fonts/audiowide-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("../../fonts/chakrapetch-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("../../fonts/chakrapetch-600.woff2") format("woff2");
+  font-weight: 600 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Share Tech Mono";
+  src: url("../../fonts/sharetechmono-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+html[data-tema="neon"] {
+  --magenta: #ff3ec8;
+  --ciano:   #26e8ff;
+
+  --bg:         #0a0612;
+  --bg-soft:    #120a1f;
+  --bg-deep:    #05030a;
+  --panel:      rgba(22, 11, 38, .86);
+  --panel-2:    rgba(14, 7, 26, .9);
+  --line:       #4a2670;
+  --line-soft:  #2c1646;
+
+  --ink:        #f4e9ff;
+  --ink-soft:   #c7aee6;
+  --ink-dim:    #8e74ad;
+
+  --accent:     var(--magenta);
+  --accent-ink: #ffffff;
+  --accent-2:   var(--ciano);
+  --ok:         #4dffb0;
+  --warn:       #ffd23e;
+  --err:        #ff4a6e;
+  --ok-ink:     #d2ffeb;
+  --warn-ink:   #fff1b8;
+  --err-ink:    #ffd0db;
+
+  --accent-hi:  #ff5fd3;
+  --accent-lo:  #c21f96;
+  --danger-hi:  #ff6a88;
+  --danger-lo:  #d01f48;
+  --danger-ink: #ffffff;
+  --warp-hi:    #1e1033;
+  --warp-lo:    #160b27;
+  --warp-ignoto: #0d0718;
+
+  --field-bg:     #0d0718;
+  --field-border: #5a2f86;
+
+  --radius: 6px;
+  --glow-accent: 0 0 18px -2px color-mix(in srgb, var(--magenta) 70%, transparent);
+  --shadow-panel: 0 0 26px -12px color-mix(in srgb, var(--magenta) 55%, transparent), 0 0 0 1px color-mix(in srgb, var(--ciano) 6%, transparent) inset;
+  --font-sans: "Chakra Petch", "Segoe UI", Roboto, sans-serif;
+  --font-display: "Audiowide", "Chakra Petch", sans-serif;
+  --font-mono: "Share Tech Mono", ui-monospace, monospace;
+
+  --fascia-0: #4dffb0;
+  --fascia-1: #26e8ff;
+  --fascia-2: #7d8cff;
+  --fascia-3: #ffd23e;
+  --fascia-4: #ff8a3e;
+  --fascia-5: #ff3e8a;
+
+  --map-accento: #26e8ff;
+  --map-rotta:   #7a4fb0;
+  --map-vuoto:   #140a24;
+  --map-ombra:   #05030a;
+  --map-cielo-hi: #1d0b33;
+  --map-cielo-lo: #06030c;
+}
+
+/* ---------------------------------------------------------------- base --- */
+[data-tema="neon"] body {
+  background:
+    radial-gradient(900px 420px at 15% 112%, rgba(255, 62, 200, .22), transparent 70%),
+    radial-gradient(900px 420px at 88% 112%, rgba(38, 232, 255, .16), transparent 70%),
+    linear-gradient(180deg, #120821 0%, #0a0612 45%, #07040d 100%);
+  background-attachment: fixed;
+}
+/* pioggia di sbieco al posto delle stelle: in citta' il cielo non si vede */
+[data-tema="neon"] body::before {
+  opacity: 1;
+  background-image: repeating-linear-gradient(104deg, transparent 0 9px, rgba(190, 210, 255, .055) 9px 10px, transparent 10px 23px);
+  background-size: 260px 260px;
+  animation: neon-pioggia 1.4s linear infinite;
+}
+@keyframes neon-pioggia { to { background-position: -64px 260px; } }
+[data-tema="neon"] ::selection { background: var(--magenta); color: #fff; }
+[data-tema="neon"] a { color: var(--ciano); }
+[data-tema="neon"] h1, [data-tema="neon"] h2, [data-tema="neon"] h3 { font-weight: 400; }
+[data-tema="neon"] h1 { color: #ffd6f3; text-shadow: 0 0 4px var(--magenta), 0 0 16px var(--magenta), 0 0 34px color-mix(in srgb, var(--magenta) 60%, transparent); }
+[data-tema="neon"] h2 { color: #d4fbff; letter-spacing: .12em; text-shadow: 0 0 4px var(--ciano), 0 0 14px color-mix(in srgb, var(--ciano) 70%, transparent); }
+[data-tema="neon"] h3 { color: var(--magenta); }
+
+/* ----------------------------------------------------- barra superiore --- */
+[data-tema="neon"] .topbar {
+  background: linear-gradient(180deg, rgba(10, 6, 18, .94), rgba(10, 6, 18, .76));
+  border-image: linear-gradient(90deg, transparent, var(--magenta), var(--ciano), transparent) 1;
+}
+[data-tema="neon"] .brand {
+  color: #ffe1f6; font-family: var(--font-display); font-weight: 400; letter-spacing: .22em; font-size: 1.05rem;
+  text-shadow: 0 0 4px var(--magenta), 0 0 12px var(--magenta), 0 0 26px var(--magenta);
+  animation: neon-insegna 7s infinite;
+}
+[data-tema="neon"] .brand::before { content: "✦ "; color: var(--ciano); text-shadow: 0 0 8px var(--ciano); }
+@keyframes neon-insegna {
+  0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; }
+  20%, 24%, 55% { opacity: .45; }
+}
+[data-tema="neon"] .topbar nav a:hover { color: var(--ciano); text-shadow: 0 0 10px var(--ciano); }
+[data-tema="neon"] .topbar .cta { color: var(--magenta) !important; text-shadow: 0 0 10px var(--magenta); }
+[data-tema="neon"] .game-nav { background: rgba(10, 6, 18, .6); }
+[data-tema="neon"] .game-nav a:hover { color: #fff; background: color-mix(in srgb, var(--magenta) 18%, transparent); text-shadow: 0 0 8px var(--magenta); }
+
+/* ------------------------------------------------------------ pannelli --- */
+[data-tema="neon"] .panel {
+  border-color: color-mix(in srgb, var(--magenta) 40%, transparent);
+}
+[data-tema="neon"] .panel h1::before, [data-tema="neon"] .panel h2::before {
+  background: linear-gradient(180deg, var(--magenta), var(--ciano));
+  box-shadow: 0 0 10px var(--magenta), 0 0 10px var(--ciano);
+}
+[data-tema="neon"] .statusbar { border-color: color-mix(in srgb, var(--ciano) 35%, transparent); box-shadow: 0 0 22px -12px var(--ciano); }
+[data-tema="neon"] .card::before { background: linear-gradient(180deg, var(--ciano), transparent); }
+[data-tema="neon"] .card .k, [data-tema="neon"] .statusbar .k, [data-tema="neon"] .tbl th { color: var(--ciano); }
+
+/* ------------------------------------------------------------- bottoni --- */
+[data-tema="neon"] .btn, [data-tema="neon"] button.btn {
+  color: #fff; border-color: var(--magenta); text-shadow: 0 0 6px rgba(255, 255, 255, .5);
+  box-shadow: 0 0 14px -4px var(--magenta);
+}
+[data-tema="neon"] .btn:hover { box-shadow: 0 0 22px -2px var(--magenta), 0 0 4px var(--magenta) inset; }
+[data-tema="neon"] .btn.ghost {
+  background: transparent; color: var(--ciano); border-color: var(--ciano);
+  box-shadow: 0 0 12px -5px var(--ciano), 0 0 8px -4px var(--ciano) inset; text-shadow: 0 0 8px var(--ciano);
+}
+[data-tema="neon"] .btn.ghost:hover { background: color-mix(in srgb, var(--ciano) 12%, transparent); }
+[data-tema="neon"] .btn.danger { color: #fff; box-shadow: 0 0 14px -4px var(--err); }
+[data-tema="neon"] .btn.warp { color: var(--ink); box-shadow: none; text-shadow: none; }
+[data-tema="neon"] .btn.warp:hover { border-color: var(--ciano); box-shadow: 0 0 14px -4px var(--ciano); }
+
+[data-tema="neon"] .tbl th { background: color-mix(in srgb, var(--ciano) 5%, transparent); }
+[data-tema="neon"] .tbl tbody tr:hover { background: color-mix(in srgb, var(--magenta) 7%, transparent); }
+[data-tema="neon"] .pill.err, [data-tema="neon"] .pill.legge-3, [data-tema="neon"] .pill.legge-4 { box-shadow: 0 0 10px -3px var(--err); }
+[data-tema="neon"] #starmap { border-color: color-mix(in srgb, var(--ciano) 35%, transparent); box-shadow: 0 0 30px -14px var(--ciano), inset 0 0 80px -12px rgba(0, 0, 0, .95); }
+[data-tema="neon"] .foot { border-top-color: var(--line); }
+[data-tema="neon"] .hero h1 { font-family: var(--font-display); letter-spacing: .12em; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-tema="neon"] body::before, [data-tema="neon"] .brand { animation: none; }
+}
+
+/* il titolo d'apertura della pagina iniziale resta grande */
+[data-tema="neon"] .hero h1 { font-size: clamp(2rem, 6vw, 3.2rem); }

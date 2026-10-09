@@ -4,8 +4,14 @@
 $u = auth_user();
 $errors = flash('errors');
 $errors = is_array($errors) ? $errors : [];
+$tema = \App\Core\Temi::attuale();
+$foglioTema = \App\Core\Temi::foglio($tema);
+// la pagina a cui tornare dopo aver cambiato tema (percorso interno all'app)
+$percorso = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+$prefisso = app_url_prefix();
+$percorso = $prefisso !== '' && str_starts_with($percorso, $prefisso) ? (substr($percorso, strlen($prefisso)) ?: '/') : '/';
 ?><!doctype html>
-<html lang="it">
+<html lang="it" data-tema="<?= e($tema) ?>">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -14,11 +20,12 @@ $errors = is_array($errors) ? $errors : [];
 <title><?= $title === $appName ? e($appName) : e($title) . ' — ' . e($appName) ?></title>
 <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
 <meta name="app-base" content="<?= e(root_url('/')) ?>">
-<meta name="theme-color" content="#070b12">
+<meta name="theme-color" content="<?= e(\App\Core\Temi::CATALOGO[$tema]['barra']) ?>">
 <link rel="manifest" href="<?= e(root_url('/manifest.webmanifest')) ?>">
 <link rel="apple-touch-icon" href="<?= e(root_url('/assets/icons/icon-192.png')) ?>">
 <link rel="icon" type="image/png" href="<?= e(root_url('/assets/icons/icon-192.png')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
+<?php if ($foglioTema !== null): ?><link rel="stylesheet" href="<?= e(asset($foglioTema)) ?>"><?php endif; ?>
 </head>
 <body>
 <?php if ($u !== null && ($u['status'] ?? '') === 'active') { echo partial('crest_sprite'); echo partial('ship_sprite'); } ?>
@@ -109,6 +116,18 @@ $errors = is_array($errors) ? $errors : [];
   <a href="<?= e(url('/health')) ?>">stato</a>
   <button type="button" id="pwa-install" class="link" hidden>· Installa app</button>
   <button type="button" id="pwa-notif" class="link" hidden>· Attiva notifiche</button>
+  <form method="post" action="<?= e(url('/tema')) ?>" class="inline tema-form">
+    <?= csrf_field() ?>
+    <input type="hidden" name="torna" value="<?= e($percorso) ?>">
+    <label><span>Tema</span>
+      <select name="tema" data-autoinvio aria-label="Tema grafico">
+        <?php foreach (\App\Core\Temi::CATALOGO as $k => $t): ?>
+          <option value="<?= e($k) ?>"<?= $k === $tema ? ' selected' : '' ?>><?= e($t['nome']) ?></option>
+        <?php endforeach; ?>
+      </select>
+    </label>
+    <noscript><button class="btn xs" type="submit">Applica</button></noscript>
+  </form>
 </footer>
 <script src="<?= e(asset('js/app.js')) ?>" defer></script>
 <script src="<?= e(asset('js/pwa.js')) ?>" defer></script>

@@ -34,6 +34,31 @@
   let exploredOnly = P.read('explored', '0') === '1';
   let twoD = P.read('twod', '0') === '1';
   let perFascia = P.read('fasce', '0') === '1';
+  // I colori della mappa vengono dal foglio di stile, cosi' seguono il tema
+  // grafico (variabili --map-*). Qualunque formato CSS diventa #rrggbb
+  // passando da un contesto canvas.
+  const TINTE = (() => {
+    const cs = getComputedStyle(document.documentElement);
+    const c = document.createElement('canvas').getContext('2d');
+    const hex = (nome, base) => {
+      const v = (cs.getPropertyValue(nome) || '').trim();
+      if (!v || !c) return base;
+      c.fillStyle = base;
+      c.fillStyle = v;
+      return /^#[0-9a-f]{6}$/i.test(c.fillStyle) ? c.fillStyle : base;
+    };
+    return {
+      accento: hex('--map-accento', '#6be2ff'),
+      rotta:   hex('--map-rotta', '#82a0d2'),
+      vuoto:   hex('--map-vuoto', '#0a1120'),
+      preda:   hex('--map-preda', '#ffcf6b'),
+      ombra:   hex('--map-ombra', '#050a14'),
+      noto:    hex('--map-noto', '#e2eaf6'),
+      ignoto:  hex('--map-ignoto', '#a6b7ce'),
+      font:    (cs.getPropertyValue('--map-font') || '').trim() || 'ui-monospace, "DejaVu Sans Mono", monospace',
+    };
+  })();
+
   // stessi colori delle etichette di fascia nel foglio di stile
   const FASCE = (() => {
     const cs = getComputedStyle(document.documentElement);
@@ -252,7 +277,7 @@
         if (!a.proj || !b.proj || hidden(a) || hidden(b)) continue;
         const near = a.idx === currentIdx || b.idx === currentIdx;
         const al = near ? 0.6 : 0.16 * fade((a.proj.depth + b.proj.depth) / 2) + 0.05;
-        ctx.strokeStyle = near ? 'rgba(107,226,255,' + al + ')' : 'rgba(130,160,210,' + al.toFixed(3) + ')';
+        ctx.strokeStyle = near ? hexA(TINTE.accento, al) : hexA(TINTE.rotta, al.toFixed(3));
         ctx.lineWidth = near ? 1.6 : 1;
         ctx.beginPath();
         ctx.moveTo(a.proj.x, a.proj.y);
@@ -275,25 +300,25 @@
         ctx.fillStyle = hexA(no.color, a);
         ctx.fill();
       } else {
-        ctx.fillStyle = 'rgba(10,17,32,' + (0.5 * a) + ')';
+        ctx.fillStyle = hexA(TINTE.vuoto, 0.5 * a);
         ctx.fill();
       }
       ctx.lineWidth = isCur ? 2.5 : no.adj ? 2 : 1;
-      ctx.strokeStyle = isCur ? '#6be2ff' : hexA(no.color, Math.min(1, a + 0.2));
-      if (isCur) { ctx.shadowColor = '#6be2ff'; ctx.shadowBlur = 14; }
+      ctx.strokeStyle = isCur ? TINTE.accento : hexA(no.color, Math.min(1, a + 0.2));
+      if (isCur) { ctx.shadowColor = TINTE.accento; ctx.shadowBlur = 14; }
       ctx.stroke();
       ctx.shadowBlur = 0;
       if (no.adj) {
         ctx.beginPath();
         ctx.arc(p.x, p.y, r + 3.5, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(107,226,255,' + (0.5 * a) + ')';
+        ctx.strokeStyle = hexA(TINTE.accento, 0.5 * a);
         ctx.lineWidth = 1;
         ctx.stroke();
       }
       if (no.tracked) {
         ctx.beginPath();
         ctx.arc(p.x, p.y, r + 5.5, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(255,207,107,' + Math.min(1, a + 0.25) + ')';
+        ctx.strokeStyle = hexA(TINTE.preda, Math.min(1, a + 0.25));
         ctx.lineWidth = 2;
         ctx.setLineDash([3, 3]);
         ctx.stroke();
@@ -306,7 +331,7 @@
 
   function drawLabels(order, fade) {
     if (labelMode === 'none' && currentIdx < 0) return;
-    ctx.font = '11px ui-monospace, "DejaVu Sans Mono", monospace';
+    ctx.font = '11px ' + TINTE.font;
     ctx.textBaseline = 'middle';
 
     const rank = (no) => {
@@ -337,10 +362,10 @@
       placed.push(box);
       budget--;
       const a = clamp(fade(p.depth) + 0.15, 0.4, 1);
-      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(5,10,20,' + a + ')';
+      ctx.lineWidth = 3; ctx.strokeStyle = hexA(TINTE.ombra, a);
       ctx.lineJoin = 'round';
       ctx.strokeText(text, bx, by);
-      ctx.fillStyle = no.idx === currentIdx ? '#6be2ff' : known ? 'rgba(226,234,246,' + a + ')' : 'rgba(166,183,206,' + a + ')';
+      ctx.fillStyle = no.idx === currentIdx ? TINTE.accento : hexA(known ? TINTE.noto : TINTE.ignoto, a);
       ctx.fillText(text, bx, by);
     }
   }

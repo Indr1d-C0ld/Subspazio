@@ -4,6 +4,40 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-09 — Sei temi grafici a scelta
+
+*Scelti con l'autore*: Console (predefinito), LCARS, Terminale MU/TH/UR,
+Cockpit, Cintura, Neon; caratteri ospitati sul server.
+
+- **[src/Core/Temi.php](src/Core/Temi.php)** (nuovo) — catalogo e scelta: account
+  (`users.tema`), poi cookie `subspazio_tema`, poi Console.
+- **[src/Controllers/TemaController.php](src/Controllers/TemaController.php)**
+  (nuovo), **src/routes.php** — `POST /tema` per tutti, ritorno solo a
+  percorsi interni.
+- **[views/layout.php](views/layout.php)**, **assets/js/app.js** —
+  `data-tema` sulla pagina, foglio del tema dopo `app.css`, colore della barra
+  del browser, selettore nel piè di pagina.
+- **[views/game/profilo.php](views/game/profilo.php)** — «Tema grafico» con le
+  anteprime in miniatura; voce d'aiuto `profilo.tema`.
+- **[assets/css/app.css](assets/css/app.css)** — tutti i colori passano da
+  variabili (resa identica in Console), `--font-display`, variabili della
+  mappa; la guida non sfora più sui telefoni.
+- **[assets/js/game.js](assets/js/game.js)** — la mappa stellare legge i colori
+  dal tema.
+- **[assets/css/temi/](assets/css/temi/)** (nuovi) — `lcars.css` (gomito,
+  colonna dei comandi, pannelli a parentesi), `muthur.css` (fosfori, righe di
+  scansione, prompt), `cockpit.css` (HUD arancione, angoli tagliati),
+  `cintura.css` (vetro, marcatori d'angolo), `neon.css` (insegne, pioggia).
+- **[assets/fonts/](assets/fonts/)** (nuovo) — undici woff2 OFL con le licenze
+  e `LEGGIMI.md`.
+- **[db/migrations/0064_temi.sql](db/migrations/0064_temi.sql)** — `users.tema`.
+- **[tests/temi.php](tests/temi.php)** (nuovo) — 16 verifiche; suite a 627.
+- **views/home.php**, **views/game/guide.php**, **README.md** (progetto e
+  pubblico: tabella dei temi, licenze dei caratteri), **sw.js** v52.
+- **README.md** (progetto) — completate le novità d'ottobre: fasce, moduli,
+  mercantili e nemici, consumabili, reperti, ripartenza totale,
+  occultamento, traguardi, tempo reale e clock.
+
 ## 2026-10-09 — I README raccontano le nuove taglie
 
 - **README.md** (copia pubblica) — in «Legge federale» un paragrafo

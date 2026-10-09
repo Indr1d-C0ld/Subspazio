@@ -44,4 +44,10 @@
       setTimeout(() => { btn.disabled = false; delete btn.dataset.busy; }, 4000);
     }
   });
+
+  // Selettori che si applicano da soli (tema grafico nel piè di pagina):
+  // senza JavaScript resta il bottone «Applica» nel <noscript>.
+  document.querySelectorAll('select[data-autoinvio]').forEach((sel) => {
+    sel.addEventListener('change', () => { if (sel.form) sel.form.submit(); });
+  });
 })();

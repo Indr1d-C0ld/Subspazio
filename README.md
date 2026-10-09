@@ -35,15 +35,18 @@ verso l'esterno è una scommessa fra guadagno e rischio.
   titoli onorifici accanto al nome.
 
 Tutto in tempo reale nel browser, dal telefono come dal computer, anche come
-app installata. Ogni regola è regolabile dal pannello di amministrazione.
+app installata, con sei **temi grafici** a scelta: Console, LCARS (la plancia
+di Star Trek: The Next Generation), il terminale MU/TH/UR di Alien, il Cockpit
+di Elite Dangerous, la Cintura di The Expanse e il Neon di Blade Runner. Ogni
+regola è regolabile dal pannello di amministrazione.
 
 Implementazione **originale** delle meccaniche di gioco: non contiene codice,
 testi o artwork della door proprietaria.
 
 - **Stack:** PHP 8 puro (nessun framework, nessuna dipendenza) · MariaDB/MySQL · Apache
 - **Interfaccia:** plancia web su API JSON, aggiornamenti in tempo reale (SSE),
-  responsive per telefono/tablet/desktop; predisposta come PWA (installazione,
-  guscio offline e Web Push richiedono HTTPS)
+  responsive per telefono/tablet/desktop, sei temi grafici; predisposta come
+  PWA (installazione, guscio offline e Web Push richiedono HTTPS)
 - **Stato:** in **beta testing**
 - **Licenza:** GPL-3.0-or-later
 
@@ -327,6 +330,28 @@ testi o artwork della door proprietaria.
   worker (guscio offline) e mappa con pan e zoom touch. Il service worker
   richiede HTTPS.
 
+- **Temi grafici** — sei, a scelta dal profilo (anteprime in miniatura) o dal
+  piè di pagina di ogni schermata, anche prima dell'accesso. La scelta sta
+  sull'account (`users.tema`), quindi vale su ogni dispositivo, e in un cookie
+  per chi non è entrato; la pagina esce già col tema giusto, senza lampi.
+
+  | Tema | Ispirazione | Cosa cambia |
+  |---|---|---|
+  | Console | — | il tema di sempre: HUD ciano e viola su campo stellato |
+  | LCARS | Star Trek: The Next Generation | nero pieno, carattere condensato maiuscolo, la barra in alto e la colonna dei comandi unite da un «gomito», pannelli a parentesi colorate con il titolo ritagliato nella banda, bottoni a capsula |
+  | Terminale MU/TH/UR | Alien (1979) | fosfori verdi a spaziatura fissa, righe di scansione e vignettatura del tubo catodico, titoli col prompt e il cursore che lampeggia, bottoni fra parentesi quadre |
+  | Cockpit | Elite Dangerous | HUD arancione con il blu per i dati secondari, pannelli e bottoni ad angoli tagliati ripassati da un filo luminoso, griglia da visore sul fondo |
+  | Cintura | The Expanse | vetro traslucido su blu profondo, marcatori d'angolo sui pannelli, titoli sottili e spaziati: il più sobrio e leggibile |
+  | Neon | Blade Runner | notte viola con la pioggia di sbieco, insegne magenta e ciano col bagliore del gas, il marchio che sfarfalla |
+
+  Ogni tema è un foglio in `assets/css/temi/` caricato dopo `app.css`: tutti i
+  colori di `app.css` passano da variabili, e il tema le ridefinisce, insieme
+  a caratteri e forme. Anche la mappa stellare, disegnata su canvas, legge i
+  suoi colori dal tema (`--map-*`). I caratteri (licenza OFL) sono ospitati in
+  `assets/fonts/`: nessuna richiesta a server esterni, e ogni giocatore
+  scarica solo quelli del suo tema. Animazioni ferme con
+  `prefers-reduced-motion`.
+
 - **Account & posta** — iscrizione con **autovalidazione dell'indirizzo**: chi
   si registra riceve un collegamento monouso e attiva l'account da sé, senza
   passare da un amministratore. Stessa meccanica per il **recupero della
@@ -565,11 +590,11 @@ php tests/run.php                # tutte
 php tests/run.php economica      # solo i file col nome che contiene "economica"
 ```
 
-Suite di integrazione senza dipendenze, 611 verifiche in 28 file: integrità
+Suite di integrazione senza dipendenze, 627 verifiche in 29 file: integrità
 economica, concorrenza, banca/contratti/Officina, combattimento, navigazione,
 nave e moduli, pianeti, porti, equipaggio, mondo, percorsi di gioco normali,
 universo, clock, sessioni e turni, difese, iscrizione e posta, immagini,
-configurazione, schema, notifiche in tempo reale, fasce di rischio, legge federale, bottino, il quarto audit, e le regole decise per mercato nero, uccisioni e
+configurazione, schema, notifiche in tempo reale, fasce di rischio, legge federale, bottino, temi grafici, il quarto audit, e le regole decise per mercato nero, uccisioni e
 stagioni. Ogni correzione ha una prova costruita per fallire sul codice di
 prima. Quando la gara sta nel database, la prova fa la prima richiesta a mano
 in una transazione aperta (blocca la riga e la cambia) e lancia la seconda in
@@ -602,7 +627,8 @@ corso una sessione di gioco affollata: aprono transazioni su tabelle vive.
 ```
 index.php              front controller unico (routing via PATH_INFO / FallbackResource)
 src/Core/              Router, Database (PDO), Request, Response, Session, Csrf, RateLimiter,
-                       View, Config, Mailer (SMTP minimale), Posta (coda con ritentativi)
+                       View, Config, Mailer (SMTP minimale), Posta (coda con ritentativi),
+                       Temi (catalogo e scelta dei temi grafici)
 src/Auth/              iscrizione, autovalidazione dell'indirizzo, recupero password,
                        gettoni monouso (Auth), testi dei messaggi (AuthMail)
 src/Game/              logica di gioco: Universe, Navigation, Economy, Haggle, Bank, Shipyard,
@@ -611,15 +637,17 @@ src/Game/              logica di gioco: Universe, Navigation, Economy, Haggle, B
                        Season, Achievements, BlackMarket, Radio, Leaderboard, Live, ShipLog,
                        Digest, Onboarding, Notifier, TurnManager, Ranks, GameConfig, Ctx,
                        Wallet (movimenti atomici), TickHealth (salute del clock),
-                       MediaAsset (immagini caricate), Cloak, Limpet, PowerGrid, Subsystems
+                       MediaAsset (immagini caricate), Cloak, Limpet, PowerGrid, Subsystems,
+                       Fasce, Legge, Consumabili, Reperti, Stats, FedNews
 src/Controllers/       Home, Auth, Admin, AdminGame, Game, GameApi, ShipLog, Port, Bank,
                        Shipyard, Module, Combat, Crew, Mission, Scan, Faction, Codex, Planet,
-                       Corp, Radio, Leaderboard, Registro, Meta
+                       Corp, Radio, Leaderboard, Registro, Meta, Tema
 src/Cli/Migrator.php   migratore SQL minimale
 src/routes.php         tabella delle rotte
 views/                 template PHP (layout, auth/*, game/*, admin/*, errors/*)
 assets/                css/js statici + icone PWA
                        (js/ritaglio.js = inquadratura dell'avatar lato browser)
+                       css/temi/ = un foglio per tema · fonts/ = caratteri OFL dei temi
 tests/                 suite di integrazione, `php tests/run.php`
 db/migrations/         *.sql versionati    ·    db/setup.sql = bootstrap DB/utente
 bin/                   console.php, migrate.php, tick.php (il clock)
@@ -656,3 +684,9 @@ deploy/                apache-subspazio.conf
 ## Licenza
 
 GNU General Public License v3.0 or later — vedi [LICENSE](LICENSE).
+
+I caratteri in `assets/fonts/` (Antonio, Share Tech Mono, VT323, Orbitron,
+Exo 2, Titillium Web, Audiowide, Chakra Petch) sono dei rispettivi autori e
+restano sotto **SIL Open Font License 1.1**: la licenza di ciascuno è nel file
+`OFL-<famiglia>.txt` accanto, e `assets/fonts/LEGGIMI.md` dice da dove vengono
+e quale tema li usa.

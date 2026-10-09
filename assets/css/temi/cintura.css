@@ -1,0 +1,178 @@
+/* =============================================================================
+   Tema «Cintura» — le interfacce di The Expanse.
+
+   Vetro traslucido su un blu profondo, linee di un pixel, bianco freddo e
+   azzurro, il verde acqua per le informazioni secondarie. Ogni pannello ha i
+   quattro marcatori d'angolo dei visori della flotta; titoli sottili, tutti
+   maiuscoli e molto spaziati. E' il tema piu' sobrio e il piu' leggibile.
+   ============================================================================= */
+
+@font-face {
+  font-family: "Titillium Web";
+  src: url("../../fonts/titilliumweb-300.woff2") format("woff2");
+  font-weight: 300;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Titillium Web";
+  src: url("../../fonts/titilliumweb-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Titillium Web";
+  src: url("../../fonts/titilliumweb-600.woff2") format("woff2");
+  font-weight: 600 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Share Tech Mono";
+  src: url("../../fonts/sharetechmono-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+html[data-tema="cintura"] {
+  --bg:         #07101b;
+  --bg-soft:    #0b1726;
+  --bg-deep:    #040a12;
+  --panel:      rgba(18, 34, 54, .58);
+  --panel-2:    rgba(10, 22, 38, .66);
+  --line:       rgba(140, 195, 240, .24);
+  --line-soft:  rgba(140, 195, 240, .12);
+
+  --ink:        #e8f1fb;
+  --ink-soft:   #a3b9cf;
+  --ink-dim:    #6f86a0;
+
+  --accent:     #4cc3ff;
+  --accent-ink: #021422;
+  --accent-2:   #9be7c4;
+  --ok:         #6fe0a8;
+  --warn:       #f2c14e;
+  --err:        #ff6b6b;
+  --ok-ink:     #d4f7e6;
+  --warn-ink:   #fbe7b6;
+  --err-ink:    #ffd3d3;
+
+  --accent-hi:  #7fd5ff;
+  --accent-lo:  #3aaee8;
+  --danger-hi:  #ff8f8f;
+  --danger-lo:  #e85656;
+  --warp-hi:    rgba(40, 80, 120, .5);
+  --warp-lo:    rgba(24, 52, 84, .5);
+  --warp-ignoto: rgba(10, 22, 38, .5);
+
+  --field-bg:     rgba(4, 12, 22, .7);
+  --field-border: rgba(140, 195, 240, .3);
+
+  --radius: 2px;
+  --glow-accent: 0 0 0 1px color-mix(in srgb, var(--accent) 50%, transparent);
+  --shadow-panel: 0 18px 50px -24px rgba(0, 0, 0, .8);
+  --font-sans: "Titillium Web", "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-sans);
+  --font-mono: "Share Tech Mono", ui-monospace, monospace;
+
+  --fascia-0: #6fe0a8;
+  --fascia-1: #9be7c4;
+  --fascia-2: #4cc3ff;
+  --fascia-3: #f2c14e;
+  --fascia-4: #ff9b5a;
+  --fascia-5: #ff6b6b;
+
+  --map-accento: #7fd5ff;
+  --map-rotta:   #5f86a8;
+  --map-vuoto:   #0a1626;
+  --map-ombra:   #040a12;
+  --map-cielo-hi: #0f2238;
+  --map-cielo-lo: #050c16;
+}
+
+/* ---------------------------------------------------------------- base --- */
+[data-tema="cintura"] body {
+  font-size: 16.5px;
+  background:
+    radial-gradient(1000px 700px at 85% -10%, rgba(76, 195, 255, .12), transparent 60%),
+    radial-gradient(900px 600px at 0% 110%, rgba(155, 231, 196, .08), transparent 55%),
+    linear-gradient(180deg, #08121f, #050b14 60%, #07101b);
+  background-attachment: fixed;
+}
+[data-tema="cintura"] body::before { opacity: .35; }
+[data-tema="cintura"] h1, [data-tema="cintura"] h2, [data-tema="cintura"] h3 {
+  text-transform: uppercase; font-weight: 300; letter-spacing: .22em;
+}
+[data-tema="cintura"] h1 { font-size: 1.55rem; }
+[data-tema="cintura"] h2 { font-size: .92rem; font-weight: 600; letter-spacing: .24em; color: var(--accent); }
+[data-tema="cintura"] h3 { font-size: .85rem; font-weight: 600; color: var(--accent-2); }
+
+/* ----------------------------------------------------- barra superiore --- */
+[data-tema="cintura"] .topbar {
+  background: rgba(6, 14, 24, .72); border-image: none; border-bottom: 1px solid var(--line);
+}
+[data-tema="cintura"] .brand { font-weight: 300; letter-spacing: .4em; color: var(--ink); text-shadow: none; }
+[data-tema="cintura"] .brand::before { content: "◇ "; color: var(--accent); }
+[data-tema="cintura"] .topbar nav a { text-transform: uppercase; letter-spacing: .14em; font-size: .78rem; }
+[data-tema="cintura"] .game-nav { background: rgba(6, 14, 24, .5); font-family: var(--font-sans); font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; }
+[data-tema="cintura"] .game-nav a { border-radius: 0; }
+[data-tema="cintura"] .game-nav a:hover { background: none; color: var(--accent); box-shadow: inset 0 -1px 0 var(--accent); }
+
+/* ------------------------------------------------- vetro e marcatori --- */
+[data-tema="cintura"] .panel,
+[data-tema="cintura"] .statusbar,
+[data-tema="cintura"] .toast,
+[data-tema="cintura"] .alert-panel {
+  background: var(--panel);
+  backdrop-filter: blur(10px) saturate(1.2); -webkit-backdrop-filter: blur(10px) saturate(1.2);
+}
+/* i quattro marcatori d'angolo */
+[data-tema="cintura"] .panel::after,
+[data-tema="cintura"] .statusbar::after {
+  /* appena dentro il bordo: il pannello puo' restare chiuso (overflow) */
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  --m: 14px; --c: var(--accent);
+  background:
+    linear-gradient(var(--c), var(--c)) top left / var(--m) 2px no-repeat,
+    linear-gradient(var(--c), var(--c)) top left / 2px var(--m) no-repeat,
+    linear-gradient(var(--c), var(--c)) top right / var(--m) 2px no-repeat,
+    linear-gradient(var(--c), var(--c)) top right / 2px var(--m) no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom left / var(--m) 2px no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom left / 2px var(--m) no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom right / var(--m) 2px no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom right / 2px var(--m) no-repeat;
+}
+[data-tema="cintura"] .statusbar { position: relative; }
+[data-tema="cintura"] .statusbar::after { --m: 9px; --c: var(--accent-2); }
+[data-tema="cintura"] .panel h1, [data-tema="cintura"] .panel h2 { padding-left: 1rem; }
+[data-tema="cintura"] .panel h1::before, [data-tema="cintura"] .panel h2::before {
+  width: 6px; height: 6px; top: .45em; bottom: auto; border-radius: 0; box-shadow: none;
+  background: var(--accent); transform: rotate(45deg);
+}
+[data-tema="cintura"] .card { background: var(--panel-2); }
+[data-tema="cintura"] .card::before { width: 1px; background: var(--accent-2); }
+[data-tema="cintura"] .card .k, [data-tema="cintura"] .statusbar .k, [data-tema="cintura"] .tbl th {
+  font-family: var(--font-sans); font-weight: 600; letter-spacing: .2em; color: var(--accent-2);
+}
+
+/* ------------------------------------------------------------- bottoni --- */
+[data-tema="cintura"] .btn, [data-tema="cintura"] button.btn {
+  background: var(--accent); color: var(--accent-ink); border: 1px solid var(--accent);
+  text-transform: uppercase; letter-spacing: .16em; font-weight: 600; font-size: .85rem;
+}
+[data-tema="cintura"] .btn.xs { font-size: .72rem; }
+[data-tema="cintura"] .btn:hover { filter: brightness(1.08); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+[data-tema="cintura"] .btn.ghost { background: rgba(76, 195, 255, .08); color: var(--ink); border-color: var(--line); }
+[data-tema="cintura"] .btn.ghost:hover { border-color: var(--accent); }
+[data-tema="cintura"] .btn.danger { color: #2a0606; background: var(--danger-hi); border-color: var(--danger-lo); }
+[data-tema="cintura"] .btn.warp.unknown { background: var(--warp-ignoto); color: var(--ink-soft); }
+[data-tema="cintura"] .btn.warp { text-transform: none; letter-spacing: .04em; font-family: var(--font-mono); font-size: .95rem; color: var(--ink); background: var(--warp-hi); border-color: var(--line); }
+
+/* -------------------------------------------------- tabelle e etichette --- */
+[data-tema="cintura"] .tbl th { background: transparent; }
+[data-tema="cintura"] .pill, [data-tema="cintura"] .tag { border-radius: 2px; letter-spacing: .12em; text-transform: uppercase; }
+[data-tema="cintura"] .alert { border-radius: 2px; border-width: 1px 1px 1px 3px; backdrop-filter: blur(8px); }
+[data-tema="cintura"] #starmap { border: 1px solid var(--line); border-radius: 2px; }
+[data-tema="cintura"] .foot { letter-spacing: .16em; text-transform: uppercase; font-size: .74rem; }
+[data-tema="cintura"] .hero h1 { font-weight: 300; letter-spacing: .45em; text-shadow: none; }
+
+/* il titolo d'apertura della pagina iniziale resta grande */
+[data-tema="cintura"] .hero h1 { font-size: clamp(1.8rem, 5vw, 2.8rem); }

@@ -80,7 +80,7 @@ final class Session
     }
 
     /** Ambito del cookie di sessione: la sottocartella del deploy, non tutto il dominio. */
-    private static function cookiePath(): string
+    public static function cookiePath(): string
     {
         $base = Config::get('app.base_path');
         if (!is_string($base) || $base === '') {

@@ -158,6 +158,8 @@ $sec = static function (string $icon, string $title, string $body, string $class
   <?= $sec('🏆', 'Meta',
       '<p><strong>Stagioni</strong> con ladder e Albo d\'Oro, <strong>traguardi</strong>, <strong>corporazioni</strong> e alleanze, '
     . '<strong>contratti</strong> e taglie fra giocatori, <strong>radio</strong> subspaziale. '
+    . 'Dal <a href="' . e(url('/gioco/profilo#tema')) . '">Profilo</a> (o dal piè di pagina) scegli il <strong>tema grafico</strong>: '
+    . 'Console, LCARS, Terminale MU/TH/UR, Cockpit, Cintura o Neon. '
     . '<a href="' . e(url('/gioco/classifica')) . '">Classifica</a> · <a href="' . e(url('/gioco/traguardi')) . '">Traguardi</a> · '
     . '<a href="' . e(url('/gioco/corp')) . '">Corp</a> · <a href="' . e(url('/gioco/albo')) . '">Albo</a></p>') ?>
 </div>

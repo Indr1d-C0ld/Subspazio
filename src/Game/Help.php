@@ -85,6 +85,7 @@ final class Help
 
         // --- Identità -------------------------------------------
         'profilo.identita'      => 'Colore d\'accento, marca di flotta, motto e registro della nave: compaiono in plancia, classifica e liste.',
+        'profilo.tema'          => 'L\'aspetto dell\'interfaccia: Console (quello di sempre), LCARS, Terminale MU/TH/UR, Cockpit, Cintura o Neon. Cambia colori, caratteri e forme, non il gioco. Vale per il tuo account su ogni dispositivo.',
         'profilo.immagini'      => 'Avatar e logo di flotta. Scegli il file, poi sposta e ingrandisci nel riquadro per decidere l\'inquadratura: viene caricato quello che vedi. L\'immagine e\' subito pubblica.',
     ];
 

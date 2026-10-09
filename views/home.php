@@ -65,6 +65,6 @@
     <li><strong>Pianeti e corporazioni</strong> — siluri Genesi, sette tipi di mondo, coloni, Citadel e cannone Quasar; corporazioni con cassa e pianeti condivisi, alleanze.</li>
     <li><strong>Fazioni</strong> — quattro potenze con reputazione a cinque livelli, rivalità, empori e cacciatori di taglie.</li>
     <li><strong>Stagioni e traguardi</strong> — classifica e albo d'oro a ogni stagione; oltre cento traguardi a livelli, alcuni segreti, con contatori di carriera che restano e titoli onorifici da mostrare accanto al nome.</li>
-    <li><strong>Sempre in contatto</strong> — notifiche e mappa in tempo reale, radio a canali, giornale di bordo e rapporto di rientro; si gioca dal telefono come dal computer, anche come app installata.</li>
+    <li><strong>Sempre in contatto</strong> — notifiche e mappa in tempo reale, radio a canali, giornale di bordo e rapporto di rientro; si gioca dal telefono come dal computer, anche come app installata. E con sei temi grafici a scelta: dalla plancia LCARS della Flotta Stellare al terminale a fosfori della Nostromo, dall'HUD arancione di un abitacolo alle insegne al neon di una città sotto la pioggia.</li>
   </ul>
 </section>

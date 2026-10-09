@@ -1,0 +1,221 @@
+/* =============================================================================
+   Tema «Cockpit» — l'abitacolo di Elite Dangerous.
+
+   HUD olografico arancione su nero, con il blu freddo per le informazioni
+   secondarie. Pannelli e bottoni hanno gli angoli tagliati a 45 gradi,
+   ripassati da un filo luminoso; etichette in Orbitron maiuscolo e spaziato,
+   testo in Exo 2. Sul fondo, una griglia sottile da visore.
+   ============================================================================= */
+
+@font-face {
+  font-family: "Orbitron";
+  src: url("../../fonts/orbitron-var.woff2") format("woff2");
+  font-weight: 400 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Exo 2";
+  src: url("../../fonts/exo2-var.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Share Tech Mono";
+  src: url("../../fonts/sharetechmono-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+html[data-tema="cockpit"] {
+  --hud:       #ff8c1a;
+  --hud-chiaro:#ffb15c;
+  --hud-blu:   #5fb7ff;
+  --taglio:    14px;
+
+  --bg:         #050303;
+  --bg-soft:    #0b0604;
+  --bg-deep:    #020101;
+  --panel:      #0d0705;
+  --panel-2:    #090403;
+  --line:       #5a3112;
+  --line-soft:  #33200f;
+
+  --ink:        #ffdcb8;
+  --ink-soft:   #d99a5c;
+  --ink-dim:    #9a6a3c;
+
+  --accent:     var(--hud);
+  --accent-ink: #1a0b00;
+  --accent-2:   var(--hud-blu);
+  --ok:         #84dd5e;
+  --warn:       #ffd04a;
+  --err:        #ff4b3a;
+  --ok-ink:     #d6f7c4;
+  --warn-ink:   #ffeab0;
+  --err-ink:    #ffc4bc;
+
+  --accent-hi:  #ffa040;
+  --accent-lo:  #ff7a00;
+  --danger-hi:  #ff6a5a;
+  --danger-lo:  #e0301f;
+  --danger-ink: #1a0300;
+  --warp-hi:    #1c0e05;
+  --warp-lo:    #130903;
+  --warp-ignoto: #0a0503;
+
+  --field-bg:     #080403;
+  --field-border: #6b3a14;
+
+  --radius: 0px;
+  --glow-accent: 0 0 16px -3px color-mix(in srgb, var(--hud) 60%, transparent);
+  --shadow-panel: 0 0 0 1px color-mix(in srgb, var(--hud) 8%, transparent) inset;
+  --font-sans: "Exo 2", "Segoe UI", Roboto, sans-serif;
+  --font-display: "Orbitron", "Exo 2", sans-serif;
+  --font-mono: "Share Tech Mono", ui-monospace, monospace;
+
+  --fascia-0: #5fb7ff;
+  --fascia-1: #84d8ff;
+  --fascia-2: #84dd5e;
+  --fascia-3: #ffd04a;
+  --fascia-4: #ff8c1a;
+  --fascia-5: #ff4b3a;
+
+  --map-accento: #ffb15c;
+  --map-rotta:   #8a4c1c;
+  --map-ombra:   #050303;
+  --map-noto:    #ffdcb8;
+  --map-ignoto:  #c0864e;
+  --map-cielo-hi: #140904;
+  --map-cielo-lo: #030101;
+}
+
+/* ---------------------------------------------------------------- base --- */
+[data-tema="cockpit"] body {
+  background:
+    radial-gradient(1200px 600px at 50% 115%, color-mix(in srgb, var(--hud) 13%, transparent), transparent 65%),
+    repeating-linear-gradient(0deg, color-mix(in srgb, var(--hud) 4%, transparent) 0 1px, transparent 1px 48px),
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--hud) 4%, transparent) 0 1px, transparent 1px 48px),
+    linear-gradient(180deg, #070403, #030101);
+  background-attachment: fixed;
+}
+[data-tema="cockpit"] body::before { opacity: .3; }
+[data-tema="cockpit"] ::selection { background: var(--hud); color: #1a0b00; }
+[data-tema="cockpit"] a { color: var(--hud-chiaro); }
+[data-tema="cockpit"] h1, [data-tema="cockpit"] h2, [data-tema="cockpit"] h3 {
+  text-transform: uppercase; letter-spacing: .14em; font-weight: 600; color: var(--hud);
+}
+[data-tema="cockpit"] h1 { font-size: 1.5rem; }
+[data-tema="cockpit"] h2 { font-size: .9rem; }
+[data-tema="cockpit"] h3 { font-size: .8rem; color: var(--hud-blu); }
+
+/* ----------------------------------------------------- barra superiore --- */
+[data-tema="cockpit"] .topbar {
+  background: linear-gradient(180deg, #0b0503, #070302);
+  border-bottom: 1px solid var(--hud); border-image: none;
+  box-shadow: 0 1px 14px -4px color-mix(in srgb, var(--hud) 70%, transparent);
+}
+[data-tema="cockpit"] .brand { color: var(--hud); letter-spacing: .3em; font-size: 1rem; }
+[data-tema="cockpit"] .brand::before { content: "▲ "; }
+[data-tema="cockpit"] .topbar nav a {
+  font-family: var(--font-display); text-transform: uppercase; letter-spacing: .14em; font-size: .7rem;
+  color: var(--ink-soft);
+}
+[data-tema="cockpit"] .topbar nav a:hover { color: var(--hud); }
+[data-tema="cockpit"] .game-nav {
+  background: #070302; border-bottom: 1px solid var(--line);
+  font-family: var(--font-display); font-size: .66rem; letter-spacing: .14em; text-transform: uppercase;
+}
+[data-tema="cockpit"] .game-nav a { border-radius: 0; border-bottom: 2px solid transparent; }
+[data-tema="cockpit"] .game-nav a:hover { color: var(--hud); background: color-mix(in srgb, var(--hud) 10%, transparent); border-bottom-color: var(--hud); }
+
+/* ---------------------------------------- pannelli con gli angoli tagliati --- */
+/* La sagoma sta su uno strato dietro al contenuto: un clip-path sul pannello
+   taglierebbe anche le tendine d'aiuto e i menu che ne escono. */
+[data-tema="cockpit"] .panel,
+[data-tema="cockpit"] .statusbar,
+[data-tema="cockpit"] .card,
+[data-tema="cockpit"] .toast {
+  --t: var(--taglio);
+  position: relative;
+  background: none; border: 0; border-radius: 0; box-shadow: none;
+}
+[data-tema="cockpit"] .panel::before,
+[data-tema="cockpit"] .statusbar::before,
+[data-tema="cockpit"] .card::before,
+[data-tema="cockpit"] .toast::before,
+[data-tema="cockpit"] #starmap {
+  --t: var(--taglio);
+  border: 1px solid color-mix(in srgb, var(--hud) 45%, transparent); border-radius: 0;
+  clip-path: polygon(var(--t) 0, 100% 0, 100% calc(100% - var(--t)), calc(100% - var(--t)) 100%, 0 100%, 0 var(--t));
+  /* il filo sul taglio: una banda alla distanza giusta dall'angolo (t / radice di 2) */
+  background-image:
+    linear-gradient(135deg, transparent calc(var(--t) * .707 - .5px), var(--hud) calc(var(--t) * .707 - .5px) calc(var(--t) * .707 + 1px), transparent calc(var(--t) * .707 + 1px)),
+    linear-gradient(-45deg, transparent calc(var(--t) * .707 - .5px), var(--hud) calc(var(--t) * .707 - .5px) calc(var(--t) * .707 + 1px), transparent calc(var(--t) * .707 + 1px)),
+    linear-gradient(180deg, color-mix(in srgb, var(--hud) 6%, transparent), color-mix(in srgb, var(--hud) 1.5%, transparent));
+  background-color: color-mix(in srgb, var(--panel) 92%, transparent);
+}
+[data-tema="cockpit"] .panel::before,
+[data-tema="cockpit"] .statusbar::before,
+[data-tema="cockpit"] .card::before,
+[data-tema="cockpit"] .toast::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; width: auto; opacity: 1;
+}
+[data-tema="cockpit"] .card, [data-tema="cockpit"] .statusbar, [data-tema="cockpit"] .toast { --t: 9px; }
+[data-tema="cockpit"] .card::before, [data-tema="cockpit"] .statusbar::before, [data-tema="cockpit"] .toast::before { --t: 9px; }
+[data-tema="cockpit"] .toast { border-left: 0; }
+[data-tema="cockpit"] #starmap { background-color: var(--map-cielo-lo); }
+[data-tema="cockpit"] .panel h1::before, [data-tema="cockpit"] .panel h2::before {
+  width: 6px; top: .2em; bottom: .2em; border-radius: 0; background: var(--hud);
+  clip-path: polygon(0 0, 100% 3px, 100% 100%, 0 calc(100% - 3px));
+}
+[data-tema="cockpit"] .card .k, [data-tema="cockpit"] .statusbar .k, [data-tema="cockpit"] .tbl th,
+[data-tema="cockpit"] .sector-meta dt, [data-tema="cockpit"] .stack label span {
+  font-family: var(--font-display); letter-spacing: .16em; font-size: .62rem; color: var(--hud-blu);
+}
+[data-tema="cockpit"] .statusbar .v, [data-tema="cockpit"] .card .v { color: var(--ink); }
+
+/* ------------------------------------------------------------- bottoni --- */
+[data-tema="cockpit"] .btn, [data-tema="cockpit"] button.btn {
+  --t: 8px;
+  border-radius: 0; border: 0; color: #1a0b00;
+  background: linear-gradient(180deg, var(--accent-hi), var(--accent-lo));
+  clip-path: polygon(var(--t) 0, 100% 0, 100% calc(100% - var(--t)), calc(100% - var(--t)) 100%, 0 100%, 0 var(--t));
+  font-family: var(--font-display); font-weight: 600; font-size: .78rem; letter-spacing: .14em; text-transform: uppercase;
+  padding: .6rem 1.2rem;
+}
+[data-tema="cockpit"] .btn.xs { --t: 6px; font-size: .64rem; padding: .38rem .75rem; }
+[data-tema="cockpit"] .btn:hover { filter: brightness(1.12); box-shadow: none; }
+[data-tema="cockpit"] .btn.ghost {
+  background: color-mix(in srgb, var(--hud) 12%, transparent); color: var(--hud-chiaro);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hud) 55%, transparent);
+}
+[data-tema="cockpit"] .btn.ghost:hover { background: color-mix(in srgb, var(--hud) 24%, transparent); }
+[data-tema="cockpit"] .btn.danger { color: #1a0300; background: linear-gradient(180deg, var(--danger-hi), var(--danger-lo)); }
+[data-tema="cockpit"] .btn.warp {
+  background: linear-gradient(180deg, var(--warp-hi), var(--warp-lo));
+  color: var(--ink); font-family: var(--font-mono); font-size: .95rem; letter-spacing: .04em;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+[data-tema="cockpit"] .btn.warp:hover { box-shadow: inset 0 0 0 1px var(--hud); }
+[data-tema="cockpit"] .btn.warp.unknown { background: var(--warp-ignoto); color: var(--ink-soft); box-shadow: inset 0 0 0 1px var(--line-soft); }
+
+/* -------------------------------------------------------------- campi --- */
+[data-tema="cockpit"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+[data-tema="cockpit"] select, [data-tema="cockpit"] textarea { border-radius: 0; }
+
+/* -------------------------------------------------- tabelle e etichette --- */
+[data-tema="cockpit"] .tbl th { background: color-mix(in srgb, var(--hud-blu) 6%, transparent); border-bottom-color: var(--line); }
+[data-tema="cockpit"] .pill, [data-tema="cockpit"] .tag {
+  border-radius: 0; text-transform: uppercase; letter-spacing: .1em;
+  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+}
+[data-tema="cockpit"] .alert { border-radius: 0; border-width: 0 0 0 4px; }
+[data-tema="cockpit"] .alert-panel { border-radius: 0; }
+
+[data-tema="cockpit"] .foot { border-top-color: var(--line); font-family: var(--font-display); font-size: .66rem; letter-spacing: .16em; text-transform: uppercase; }
+[data-tema="cockpit"] .foot button.link, [data-tema="cockpit"] .tema-form select { font-family: var(--font-display); font-size: .66rem; letter-spacing: .1em; }
+[data-tema="cockpit"] .hero h1 { letter-spacing: .3em; text-shadow: 0 0 30px color-mix(in srgb, var(--hud) 45%, transparent); }
+[data-tema="cockpit"] .big { font-family: var(--font-display); }
+
+/* il titolo d'apertura della pagina iniziale resta grande */
+[data-tema="cockpit"] .hero h1 { font-size: clamp(1.7rem, 4.5vw, 2.6rem); }

@@ -1,0 +1,221 @@
+/* =============================================================================
+   Tema «Terminale MU/TH/UR» — il calcolatore di bordo della Nostromo (Alien, 1979).
+
+   Fosfori verdi su nero, un solo carattere a spaziatura fissa, righe di
+   scansione e un leggero bagliore del tubo catodico. Niente angoli
+   arrotondati, niente sfumature: cornici sottili, titoli preceduti dal
+   prompt, bottoni fra parentesi quadre che si invertono al passaggio.
+   L'ambra resta per gli avvisi e il rosso per i pericoli, come sui terminali
+   veri.
+   ============================================================================= */
+
+@font-face {
+  font-family: "Share Tech Mono";
+  src: url("../../fonts/sharetechmono-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "VT323";
+  src: url("../../fonts/vt323-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+html[data-tema="muthur"] {
+  --fosforo:      #4dff88;
+  --fosforo-vivo: #9dffbf;
+
+  --bg:         #020703;
+  --bg-soft:    #031006;
+  --bg-deep:    #010401;
+  --panel:      #031008;
+  --panel-2:    #020a05;
+  --line:       #146b35;
+  --line-soft:  #0c3d1f;
+
+  --ink:        #9dffbf;
+  --ink-soft:   #52d585;
+  --ink-dim:    #2f9a58;
+
+  --accent:     #4dff88;
+  --accent-ink: #011a08;
+  --accent-2:   #c8ff5a;
+  --ok:         #4dff88;
+  --warn:       #ffcc33;
+  --err:        #ff5544;
+  --ok-ink:     #b8ffd0;
+  --warn-ink:   #ffe39a;
+  --err-ink:    #ffb4a8;
+  --err-deep:   #200805;
+  --err-deeper: #100302;
+
+  --accent-hi:  #4dff88;
+  --accent-lo:  #4dff88;
+  --danger-hi:  #ff5544;
+  --danger-lo:  #ff5544;
+  --danger-ink: #1a0300;
+  --warp-hi:    #031008;
+  --warp-lo:    #031008;
+  --warp-ignoto: #020703;
+
+  --field-bg:     #010502;
+  --field-border: #1d8a47;
+
+  --radius: 0px;
+  --glow-accent: 0 0 12px -2px color-mix(in srgb, var(--accent) 55%, transparent);
+  --shadow-panel: none;
+  --font-sans: "Share Tech Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+  --font-mono: var(--font-sans);
+  --font-display: "VT323", var(--font-sans);
+
+  --fascia-0: #4dff88;
+  --fascia-1: #8cff6a;
+  --fascia-2: #c8ff5a;
+  --fascia-3: #ffcc33;
+  --fascia-4: #ff8a33;
+  --fascia-5: #ff5544;
+
+  --map-accento: #9dffbf;
+  --map-rotta:   #1f8f4a;
+  --map-ombra:   #010401;
+  --map-noto:    #9dffbf;
+  --map-ignoto:  #3fbf70;
+  --map-cielo-hi: #03120a;
+  --map-cielo-lo: #010401;
+}
+
+/* ---------------------------------------------------------------- base --- */
+[data-tema="muthur"] body {
+  background: radial-gradient(120% 90% at 50% 40%, #04140a 0%, #020703 55%, #000 100%);
+  font-size: 15px; letter-spacing: .01em;
+  text-shadow: 0 0 1px currentColor, 0 0 9px color-mix(in srgb, var(--fosforo) 22%, transparent);
+}
+[data-tema="muthur"] body::before { display: none; }
+/* righe di scansione e vignettatura del tubo catodico, sopra a tutto ma
+   trasparenti ai clic */
+[data-tema="muthur"] body::after {
+  content: ""; position: fixed; inset: 0; z-index: 2000; pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, .22) 0 1px, transparent 1px 3px),
+    radial-gradient(130% 100% at 50% 50%, transparent 62%, rgba(0, 0, 0, .55) 100%);
+  animation: muthur-sfarfallio 6s steps(1) infinite;
+}
+@keyframes muthur-sfarfallio {
+  0%, 100% { opacity: 1; }
+  47%      { opacity: .93; }
+  48%      { opacity: 1; }
+}
+[data-tema="muthur"] ::selection { background: var(--fosforo); color: #011a08; text-shadow: none; }
+[data-tema="muthur"] a { color: var(--fosforo-vivo); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--fosforo) 35%, transparent); text-underline-offset: 3px; }
+[data-tema="muthur"] a:hover { background: var(--fosforo); color: #011a08; text-decoration: none; text-shadow: none; }
+[data-tema="muthur"] h1, [data-tema="muthur"] h2, [data-tema="muthur"] h3 {
+  font-weight: 400; text-transform: uppercase; letter-spacing: .08em; color: var(--fosforo);
+}
+[data-tema="muthur"] h1 { font-size: 2.3rem; }
+[data-tema="muthur"] h2 { font-size: 1.45rem; }
+[data-tema="muthur"] h3 { font-size: 1.25rem; }
+/* il titolo principale della pagina ha il cursore che lampeggia */
+[data-tema="muthur"] main > h1:first-child::after,
+[data-tema="muthur"] .panel > h1:first-child::after,
+[data-tema="muthur"] .hero h1::after {
+  content: "█"; margin-left: .25em; font-size: .7em; vertical-align: .05em;
+  animation: muthur-cursore 1.1s steps(1) infinite;
+}
+@keyframes muthur-cursore { 50% { opacity: 0; } }
+
+/* ----------------------------------------------------- barra superiore --- */
+[data-tema="muthur"] .topbar {
+  background: #010401; backdrop-filter: none; -webkit-backdrop-filter: none;
+  border-bottom: 1px solid var(--line); border-image: none;
+}
+[data-tema="muthur"] .brand { font-family: var(--font-display); font-size: 1.6rem; font-weight: 400; letter-spacing: .12em; text-shadow: 0 0 12px color-mix(in srgb, var(--fosforo) 60%, transparent); }
+[data-tema="muthur"] .brand::before { content: "MU/TH/UR 6000 :: "; opacity: .65; font-size: .8em; }
+[data-tema="muthur"] .topbar nav a { color: var(--ink-soft); text-decoration: none; text-transform: uppercase; font-size: .85rem; }
+[data-tema="muthur"] .topbar nav a:hover { color: #011a08; }
+[data-tema="muthur"] .topbar .cta { color: var(--accent-2) !important; }
+[data-tema="muthur"] .badge { background: var(--err); color: #000; border-radius: 0; text-shadow: none; }
+
+[data-tema="muthur"] .game-nav {
+  background: #010401; border-bottom: 1px dashed var(--line); font-size: .8rem;
+}
+[data-tema="muthur"] .game-nav a { border-radius: 0; color: var(--ink-soft); text-decoration: none; text-transform: uppercase; }
+[data-tema="muthur"] .game-nav a::before { content: "/"; opacity: .45; margin-right: .15em; }
+[data-tema="muthur"] .game-nav a:hover { background: var(--fosforo); color: #011a08; text-shadow: none; }
+
+/* ------------------------------------------------------------ pannelli --- */
+[data-tema="muthur"] .panel,
+[data-tema="muthur"] .statusbar,
+[data-tema="muthur"] .card {
+  background: color-mix(in srgb, var(--panel) 85%, transparent);
+  border: 1px solid var(--line); border-radius: 0; box-shadow: none;
+}
+[data-tema="muthur"] .panel { outline: 1px solid var(--line-soft); outline-offset: 3px; }
+[data-tema="muthur"] .panel h1, [data-tema="muthur"] .panel h2 { padding-left: 0; }
+[data-tema="muthur"] .panel h1::before, [data-tema="muthur"] .panel h2::before {
+  content: ">"; position: static; display: inline; width: auto; background: none; box-shadow: none;
+  margin-right: .45em; color: var(--ink-dim);
+}
+[data-tema="muthur"] .card::before { display: none; }
+[data-tema="muthur"] .card .k, [data-tema="muthur"] .statusbar .k { color: var(--ink-dim); }
+[data-tema="muthur"] .statusbar .k::after { content: ":"; }
+[data-tema="muthur"] hr { border: 0; border-top: 1px dashed var(--line); }
+
+/* ------------------------------------------------------------- bottoni --- */
+[data-tema="muthur"] .btn, [data-tema="muthur"] button.btn {
+  background: transparent; color: var(--fosforo); border: 1px solid var(--fosforo); border-radius: 0;
+  font-weight: 400; text-transform: uppercase; letter-spacing: .08em; text-decoration: none;
+}
+[data-tema="muthur"] .btn::before { content: "[ "; opacity: .7; }
+[data-tema="muthur"] .btn::after  { content: " ]"; opacity: .7; }
+[data-tema="muthur"] .btn:hover { background: var(--fosforo); color: #011a08; filter: none; box-shadow: var(--glow-accent); text-shadow: none; }
+[data-tema="muthur"] .btn.ghost { border-color: var(--line); color: var(--ink-soft); background: transparent; }
+[data-tema="muthur"] .btn.ghost:hover { background: var(--ink-soft); color: #011a08; }
+[data-tema="muthur"] .btn.danger { color: var(--err); border-color: var(--err); background: transparent; }
+[data-tema="muthur"] .btn.danger:hover { background: var(--err); color: #1a0300; }
+[data-tema="muthur"] .btn.warp { background: transparent; color: var(--ink); border-color: var(--line); }
+[data-tema="muthur"] .btn.warp::before, [data-tema="muthur"] .btn.warp::after { content: none; }
+[data-tema="muthur"] .btn.warp:hover { background: var(--fosforo); color: #011a08; }
+[data-tema="muthur"] .btn.warp.unknown { border-style: dashed; }
+[data-tema="muthur"] button.link { color: var(--fosforo-vivo); text-decoration: underline; }
+
+/* -------------------------------------------------------------- campi --- */
+[data-tema="muthur"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+[data-tema="muthur"] select, [data-tema="muthur"] textarea {
+  border-radius: 0; color: var(--fosforo-vivo); caret-color: var(--fosforo);
+}
+[data-tema="muthur"] input:focus, [data-tema="muthur"] select:focus, [data-tema="muthur"] textarea:focus {
+  box-shadow: 0 0 0 1px var(--fosforo), 0 0 14px -4px var(--fosforo);
+}
+
+/* -------------------------------------------------- tabelle e etichette --- */
+[data-tema="muthur"] .tbl th { background: none; color: var(--fosforo); border-bottom: 1px dashed var(--fosforo); }
+[data-tema="muthur"] .tbl th, [data-tema="muthur"] .tbl td { border-bottom-style: dotted; }
+[data-tema="muthur"] .tbl tbody tr:hover { background: color-mix(in srgb, var(--fosforo) 8%, transparent); }
+[data-tema="muthur"] .pill, [data-tema="muthur"] .tag { border-radius: 0; background: transparent; text-shadow: none; }
+[data-tema="muthur"] .pill::before, [data-tema="muthur"] .tag::before { content: "<"; opacity: .6; }
+[data-tema="muthur"] .pill::after,  [data-tema="muthur"] .tag::after  { content: ">"; opacity: .6; }
+[data-tema="muthur"] .alert { border-radius: 0; background: transparent; border-style: solid; border-width: 1px 1px 1px 6px; }
+[data-tema="muthur"] .alert.ok::before  { content: "STATO: "; opacity: .7; }
+[data-tema="muthur"] .alert.err::before { content: "ATTENZIONE: "; font-weight: 700; }
+[data-tema="muthur"] .toast, [data-tema="muthur"] .alert-panel { border-radius: 0; background: #010502; }
+
+/* -------------------------------------------------------------- mappa --- */
+[data-tema="muthur"] #starmap { border: 1px solid var(--line); border-radius: 0; }
+
+/* ------------------------------------------------------ piè di pagina --- */
+[data-tema="muthur"] .foot { border-top: 1px dashed var(--line); text-transform: uppercase; }
+[data-tema="muthur"] .foot::before { content: "TERMINALE DI BORDO // CANALE 0 // "; color: var(--ink-dim); }
+
+[data-tema="muthur"] .hero h1 { text-shadow: 0 0 22px color-mix(in srgb, var(--fosforo) 55%, transparent); }
+[data-tema="muthur"] .big { text-shadow: 0 0 22px color-mix(in srgb, var(--fosforo) 55%, transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-tema="muthur"] body::after { animation: none; }
+  [data-tema="muthur"] main > h1:first-child::after,
+  [data-tema="muthur"] .panel > h1:first-child::after,
+  [data-tema="muthur"] .hero h1::after { animation: none; }
+}
+
+/* il titolo d'apertura della pagina iniziale resta grande */
+[data-tema="muthur"] .hero h1 { font-size: clamp(2.8rem, 8vw, 4.6rem); }
