@@ -4,6 +4,19 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-09 — La presentazione del gioco mostra i temi grafici
+
+- **[views/home.php](views/home.php)** — voce «La tua plancia» in «Cosa ti
+  aspetta» e sezione «Scegli la tua plancia» con le sei anteprime: si provano
+  prima di iscriversi.
+- **[views/partials/temi_scelta.php](views/partials/temi_scelta.php)** (nuovo),
+  **views/game/profilo.php** — schede dei temi condivise.
+- **[src/Controllers/TemaController.php](src/Controllers/TemaController.php)** —
+  ritorno con un'ancora interna semplice (`/#temi`).
+- **[tests/temi.php](tests/temi.php)** — 2 verifiche; suite a 634.
+- **README.md** — voce «Scegliere la propria plancia» in «Il gioco in breve».
+- **Descrizione del repository su GitHub** — cita i sei temi grafici.
+
 ## 2026-10-09 — L'aiuto contestuale racconta i temi grafici
 
 - **[src/Game/Help.php](src/Game/Help.php)** — segnaposto `{temi}` (nomi dal

@@ -61,6 +61,8 @@ return static function (): void {
     Esito::uguale('non un altro sito', '/', $ritorno->invoke(null, '//altro-sito.example/x'));
     Esito::uguale('non un indirizzo intero', '/', $ritorno->invoke(null, 'https://altro-sito.example/'));
     Esito::uguale('non un percorso con trucchi', '/', $ritorno->invoke(null, '/gioco/../../etc'));
+    Esito::uguale('con l\'ancora della sezione', '/#temi', $ritorno->invoke(null, '/#temi'));
+    Esito::uguale('ma un\'ancora sola, e semplice', '/', $ritorno->invoke(null, '/#temi#"onload'));
 
     Esito::sezione('Temi — nel notiziario della Federazione');
 

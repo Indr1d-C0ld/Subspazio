@@ -29,6 +29,7 @@ final class TemaController
      */
     private static function ritorno(string $torna): string
     {
-        return preg_match('#^/(?!/)[a-z0-9/_-]*$#', $torna) === 1 && $torna !== '/tema' ? $torna : '/';
+        // con un'eventuale ancora alla sezione da cui si e' scelto (#temi)
+        return preg_match('~^/(?!/)[a-z0-9/_-]*(#[a-z0-9_-]+)?$~', $torna) === 1 && !str_starts_with($torna, '/tema') ? $torna : '/';
     }
 }

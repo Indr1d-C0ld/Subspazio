@@ -88,28 +88,9 @@ $isPod    = ($ship['type_key'] ?? '') === 'escape_pod';
   </form>
 </section>
 
-<?php $temaInUso = \App\Core\Temi::attuale(); ?>
 <section class="panel" id="tema">
   <h2><span class="sec-ic">🎨</span> Tema grafico<?= partial('help', ['key' => 'profilo.tema']) ?></h2>
-  <form method="post" action="<?= e(url('/tema')) ?>" class="temi-grid">
-    <?= csrf_field() ?>
-    <input type="hidden" name="torna" value="/gioco/profilo">
-    <?php foreach (\App\Core\Temi::CATALOGO as $k => $t): [$c0, $c1, $c2, $c3, $c4] = $t['anteprima']; ?>
-      <button type="submit" name="tema" value="<?= e($k) ?>" class="tema-scheda<?= $k === $temaInUso ? ' in-uso' : '' ?>"
-              aria-pressed="<?= $k === $temaInUso ? 'true' : 'false' ?>"
-              style="--t0: <?= e($c0) ?>; --t1: <?= e($c1) ?>; --t2: <?= e($c2) ?>; --t3: <?= e($c3) ?>; --t4: <?= e($c4) ?>;">
-        <span class="tema-mini" data-forma="<?= e($k) ?>" aria-hidden="true">
-          <span class="tm-barra"></span>
-          <span class="tm-corpo">
-            <span class="tm-pannello"><span class="tm-riga"></span><span class="tm-riga corta"></span><span class="tm-bottone"></span></span>
-            <span class="tm-pannello due"><span class="tm-riga"></span><span class="tm-riga corta"></span></span>
-          </span>
-        </span>
-        <span class="tema-nome"><?= e($t['nome']) ?><?php if ($k === $temaInUso): ?> <span class="pill ok">in uso</span><?php endif; ?></span>
-        <span class="tema-descr"><?= e($t['ispirazione']) ?></span>
-      </button>
-    <?php endforeach; ?>
-  </form>
+  <?= partial('temi_scelta', ['torna' => '/gioco/profilo#tema']) ?>
   <p class="hint">Il tema vale per il tuo account su ogni dispositivo. Si cambia anche dal piè di pagina, in ogni schermata.</p>
 </section>
 

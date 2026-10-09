@@ -65,6 +65,13 @@
     <li><strong>Pianeti e corporazioni</strong> — siluri Genesi, sette tipi di mondo, coloni, Citadel e cannone Quasar; corporazioni con cassa e pianeti condivisi, alleanze.</li>
     <li><strong>Fazioni</strong> — quattro potenze con reputazione a cinque livelli, rivalità, empori e cacciatori di taglie.</li>
     <li><strong>Stagioni e traguardi</strong> — classifica e albo d'oro a ogni stagione; oltre cento traguardi a livelli, alcuni segreti, con contatori di carriera che restano e titoli onorifici da mostrare accanto al nome.</li>
-    <li><strong>Sempre in contatto</strong> — notifiche e mappa in tempo reale, radio a canali, giornale di bordo e rapporto di rientro; si gioca dal telefono come dal computer, anche come app installata. E con sei temi grafici a scelta: dalla plancia LCARS della Flotta Stellare al terminale a fosfori della Nostromo, dall'HUD arancione di un abitacolo alle insegne al neon di una città sotto la pioggia.</li>
+    <li><strong>Sempre in contatto</strong> — notifiche e mappa in tempo reale, radio a canali, giornale di bordo e rapporto di rientro; si gioca dal telefono come dal computer, anche come app installata.</li>
+    <li><strong>La tua plancia</strong> — sei temi grafici ispirati alla fantascienza: dalla plancia LCARS della Flotta Stellare al terminale a fosfori della Nostromo, dall'HUD arancione di un abitacolo al vetro delle navi della Cintura, fino alle insegne al neon di una città sotto la pioggia. Cambiano colori, caratteri, forme e mappa stellare; il gioco resta lo stesso.</li>
   </ul>
+</section>
+
+<section class="panel" id="temi">
+  <h2><span class="sec-ic">🎨</span> Scegli la tua plancia</h2>
+  <p class="hint">Provali subito: un clic e questa pagina cambia aspetto. Da comandante la scelta resta sul tuo account, su ogni dispositivo; si cambia quando vuoi dal Profilo o dal menu in fondo a ogni pagina.</p>
+  <?= partial('temi_scelta', ['torna' => '/#temi']) ?>
 </section>

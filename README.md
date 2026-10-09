@@ -33,12 +33,15 @@ verso l'esterno è una scommessa fra guadagno e rischio.
 - **Lasciare il segno**: stagioni con classifica e albo d'oro, oltre cento
   traguardi a livelli (alcuni segreti) con contatori di carriera che restano, e
   titoli onorifici accanto al nome.
+- **Scegliere la propria plancia** fra sei temi grafici ispirati alla
+  fantascienza: Console, LCARS (la plancia di Star Trek: The Next Generation),
+  il terminale MU/TH/UR di Alien, il Cockpit di Elite Dangerous, la Cintura di
+  The Expanse e il Neon di Blade Runner. Cambiano colori, caratteri, forme e
+  mappa stellare; il gioco resta lo stesso. Si provano già dalla pagina
+  iniziale, prima di iscriversi.
 
 Tutto in tempo reale nel browser, dal telefono come dal computer, anche come
-app installata, con sei **temi grafici** a scelta: Console, LCARS (la plancia
-di Star Trek: The Next Generation), il terminale MU/TH/UR di Alien, il Cockpit
-di Elite Dangerous, la Cintura di The Expanse e il Neon di Blade Runner. Ogni
-regola è regolabile dal pannello di amministrazione.
+app installata. Ogni regola è regolabile dal pannello di amministrazione.
 
 Implementazione **originale** delle meccaniche di gioco: non contiene codice,
 testi o artwork della door proprietaria.
@@ -331,8 +334,9 @@ testi o artwork della door proprietaria.
   worker (guscio offline) e mappa con pan e zoom touch. Il service worker
   richiede HTTPS.
 
-- **Temi grafici** — sei, a scelta dal profilo (anteprime in miniatura) o dal
-  piè di pagina di ogni schermata, anche prima dell'accesso. La scelta sta
+- **Temi grafici** — sei, a scelta dalla pagina iniziale e dal profilo
+  (anteprime in miniatura) o dal piè di pagina di ogni schermata, anche prima
+  dell'accesso. La scelta sta
   sull'account (`users.tema`), quindi vale su ogni dispositivo, e in un cookie
   per chi non è entrato; la pagina esce già col tema giusto, senza lampi.
 
@@ -591,7 +595,7 @@ php tests/run.php                # tutte
 php tests/run.php economica      # solo i file col nome che contiene "economica"
 ```
 
-Suite di integrazione senza dipendenze, 632 verifiche in 29 file: integrità
+Suite di integrazione senza dipendenze, 634 verifiche in 29 file: integrità
 economica, concorrenza, banca/contratti/Officina, combattimento, navigazione,
 nave e moduli, pianeti, porti, equipaggio, mondo, percorsi di gioco normali,
 universo, clock, sessioni e turni, difese, iscrizione e posta, immagini,
