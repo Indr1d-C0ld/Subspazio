@@ -4,6 +4,13 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-09 — La presentazione tiene conto delle correzioni dell'audit
+
+- **[views/home.php](views/home.php)** — «La legge»: nave di soccorso senza
+  premi nemmeno quando attacca, scorta dei mercantili che respinge vicino a
+  Sol; «Sempre in contatto»: il notiziario con i comunicati.
+- **README.md** — le stesse correzioni in «Il gioco in breve».
+
 ## 2026-10-09 — L'aiuto contestuale racconta le regole cambiate dagli audit
 
 - **[src/Game/Help.php](src/Game/Help.php)** — `plancia.armi` (nave di soccorso,

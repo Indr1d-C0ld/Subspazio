@@ -22,7 +22,9 @@ verso l'esterno è una scommessa fra guadagno e rischio.
   taglia sulla sua testa la paga lui: chi lo abbatte la incassa, confiscata dai
   crediti a bordo e poi dalla banca del ricercato; uno al verde non rende
   nulla, e la nave di soccorso gratuita, abbattuta, non vale né esperienza né
-  bottino. I mercantili viaggiano scortati, fuggono e chiamano soccorso.
+  bottino né reputazione, nemmeno quando è lei ad attaccare. I mercantili
+  viaggiano scortati, fuggono e chiamano soccorso; vicino a Sol la loro scorta
+  respinge chi li aggredisce.
 - **Equipaggiare la nave** con 88 moduli in 18 famiglie, da Civile a
   Precursore, con affissi casuali; consumabili monouso, reperti da collezionare,
   progetti che sbloccano ricette d'Officina.
