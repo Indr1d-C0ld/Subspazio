@@ -4,6 +4,15 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-09 — I README raccontano le correzioni dell'audit
+
+- **README.md** (copia pubblica) — moduli (smontaggio e moduli guasti),
+  occultamento (ricarica), taglie e combattimento (nave di soccorso, attacco
+  tardivo), mercantili (scorta che respinge), stagioni (manutenzione, doppio
+  invio), tempo reale (battito), sicurezza (lucchetti e transazioni annullate).
+- **README.md** (progetto) — le stesse regole coi nomi nel codice; la voce Audit
+  riassume il quinto passaggio e l'incidente della Stagione 3.
+
 ## 2026-10-09 — La presentazione tiene conto delle correzioni dell'audit
 
 - **[views/home.php](views/home.php)** — «La legge»: nave di soccorso senza

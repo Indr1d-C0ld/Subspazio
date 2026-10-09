@@ -83,7 +83,9 @@ testi o artwork della door proprietaria.
   rarità (Civile, Militare, Sperimentale, Xeno, Precursore): si trovano come
   bottino, occupano slot per categoria, si installano, smontano e potenziano
   (con recupero in «Leghe»), e sovrappongono i loro bonus alle statistiche
-  della nave. Il catalogo conta **88 modelli in 18 famiglie**, ognuna con un
+  della nave. Un modulo che alza un tetto (hangar, stive) si smonta solo se
+  caccia e carico ci stanno ancora senza (gli scudi in più si disperdono); un
+  modulo guasto non conta, nemmeno nei tetti, finché non si ripara. Il catalogo conta **88 modelli in 18 famiglie**, ognuna con un
   modello per rarità (l'occultamento solo dalle tre più alte):
 
   | Slot | Famiglie |
@@ -95,8 +97,8 @@ testi o artwork della door proprietaria.
   | Utility | stive, recupero (Leghe), occultamento, officina (caccia prodotti ogni ora) |
 
   L'**occultamento** è un attraversamento, non un rifugio: il dispositivo ha
-  una riserva di 8 cariche (una per salto, ne torna una ogni 10 minuti; a
-  riserva vuota la nave riappare), ogni aggancio può scoprire la nave (dal 5%
+  una riserva di 8 cariche (una per salto, ne torna una ogni 10 minuti e
+  saltare non azzera la ricarica in corso; a riserva vuota la nave riappare), ogni aggancio può scoprire la nave (dal 5%
   nella Cintura al 40% nell'Orlo, +20% contro pattuglie ed élite, meno coi
   modelli rari del dispositivo), e qualunque interazione col settore —
   commercio, mercato nero, pianeti, relitti, depositi, estrazione, anomalie,
@@ -144,7 +146,11 @@ testi o artwork della door proprietaria.
   «Legge federale»). Chi si difende e distrugge l'attaccante riceve
   l'uccisione, la taglia e i contratti sulla sua testa. Abbattere una capsula
   di salvataggio, o la nave di soccorso gratuita dello StarDock finché non se
-  ne compra una vera, non vale come uccisione: niente esperienza né moduli.
+  ne compra una vera, non vale come uccisione: niente esperienza, moduli né
+  reputazione, nemmeno quando è lei ad attaccare e chi si difende la abbatte.
+  Un attacco a un NPC che arriva tardi (già abbattuto da altri o cambiato nel
+  frattempo) viene respinto senza costi: niente turni, consumabili od
+  occultamento persi.
 
 - **Equipaggio** — ufficiali generati da archetipi, 6 ruoli con **bonus
   passivo** (fuso nelle statistiche dopo i moduli) e **abilità attiva**,
@@ -253,7 +259,9 @@ testi o artwork della door proprietaria.
   **fuggire** in un settore vicino (35%, meno con un proiettore
   d'interdizione) e lanciano una **richiesta di soccorso**: una pattuglia
   parte a due o tre salti e insegue l'aggressore per 30 minuti, ricercato o no
-  (sempre nella Cintura, 30% nell'Orlo). Famiglia `mercanti`.
+  (sempre nella Cintura, 30% nell'Orlo). Se la scorta vince, vicino a Sol
+  respinge l'aggressore (caccia e scudi azzerati) invece di razziarlo.
+  Famiglia `mercanti`.
 
 - **Industria & produzione** — laser minerario per estrarre da un giacimento di
   asteroidi (minerale e Cristalli, a più passaggi); **raffineria** allo
@@ -302,8 +310,10 @@ testi o artwork della door proprietaria.
   Con la **ripartenza totale** si azzerano anche moduli, ufficiali, progetti,
   collezioni e corporazioni. L'universo si rigenera a scelta. Mentre si azzera
   il gioco è fermo: il clock aspetta e le pagine rispondono «Fine stagione in
-  corso» (l'amministratore entra); se la chiusura si interrompe, il gioco resta
-  chiuso invece di riaprire a metà. Banditi e sospesi non compaiono in
+  corso» (l'amministratore entra), anche dopo la rigenerazione dell'universo;
+  se la chiusura si interrompe, il gioco resta chiuso invece di riaprire a
+  metà. Il modulo del pannello indica la stagione da chiudere: un doppio invio
+  non chiude anche quella appena aperta. Banditi e sospesi non compaiono in
   classifica né nell'albo.
 
 - **Traguardi** — **109**, in sette categorie (commercio, combattimento,
@@ -336,7 +346,9 @@ testi o artwork della door proprietaria.
   ricorda cosa ha mostrato e da dove riprendere, così cambiare schermata non
   ripresenta notifiche vecchie. Ogni comandante tiene aperti al massimo tre
   stream (`live.stream_paralleli`): il quarto chiude il più vecchio, di solito
-  una pagina già lasciata, che si riaggancia se torna in primo piano. Web App Manifest, service
+  una pagina già lasciata, che si riaggancia se torna in primo piano. Ogni
+  stream batte ogni cinque secondi (`live_streams.visto_at`): quelli di
+  processi morti senza chiudersi non contano. Web App Manifest, service
   worker (guscio offline) e mappa con pan e zoom touch. Il service worker
   richiede HTTPS.
 
@@ -713,6 +725,13 @@ deploy/                apache-subspazio.conf
   database li applica una volta sola — non su una copia in memoria letta a
   inizio richiesta. Due richieste concorrenti dello stesso comandante non
   possono spendere lo stesso saldo né raccogliere due volte lo stesso deposito.
+  Dove serve si rilegge la riga bloccata (`FOR UPDATE`), sempre nello stesso
+  ordine (comandante, poi nave), così due schede non si aspettano a vicenda.
+  I dettagli che non devono far fallire un'azione (contatori, avvisi, bottino)
+  ingoiano i propri errori, tranne quando il database ha già annullato la
+  transazione in corso (stallo, o riga cambiata con
+  `innodb_snapshot_isolation`): allora l'errore risale e l'azione si annulla
+  per intero, invece di proseguire a metà.
 - **Nessuna risorsa da server esterni**: i caratteri dei temi sono ospitati
   dal gioco e la CSP (`default-src 'self'`, script solo dal sito) non ammette
   altro, quindi il browser di un giocatore non contatta nessuno fuori da
