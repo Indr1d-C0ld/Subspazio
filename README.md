@@ -62,7 +62,9 @@ testi o artwork della door proprietaria.
   **mercato nero**: compra a premio sul prezzo equo del porto locale — ma non
   la merce che il porto del settore vende, così non esiste arbitraggio sul
   posto — e vende hardware scontato; ogni affare costa allineamento, e per
-  una cifra ripulisce la taglia. Il commercio non consuma turni.
+  una cifra ripulisce la taglia accumulata uccidendo comandanti onesti (la
+  notorietà federale no: per quella c'è l'ammenda). Il commercio non consuma
+  turni.
 
 - **Navi, hardware & moduli** — cantiere StarDock: acquisto navi con permuta
   (stive, caccia e scudi passano alla nuova nave fino al suo tetto, e ciò che
@@ -129,15 +131,12 @@ testi o artwork della door proprietaria.
   con un tetto) che intercettano all'ingresso nel settore, distruzione della
   nave con capsula di salvataggio, gradi e allineamento, protezione novizio,
   **replay round per round** di ogni battaglia.
-  **Taglie**: chi uccide comandanti onesti accumula una taglia, che incassa
-  chi lo abbatte. Ogni taglia la paga chi ce l'ha sulla testa: la Federazione
-  la confisca ai suoi crediti a bordo e poi alla sua banca, fino all'importo,
-  e da un ricercato al verde non si ricava nulla (versata dal nulla, un
-  secondo account si faceva ricercato apposta). Chi si difende e distrugge
-  l'attaccante riceve l'uccisione e i contratti sulla sua testa. Abbattere una
-  capsula di salvataggio, o la nave di soccorso gratuita dello StarDock finché
-  non se ne compra una vera, non vale come uccisione: niente esperienza né
-  moduli.
+  **Taglie**: chi abbatte un ricercato, o chi ha ucciso comandanti onesti,
+  incassa la sua taglia, che paga lui: confiscata a bordo e in banca (vedi
+  «Legge federale»). Chi si difende e distrugge l'attaccante riceve
+  l'uccisione, la taglia e i contratti sulla sua testa. Abbattere una capsula
+  di salvataggio, o la nave di soccorso gratuita dello StarDock finché non se
+  ne compra una vera, non vale come uccisione: niente esperienza né moduli.
 
 - **Equipaggio** — ufficiali generati da archetipi, 6 ruoli con **bonus
   passivo** (fuso nelle statistiche dopo i moduli) e **abilità attiva**,
@@ -221,7 +220,24 @@ testi o artwork della door proprietaria.
   abbattimento per la taglia riportano il colpevole sotto la soglia di
   Ricercato, e una squadra lascia stare chi non è più ricercato. L'**ammenda** (pagina Fazioni, da ovunque) azzera la notorietà a
   400 cr per punto, moltiplicati per la recidiva. Tutto regolabile nella
-  famiglia `legge`.
+  famiglia `legge`. Pirati, Ferrengi, ricercati e comandanti fuorilegge si
+  attaccano senza colpa.
+
+  **Taglie**. Da Ricercato si ha una taglia di 300 cr per punto di notorietà
+  (`legge.taglia_per_punto`); chi uccide comandanti onesti ne accumula
+  un'altra, pari al 10% del bottino (`combat.bounty_pct`). Entrambe le paga
+  **chi le ha sulla testa**: quando viene abbattuto, la Federazione le
+  confisca prima ai suoi crediti a bordo (dopo il bottino di chi l'ha
+  abbattuto) e poi al suo conto in banca, fino all'importo, e le versa a chi
+  l'ha abbattuto (anche a chi si difende e distrugge un aggressore
+  ricercato). Da un ricercato al verde non si ricava nulla: nessun credito
+  nasce dal nulla. Una riscossione conta una volta sola anche se le taglie
+  sono due. Fino al 09/10/2026 la taglia federale la versava la Federazione,
+  e un secondo account con la nave di soccorso gratuita si faceva ricercato
+  apposta per farla incassare al principale: per questo anche la **nave di
+  soccorso**, finché non se ne compra una vera, abbattuta non vale esperienza,
+  uccisione né moduli, come la capsula. Le taglie riscosse e i ricercati più
+  quotati finiscono nel notiziario della Federazione.
 
 - **Mercantili** — viaggiano con una **scorta armata** proporzionata alla
   fascia (da 300–800 caccia nella Cintura a 20.000–60.000 nell'Orlo), portano

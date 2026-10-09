@@ -4,6 +4,19 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-09 — I README raccontano le nuove taglie
+
+- **README.md** (copia pubblica) — in «Legge federale» un paragrafo
+  «Taglie»: le due taglie (300 cr per punto da Ricercato, 10% del bottino per
+  chi uccide onesti), pagate da chi le ha sulla testa e confiscate a bordo e
+  poi in banca, nulla da un ricercato al verde, una riscossione per
+  abbattimento, il motivo del cambio e la nave di soccorso senza premio, il
+  notiziario. «Combattimento» rimanda lì; il mercato nero ripulisce la taglia
+  da uccisioni, non la notorietà.
+- **README.md** (progetto) — nuova voce «Legge federale e taglie» fra le
+  evoluzioni, con i nomi nel codice (`Legge::confisca`, `riscuoti`, `riduci`,
+  `ships.soccorso`, `combat_log.detail.taglia`).
+
 ## 2026-10-09 — Il notiziario della Federazione racconta legge e taglie
 
 - **[src/Game/FedNews.php](src/Game/FedNews.php)** — due notizie nuove dopo la
