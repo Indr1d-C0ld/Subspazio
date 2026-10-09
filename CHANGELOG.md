@@ -4,6 +4,18 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-09 — Il notiziario apre con i comunicati della Federazione
+
+- **[src/Game/FedNews.php](src/Game/FedNews.php)** — `comunicati()`: i testi di
+  `fednews.comunicato` (separati da «|») aprono il bollettino fino a
+  `fednews.comunicato_fino`; si cambiano dal pannello.
+- **[db/migrations/0066_comunicati.sql](db/migrations/0066_comunicati.sql)** —
+  le chiavi e il primo comunicato (fino al 16/10): la chiusura per errore della
+  Stagione 3, riaperta, con quel che si è perso, e le correzioni del quinto
+  audit che si notano giocando.
+- **src/Game/Help.php** — `plancia.notiziario`. **tests/quinto_audit.php** — 4
+  verifiche; suite a 657. **README.md** (progetto e pubblico).
+
 ## 2026-10-09 — Quinto audit: soccorso, stalli, lucchetti, stagione, temi (e un incidente)
 
 Rilette a mente fresca le correzioni del quarto audit e il codice della

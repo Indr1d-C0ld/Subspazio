@@ -106,7 +106,7 @@ final class FedNews
     /** @return list<string> */
     private static function compose(): array
     {
-        $h = [];
+        $h = self::comunicati();
         $hrs = self::intervalHours();
 
         // 1) mercato: evento attivo più recente
@@ -242,6 +242,30 @@ final class FedNews
         $h[] = 'Bollettino di servizio: ' . $servizio[(int) date('z') % count($servizio)] . ' Buona rotta, comandanti.';
 
         return $h;
+    }
+
+    /**
+     * I comunicati della Federazione (fednews.comunicato, piu' testi separati
+     * da «|»): aprono il bollettino fino a fednews.comunicato_fino. Servono per
+     * cio' che lo stato del gioco non racconta da solo, come un disservizio o
+     * una regola cambiata. Una scadenza illeggibile vale come scaduta.
+     *
+     * @return list<string>
+     */
+    private static function comunicati(): array
+    {
+        $testo = trim(GameConfig::str('fednews.comunicato', ''));
+        if ($testo === '') {
+            return [];
+        }
+        $fino = trim(GameConfig::str('fednews.comunicato_fino', ''));
+        if ($fino !== '') {
+            $t = strtotime($fino);
+            if ($t === false || $t < time()) {
+                return [];
+            }
+        }
+        return array_values(array_filter(array_map('trim', explode('|', $testo)), static fn (string $c): bool => $c !== ''));
     }
 
     /**

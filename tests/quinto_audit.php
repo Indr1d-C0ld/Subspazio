@@ -156,6 +156,28 @@ return static function (): void {
         // Le tre piu' recenti sono di processi morti senza chiudersi.
         Database::run('UPDATE live_streams SET visto_at = DATE_SUB(NOW(), INTERVAL 5 MINUTE) WHERE id IN (?, ?, ?)', [$aperti[1], $aperti[2], $aperti[3]]);
         Esito::verifica('stream morti non chiudono uno vivo', !\App\Game\Live::streamSuperato((int) $t['id'], $aperti[0]));
+
+        Esito::sezione('Notiziario — i comunicati della Federazione');
+
+        // La configurazione cambia solo in memoria: il comunicato vero resta.
+        \App\Game\GameConfig::str('fednews.comunicato', '');
+        $cache = new ReflectionProperty(\App\Game\GameConfig::class, 'cache');
+        $c0 = $cache->getValue();
+        $titoli = static function (string $testo, string $fino) use ($cache, $c0): array {
+            $cache->setValue(null, ['fednews.comunicato' => $testo, 'fednews.comunicato_fino' => $fino] + (array) $c0);
+            try {
+                return (new ReflectionMethod(\App\Game\FedNews::class, 'compose'))->invoke(null);
+            } finally {
+                $cache->setValue(null, $c0);
+            }
+        };
+        $domani = date('Y-m-d H:i', time() + 86400);
+        $t = $titoli('__test_ primo comunicato | __test_ secondo', $domani);
+        // Prima il notiziario non sapeva dire nulla che i numeri non dicessero.
+        Esito::uguale('i comunicati aprono il bollettino, nell\'ordine', ['__test_ primo comunicato', '__test_ secondo'], array_slice($t, 0, 2));
+        Esito::verifica('scaduti, spariscono', !in_array('__test_ primo comunicato', $titoli('__test_ primo comunicato', date('Y-m-d H:i', time() - 60)), true));
+        Esito::verifica('senza scadenza, restano', in_array('__test_ fisso', $titoli('__test_ fisso', ''), true));
+        Esito::verifica('una scadenza illeggibile vale come scaduta', !in_array('__test_ x', $titoli('__test_ x', 'domani'), true));
     } finally {
         if ($npcIds !== []) {
             Database::run('DELETE FROM npcs WHERE id IN (' . implode(',', array_fill(0, count($npcIds), '?')) . ')', $npcIds);

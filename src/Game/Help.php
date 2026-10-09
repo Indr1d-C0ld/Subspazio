@@ -25,7 +25,7 @@ final class Help
         'plancia.prede'         => 'Le navi a cui hai agganciato una mina Limpet: ne vedi la posizione in tempo reale finché non raggiungono lo StarDock.',
         'plancia.primipassi'    => 'Obiettivi guidati per iniziare: completandoli tutti ricevi una ricompensa una tantum.',
         'plancia.incontro'      => 'Un evento di percorso: scegli come reagire: alcune opzioni fanno una prova di abilità di un ufficiale. Riparti senza scegliere e l\'occasione svanisce.',
-        'plancia.notiziario'    => 'Il bollettino della Federazione, composto dallo stato reale del gioco. Versione integrale nella Radio.',
+        'plancia.notiziario'    => 'Il bollettino della Federazione, composto dallo stato reale del gioco e aperto, quando serve, dai comunicati della Federazione (disservizi, regole cambiate). Versione integrale nella Radio.',
         'plancia.sonda'         => 'Lancia una sonda in un settore adiacente per vederne contenuto e pericoli senza entrarci.',
         'plancia.armi'          => 'Attacchi, assalti ai porti e dispiegamento di caccia e mine nel settore. Vietato in spazio Federazione. Chi abbatte un ricercato incassa la sua taglia, confiscata a lui (crediti a bordo, poi banca): da uno al verde non si ricava nulla. Capsule e navi di soccorso abbattute non valgono esperienza né bottino.',
         'plancia.occultamento'  => 'Il dispositivo ti toglie dai sensori, ma con una riserva di energia (una carica per salto, che si ricarica col tempo) e senza garanzie: ogni aggancio può scoprirti, più facilmente lontano da Sol. Qualunque interazione col settore (commercio, pianeti, relitti, estrazione, scansione) lo fa cadere.',
