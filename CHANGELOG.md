@@ -4,6 +4,15 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-09 — I README raccontano i temi grafici ovunque
+
+- **README.md** (copia pubblica) — i temi anche in «Come si gioca»,
+  «Ispirazioni» (omaggi a TNG, Alien, Elite Dangerous, The Expanse, Blade
+  Runner: nessun logo né grafica originale), «Sicurezza» (nessuna risorsa
+  esterna, CSRF, cookie, ritorno interno) e nella sezione dei temi come
+  aggiungerne uno, con le trappole da evitare.
+- **README.md** (progetto) — le stesse aggiunte in breve.
+
 ## 2026-10-09 — La presentazione del gioco mostra i temi grafici
 
 - **[views/home.php](views/home.php)** — voce «La tua plancia» in «Cosa ti

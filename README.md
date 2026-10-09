@@ -357,6 +357,18 @@ testi o artwork della door proprietaria.
   scarica solo quelli del suo tema. Animazioni ferme con
   `prefers-reduced-motion`.
 
+  **Aggiungere un tema**: una voce in `App\Core\Temi::CATALOGO` (nome,
+  ispirazione, colore della barra del browser, cinque colori per l'anteprima),
+  un foglio `assets/css/temi/<chiave>.css` che ridefinisce le variabili sotto
+  `html[data-tema="<chiave>"]` e, se serve, la forma dei componenti sotto
+  `[data-tema="<chiave>"]`, e gli eventuali caratteri in `assets/fonts/` con la
+  loro licenza. Pagina iniziale, Profilo, guida, aiuto contestuale e notiziario
+  lo mostrano da soli; `tests/temi.php` controlla che foglio, caratteri e
+  licenze ci siano. Due attenzioni: una regola del tema su `.btn` scavalca le
+  varianti di `app.css` (`.btn.warp`, `.btn.danger`), che vanno ridefinite; e un
+  `clip-path` o un `overflow` diverso sui pannelli taglia le tendine d'aiuto e
+  le schede a comparsa che ne escono.
+
 - **Account & posta** — iscrizione con **autovalidazione dell'indirizzo**: chi
   si registra riceve un collegamento monouso e attiva l'account da sé, senza
   passare da un amministratore. Stessa meccanica per il **recupero della
@@ -406,6 +418,10 @@ Stare offline non fa perdere nulla: al rientro in plancia il **rapporto di
 rientro** riassume cosa è maturato. Periodicamente una **stagione** si chiude
 con un soft-reset dei comandanti (traguardi e albo d'oro restano).
 
+L'aspetto della plancia lo sceglie ciascuno: sei **temi grafici**, da provare
+già nella pagina iniziale, poi dal Profilo o dal menu «Tema» in fondo a ogni
+schermata. La scelta segue l'account su ogni dispositivo e non tocca il gioco.
+
 ## Ispirazioni
 
 L'ossatura è quella di **TradeWars 2002**, la *door* per BBS: settori, warp,
@@ -416,6 +432,14 @@ galattiche), il tono di plancia di **Star Trek: The Next Generation** (radio
 subspaziale, comunicazioni diplomatiche, giornale di bordo, ufficiali con i loro
 ruoli) e, da **Mass Effect**, l'equipaggio con ruoli e lealtà, la reputazione a
 livelli con fazioni rivali e le missioni fuori dalla nave con esiti che pesano.
+
+I **temi grafici** rendono omaggio alle interfacce della fantascienza: le
+schermate LCARS di **Star Trek: The Next Generation**, il calcolatore di bordo
+della Nostromo in **Alien** (1979), l'abitacolo di **Elite Dangerous**, i visori
+di **The Expanse** e le insegne della Los Angeles di **Blade Runner**. Sono
+omaggi e non riproduzioni: nessun logo, marchio, immagine o carattere
+originale, solo palette, forme e caratteri liberi (OFL) che ne richiamano lo
+spirito. I nomi appartengono ai rispettivi titolari.
 
 ## Requisiti
 
@@ -678,6 +702,13 @@ deploy/                apache-subspazio.conf
   database li applica una volta sola — non su una copia in memoria letta a
   inizio richiesta. Due richieste concorrenti dello stesso comandante non
   possono spendere lo stesso saldo né raccogliere due volte lo stesso deposito.
+- **Nessuna risorsa da server esterni**: i caratteri dei temi sono ospitati
+  dal gioco e la CSP (`default-src 'self'`, script solo dal sito) non ammette
+  altro, quindi il browser di un giocatore non contatta nessuno fuori da
+  SubSpazio. La scelta del tema passa da `POST /tema` (token CSRF come ogni
+  form), il cookie `subspazio_tema` è HttpOnly e `SameSite=Lax`, e dopo la
+  scelta si torna solo a un percorso interno (con al più un'ancora semplice):
+  mai un indirizzo intero o «//altro-sito».
 - **Immagini caricate** ricodificate lato server con GD (EXIF e payload
   spogliati), MIME riconosciuto dal contenuto e non dal nome, limiti di
   dimensione e lato.
