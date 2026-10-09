@@ -102,6 +102,18 @@ return static function (): void {
             $pdo->rollBack();
         }
 
+        // Gli avvisi di servizio durano oltre il comunicato: quello sulle taglie
+        // prometteva «niente bottino» (i crediti a bordo si perdono), e le
+        // regole chiarite dall'audit (moduli guasti, ammenda) non c'erano.
+        $avvisi = (new ReflectionMethod(FedNews::class, 'avvisiDiServizio'))->invoke(null);
+        $avviso = static fn (string $parola): string => (string) (array_values(array_filter($avvisi, static fn ($a) => str_contains($a, $parola)))[0] ?? '');
+        Esito::verifica('l\'avviso sulle taglie non promette «niente bottino»',
+            !str_contains($avviso('taglie'), 'bottino') && str_contains($avviso('taglie'), 'crediti a bordo si perdono'), $avviso('taglie'));
+        Esito::verifica('un avviso spiega i moduli guasti, con le ore vere',
+            str_contains($avviso('guasto'), \App\Game\Subsystems::autoRepairHours() . ' ore') && str_contains($avviso('guasto'), 'Ingegnere'));
+        Esito::verifica('e uno l\'ammenda, che azzera la notorietà e non la taglia da uccisioni',
+            str_contains($avviso('ammenda'), 'azzera la notorietà') && str_contains($avviso('ammenda'), 'mercato nero'));
+
         Esito::sezione('Nave di soccorso — niente premio, ma l\'omicidio conta');
 
         // Il quinto audit saltava tutta la reputazione per capsule e navi di

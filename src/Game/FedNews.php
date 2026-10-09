@@ -311,7 +311,14 @@ final class FedNews
             'la protezione novizio resta attiva ' . GameConfig::int('newbie.protect_hours', 48) . ' ore dopo la registrazione.',
             'le taglie le paga chi le ha sulla testa. Chi abbatte un ricercato incassa la sua taglia, confiscata ai crediti a bordo'
                 . ' e poi alla banca del ricercato: da un ricercato al verde non si ricava nulla. Capsule e navi di soccorso abbattute'
-                . ' non valgono esperienza né bottino.',
+                . ' non valgono esperienza né moduli, ma i crediti a bordo si perdono come sempre e l\'omicidio di un onesto la'
+                . ' Federazione lo conta comunque.',
+            // le regole che il sesto audit ha trovato raccontate male in guida e aiuto
+            'un modulo guasto non conta nei tetti finché non è riparato: al Cantiere, o prima da un Ingegnere a bordo,'
+                . ' e comunque da solo dopo ' . Subsystems::autoRepairHours() . ' ore. Intanto non blocca lo smontaggio'
+                . ' degli altri moduli, nemmeno con le stive piene.',
+            'l\'ammenda azzera la notorietà da qualunque settore, a ' . number_format(GameConfig::int('legge.ammenda_per_punto', 400), 0, ',', '.')
+                . ' cr per punto (di più per i recidivi); la taglia da uccisioni di comandanti onesti resta, e la ripulisce il mercato nero.',
             'ogni comandante sceglie l\'aspetto della sua plancia fra ' . count($temi) . ' temi grafici: '
                 . implode(', ', array_slice($temi, 0, -1)) . ' e ' . end($temi) . '. Si cambia dal Profilo, o dal piè di pagina'
                 . ' di qualunque schermata; vale per l\'account su ogni dispositivo. Cambia l\'aspetto, non il gioco.',

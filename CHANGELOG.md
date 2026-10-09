@@ -4,6 +4,22 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-09 — Il notiziario racconta le correzioni del sesto audit
+
+- **[src/Game/FedNews.php](src/Game/FedNews.php)** — avvisi di servizio:
+  quello sulle taglie diceva che capsule e navi di soccorso abbattute non
+  valgono «bottino», ma i crediti a bordo si perdono: ora dice «moduli», e
+  che l'omicidio di un onesto la Federazione lo conta. Due avvisi nuovi per
+  le regole che il sesto audit ha trovato raccontate male: i moduli guasti
+  (si riparano al Cantiere, con l'Ingegnere o da soli dopo
+  `subsys.auto_repair_hours`, e non bloccano l'officina) e l'ammenda (azzera
+  la notorietà, non la taglia da uccisioni, che ripulisce il mercato nero).
+  Il comunicato in testa al bollettino era già stato aggiornato (0068).
+- **[tests/sesto_audit.php](tests/sesto_audit.php)** — tre verifiche sugli
+  avvisi. Suite: 682 verifiche.
+- **README.md**, **docs/roadmap.md**, **tests/README.md** — gli avvisi di
+  servizio.
+
 ## 2026-10-09 — Radio recuperata e comunicato corretto
 
 - **[db/migrations/0068_comunicato_ripristino.sql](db/migrations/0068_comunicato_ripristino.sql)** —
