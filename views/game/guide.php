@@ -158,8 +158,36 @@ $sec = static function (string $icon, string $title, string $body, string $class
   <?= $sec('🏆', 'Meta',
       '<p><strong>Stagioni</strong> con ladder e Albo d\'Oro, <strong>traguardi</strong>, <strong>corporazioni</strong> e alleanze, '
     . '<strong>contratti</strong> e taglie fra giocatori, <strong>radio</strong> subspaziale. '
-    . 'Dal <a href="' . e(url('/gioco/profilo#tema')) . '">Profilo</a> (o dal piè di pagina) scegli il <strong>tema grafico</strong>: '
-    . 'Console, LCARS, Terminale MU/TH/UR, Cockpit, Cintura o Neon. '
+    . 'L\'aspetto della plancia lo scegli tu: vedi «Temi grafici». '
     . '<a href="' . e(url('/gioco/classifica')) . '">Classifica</a> · <a href="' . e(url('/gioco/traguardi')) . '">Traguardi</a> · '
     . '<a href="' . e(url('/gioco/corp')) . '">Corp</a> · <a href="' . e(url('/gioco/albo')) . '">Albo</a></p>') ?>
+
+  <?php
+  // Il catalogo e' quello di App\Core\Temi: un tema nuovo compare qui da solo.
+  $temaInUso = \App\Core\Temi::attuale();
+  $righeTemi = '';
+  foreach (\App\Core\Temi::CATALOGO as $k => $t) {
+      $tinte = '';
+      foreach ($t['anteprima'] as $c) {
+          $tinte .= '<span style="background:' . e($c) . '"></span>';
+      }
+      $azione = $k === $temaInUso
+          ? '<span class="pill ok">in uso</span>'
+          : '<form method="post" action="' . e(url('/tema')) . '" class="inline">' . csrf_field()
+            . '<input type="hidden" name="torna" value="/gioco/guida"><input type="hidden" name="tema" value="' . e($k) . '">'
+            . '<button type="submit" class="btn xs ghost">Usa</button></form>';
+      $righeTemi .= '<tr><td class="nowrap"><span class="tema-tinte" aria-hidden="true">' . $tinte . '</span> <strong>' . e($t['nome']) . '</strong></td>'
+          . '<td>' . e($t['ispirazione']) . '</td><td class="ta-r nowrap">' . $azione . '</td></tr>';
+  }
+  ?>
+  <?= $sec('🎨', 'Temi grafici',
+      '<p>L\'interfaccia ha ' . count(\App\Core\Temi::CATALOGO) . ' <strong>temi</strong>, ispirati a plance e terminali '
+    . 'della fantascienza. Un tema cambia colori, caratteri e forme di barre, pannelli e bottoni, e i colori della mappa '
+    . 'stellare e delle fasce; <strong>non cambia il gioco</strong>: stesse pagine, stessi comandi, stessi numeri.</p>'
+    . '<div class="table-wrap"><table class="tbl compact"><tbody>' . $righeTemi . '</tbody></table></div>'
+    . '<p>Si sceglie dal <a href="' . e(url('/gioco/profilo#tema')) . '">Profilo</a>, con un\'anteprima di ciascuno, '
+    . 'o dal menu <strong>Tema</strong> in fondo a ogni schermata, anche prima di entrare. La scelta resta legata al tuo '
+    . 'account e vale su ogni dispositivo. I caratteri dei temi stanno su SubSpazio: nessun servizio esterno, e scarichi '
+    . 'solo quelli del tema che usi. Se il sistema chiede meno movimento, righe di scansione, pioggia e insegne restano ferme.</p>',
+      'guide-wide') ?>
 </div>

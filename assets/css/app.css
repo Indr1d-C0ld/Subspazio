@@ -225,6 +225,10 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 1rem 0; }
 .tema-mini[data-forma="neon"] .tm-pannello { box-shadow: 0 0 8px -2px var(--t2); }
 .tema-mini[data-forma="neon"] .tm-bottone { box-shadow: 0 0 8px var(--t2); }
 
+/* i cinque colori di un tema, in fila (guida) */
+.tema-tinte { display: inline-flex; vertical-align: -.15em; border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+.tema-tinte span { display: block; width: .55rem; height: 1rem; }
+
 .tema-form { margin-left: .9rem; }
 .tema-form label { display: inline-flex; align-items: center; gap: .4rem; }
 .tema-form select { font-size: .8rem; padding: .2rem 1.8rem .2rem .5rem; }

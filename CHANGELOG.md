@@ -4,6 +4,15 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-09 — La guida di gioco spiega i temi grafici
+
+- **[views/game/guide.php](views/game/guide.php)** — nuova sezione «Temi
+  grafici»: cosa cambiano e cosa no, una riga per tema dal catalogo (colori,
+  nome, ispirazione, bottone «Usa»), dove si sceglie, account su ogni
+  dispositivo, caratteri ospitati, animazioni ferme per chi chiede meno
+  movimento. «Meta» rimanda alla sezione.
+- **[assets/css/app.css](assets/css/app.css)** — `.tema-tinte`.
+
 ## 2026-10-09 — Il notiziario della Federazione racconta i temi grafici
 
 - **[src/Game/FedNews.php](src/Game/FedNews.php)** — «Moda di plancia»: il tema
