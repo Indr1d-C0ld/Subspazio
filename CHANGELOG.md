@@ -4,6 +4,14 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-09 — L'aiuto contestuale racconta le regole cambiate dagli audit
+
+- **[src/Game/Help.php](src/Game/Help.php)** — `plancia.armi` (nave di soccorso,
+  scorta dei mercantili), `plancia.occultamento` (ricarica), `plancia.consumabili`
+  (Nucleo che resta se l'attacco a un NPC è respinto), `moduli.slot` e
+  `cantiere.riparazioni` (tetti, carico, moduli guasti), `fazioni.reputazione`
+  (capsule e navi di soccorso non la muovono).
+
 ## 2026-10-09 — La guida di gioco racconta le regole cambiate dagli audit
 
 - **[views/game/guide.php](views/game/guide.php)** — Combattimento (scorta dei
