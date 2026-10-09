@@ -93,6 +93,9 @@ final class BlackMarket
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
+            // prima il comandante, poi la nave: l'ordine di lucchetti di tutto
+            // il gioco (sesto audit)
+            Database::first('SELECT id FROM players WHERE id = ? FOR UPDATE', [(int) $player['id']]);
             if (!Wallet::takeFromShip((int) $ship['id'], $col, $qty)) {
                 $pdo->rollBack();
                 return ['ok' => false, 'error' => 'Carico insufficiente.'];

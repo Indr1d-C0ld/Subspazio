@@ -17,6 +17,7 @@ declare(strict_types=1);
  *   compra_nave       <playerId> <0=merchant_freighter,1=cargo_transport>
  *   effetto_pendente  <playerId>         (consuma un «free_warp»)
  *   arresto           <playerId>
+ *   abilita           <playerId> <officerId>
  * Esce con 0 se l'azione e' riuscita, 1 altrimenti.
  */
 require dirname(__DIR__) . '/bin/_bootstrap.php';
@@ -55,6 +56,7 @@ $r = match ($azione) {
         \App\Game\Legge::arresto($a[0]);
         return ['ok' => true];
     })(),
+    'abilita'           => \App\Game\Crew::useAbility($player, PlayerService::ship((int) $player['ship_id']), $a[1]),
     default             => ['ok' => false],
 };
 exit(empty($r['ok']) ? 1 : 0);

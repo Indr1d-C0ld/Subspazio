@@ -222,8 +222,11 @@ html[data-tema="cockpit"] {
 
 /* Il clip-path dei bottoni taglierebbe il contorno del focus, tutto fuori dal
    poligono: chi naviga con la tastiera non vedeva dove si trovava. Il segno
-   del focus sta dentro. */
+   del focus sta dentro. I salti hanno regole loro piu' specifiche (l'ombra
+   dei settori ignoti), che lo cancellavano: vanno nominati qui. */
 [data-tema="cockpit"] .btn:focus-visible,
+[data-tema="cockpit"] .btn.warp:focus-visible,
+[data-tema="cockpit"] .btn.warp.unknown:focus-visible,
 [data-tema="cockpit"] a.pill:focus-visible,
 [data-tema="cockpit"] a.tag:focus-visible {
   outline: none;

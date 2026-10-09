@@ -4,6 +4,54 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-09 — Sesto audit: notiziario in radio, omicidi, mercantili, abilità
+
+- **[db/migrations/0067_radio_testo.sql](db/migrations/0067_radio_testo.sql)** —
+  `messages.body` da VARCHAR(500) a TEXT: il notiziario coi comunicati superava
+  i 500 caratteri e alle 21:30 l'invio in radio sarebbe fallito, ogni giorno.
+- **[src/Game/FedNews.php](src/Game/FedNews.php)** — archivio e radio in una
+  sola transazione (un errore non rimanda più il bollettino di 24 ore); al più
+  due comunicati (`MAX_COMUNICATI`), un comunicato scaduto sparisce subito
+  dalla plancia, la notifica annuncia la prima notizia del gioco.
+- **[src/Game/Faction.php](src/Game/Faction.php)**,
+  **[src/Game/Combat.php](src/Game/Combat.php)** — capsule e navi di soccorso
+  abbattute: niente guadagni di reputazione, ma la penalità federale per
+  l'omicidio di un onesto resta. Attacco ai mercantili: fuga e richiesta di
+  soccorso dopo il controllo sotto lucchetto (un mercantile già sparito non
+  costa più turni, occultamento, un crimine e una pattuglia); nave bloccata
+  prima della prima lettura (errore 1020); moduli persi all'abbattimento senza
+  `try` che ingoia.
+- **[src/Game/Crew.php](src/Game/Crew.php)** — la ricarica delle abilità si
+  reclama con la condizione nell'UPDATE: due richieste insieme la usavano due
+  volte. Comandante bloccato prima della nave.
+- **[src/Game/BlackMarket.php](src/Game/BlackMarket.php)**,
+  **[src/Game/Contracts.php](src/Game/Contracts.php)**,
+  **[src/Game/Industry.php](src/Game/Industry.php)** — lucchetti
+  comandante→nave, come nel resto del gioco.
+- **[src/Game/Modules.php](src/Game/Modules.php)** — le stive come l'hangar:
+  si rifiuta lo smontaggio solo se è quel modulo ad abbassare la capacità
+  (una stiva guasta bloccava tutta l'officina).
+- **[src/Game/Shipyard.php](src/Game/Shipyard.php)**,
+  **[src/Game/Codex.php](src/Game/Codex.php)** — niente più `try` che
+  ingoiano stalli dentro le transazioni.
+- **[src/Game/Season.php](src/Game/Season.php)** — `chiusuraAmmessa` in sola
+  lettura; l'annuncio di fine stagione va in onda dopo l'azzeramento della
+  radio, che lo cancellava subito.
+- **[assets/css/temi/cockpit.css](assets/css/temi/cockpit.css)** — anello di
+  focus anche sui salti verso settori ignoti.
+- **[assets/js/app.js](assets/js/app.js)** — selettore dei temi: Invio nella
+  tendina aperta applica subito, le frecce sul campo chiuso no, il cambio di
+  finestra non invia.
+- **[src/Game/Help.php](src/Game/Help.php)**,
+  **[views/game/guide.php](views/game/guide.php)**,
+  **[views/home.php](views/home.php)** — «bottino» diventa «moduli» (i crediti
+  a bordo si perdono), l'ammenda azzera la notorietà e non tutto, i moduli
+  guasti tornano in linea anche da soli o con l'Ingegnere.
+- **[tests/sesto_audit.php](tests/sesto_audit.php)** — 22 verifiche, 15 viste
+  fallire sul codice di prima; `tests/_corsa.php` sa usare un'abilità;
+  `tests/quinto_audit.php` conta la penalità federale. Suite: 679 verifiche.
+- **README.md**, **docs/roadmap.md**, **tests/README.md**, **sw.js** (v54).
+
 ## 2026-10-09 — I README raccontano le correzioni dell'audit
 
 - **README.md** (copia pubblica) — moduli (smontaggio e moduli guasti),

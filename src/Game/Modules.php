@@ -139,10 +139,14 @@ final class Modules
                 return ['ok' => false, 'error' => 'Modulo non installato su questa nave.'];
             }
             // Un modulo di stiva non si toglie con le sue stive piene: il
-            // carico resterebbe a bordo senza posto.
+            // carico resterebbe a bordo senza posto. Come per l'hangar, solo se
+            // e' questo modulo ad abbassare la capacita': con una stiva guasta
+            // e il carico gia' oltre, prima si rifiutava lo smontaggio di
+            // qualunque modulo, compreso quello guasto (sesto audit).
             $nave = Database::first('SELECT * FROM ships WHERE id = ? FOR UPDATE', [(int) $ship['id']]);
-            $eccesso = Economy::holdsUsed($nave) - Economy::capacita($nave);
-            if ($eccesso > 0) {
+            $capacita = Economy::capacita($nave);
+            $eccesso = Economy::holdsUsed($nave) - $capacita;
+            if ($eccesso > 0 && $capacita < Economy::capacita($con)) {
                 $pdo->rollBack();
                 return ['ok' => false, 'error' => "Senza questo modulo il carico non ci sta: scarica prima {$eccesso} unita'."];
             }

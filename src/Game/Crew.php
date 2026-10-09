@@ -322,6 +322,18 @@ final class Crew
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
+            // Prima il comandante, poi la nave (sesto audit). E la ricarica si
+            // reclama qui, con la condizione nell'UPDATE: letta solo sopra, due
+            // richieste insieme la trovavano libera entrambe e l'abilita'
+            // partiva due volte (due riparazioni dell'Ingegnere, per esempio).
+            Database::first('SELECT id FROM players WHERE id = ? FOR UPDATE', [(int) $player['id']]);
+            if (Database::run(
+                'UPDATE officers SET ready_at = ? WHERE id = ? AND (ready_at IS NULL OR ready_at <= NOW())',
+                [date('Y-m-d H:i:s', time() + GameConfig::int('crew.ability_cooldown_min', 90) * 60), $officerId]
+            )->rowCount() === 0) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'Abilità in ricarica.'];
+            }
             switch ($o['role']) {
                 case 'tactical':
                     $mag = 12 + $primary * 0.7 + ($tier - 1) * 12;
@@ -372,10 +384,6 @@ final class Crew
                 $pdo->rollBack();
                 return ['ok' => false, 'error' => "Turni insufficienti (servono {$turnCost})."];
             }
-            Database::run(
-                'UPDATE officers SET ready_at = ? WHERE id = ?',
-                [date('Y-m-d H:i:s', time() + GameConfig::int('crew.ability_cooldown_min', 90) * 60), $officerId]
-            );
             $pdo->commit();
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) {

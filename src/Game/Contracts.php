@@ -179,6 +179,8 @@ final class Contracts
                 $pdo->rollBack();
                 return ['ok' => false, 'error' => 'Contratto gia\' chiuso.'];
             }
+            // prima il comandante, poi la nave (sesto audit)
+            Database::first('SELECT id FROM players WHERE id = ? FOR UPDATE', [(int) $player['id']]);
             if (!Wallet::takeFromShip((int) $ship['id'], $col, (int) $c['qty'])) {
                 $pdo->rollBack();
                 return ['ok' => false, 'error' => "Ti servono {$c['qty']} " . Economy::label((string) $c['commodity']) . ' a bordo.'];

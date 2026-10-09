@@ -46,20 +46,35 @@
   });
 
   // Selettori che si applicano da soli (tema grafico nel piè di pagina):
-  // senza JavaScript resta il bottone «Applica» nel <noscript>. Col mouse si
-  // applica alla scelta; con la tastiera le frecce scorrono le voci senza
-  // inviare (su alcuni browser ogni freccia genera «change», e si veniva
-  // portati via alla prima), e si conferma con Invio o uscendo dal campo.
+  // senza JavaScript resta il bottone «Applica» nel <noscript>. Una scelta
+  // fatta (clic, tocco, Invio nella tendina aperta) si applica subito. Le
+  // frecce e le lettere sul campo chiuso scorrono le voci senza inviare: su
+  // alcuni browser ogni tasto genera «change», e si veniva portati via alla
+  // prima; quel «change» arriva nello stesso istante del tasto, ed e' cosi'
+  // che lo si riconosce. Si conferma con Invio o uscendo dal campo (non
+  // passando a un'altra finestra).
   document.querySelectorAll('select[data-autoinvio]').forEach((sel) => {
     const iniziale = sel.value;
-    let tastiera = false;
+    let ultimoTasto = 0;
+    let inSospeso = false;
     const invia = () => { if (sel.form && sel.value !== iniziale) sel.form.submit(); };
     sel.addEventListener('keydown', (e) => {
-      tastiera = true;
-      if (e.key === 'Enter') { e.preventDefault(); invia(); }
+      if (e.key === 'Enter') {
+        // dopo che il browser ha fissato la voce, senza impedirglielo
+        setTimeout(invia, 0);
+      } else if (e.key !== 'Tab' && e.key !== 'Escape') {
+        ultimoTasto = Date.now();
+      }
     });
-    sel.addEventListener('pointerdown', () => { tastiera = false; });
-    sel.addEventListener('change', () => { if (!tastiera) invia(); });
-    sel.addEventListener('blur', () => { if (tastiera) invia(); });
+    sel.addEventListener('change', () => {
+      if (Date.now() - ultimoTasto < 150) {
+        inSospeso = true;
+      } else {
+        invia();
+      }
+    });
+    sel.addEventListener('blur', () => {
+      if (inSospeso && document.hasFocus()) invia();
+    });
   });
 })();

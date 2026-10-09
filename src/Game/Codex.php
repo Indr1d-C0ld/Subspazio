@@ -20,7 +20,10 @@ final class Codex
                 [$playerId, $key]
             )->rowCount();
             return $n > 0;
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            // dentro una transazione annullata (stallo) l'errore risale: prima
+            // la scoperta mancata nascondeva l'annullamento di tutto il resto
+            Database::rilanciaSeAnnullata($e);
             return false;
         }
     }

@@ -208,9 +208,7 @@ final class Combat
                         Stats::add((int) $atkPlayer['id'], 'taglie_riscosse');
                     }
                 }
-                if (!$senzaPremio) {
-                    Faction::onKillPlayer((int) $atkPlayer['id'], (int) $target['alignment']);
-                }
+                Faction::onKillPlayer((int) $atkPlayer['id'], (int) $target['alignment'], $senzaPremio);
                 self::destroyShip($target);
                 Contracts::onPlayerKilled((int) $target['id'], (int) $atkPlayer['id']);
                 Live::alert((int) $target['id'], 'destroyed', 'Sei stato distrutto', "{$atkPlayer['handle']} ti ha distrutto nel settore {$sectorId}.", '/gioco');
@@ -677,31 +675,7 @@ final class Combat
             return self::err('Non hai caccia da lanciare.');
         }
 
-        // Un mercantile sotto tiro chiama soccorso e, se puo', scappa prima
-        // dello scontro. Un proiettore d'interdizione toglie punti alla fuga.
         $soccorso = false;
-        if ($npc['kind'] === 'trader') {
-            $soccorso = Legge::chiamaSoccorso((int) $atkPlayer['id'], (int) $npc['sector_id']);
-            $fuga = max(0, GameConfig::int('mercanti.fuga_pct', 35) - (int) ($atkShip['mod_effects']['interdict_pct'] ?? 0));
-            $verso = Universe::warpsFrom((int) $npc['sector_id']);
-            if ($verso !== [] && mt_rand(1, 100) <= $fuga) {
-                if (!Wallet::charge((int) $atkPlayer['id'], ['turns' => $turnCost])) {
-                    return self::err("Turni insufficienti (servono {$turnCost}).");
-                }
-                Cloak::drop((int) $atkShip['id'], 'apertura del fuoco');
-                $dove = (int) $verso[array_rand($verso)];
-                Database::run('UPDATE npcs SET sector_id = ?, last_move_at = NOW() WHERE id = ?', [$dove, $npcId]);
-                Legge::crimine((int) $atkPlayer['id'], 'mercantile', (int) $npc['sector_id']);
-                return [
-                    'ok' => true, 'kind' => 'npc', 'fled' => true, 'fled_to' => $dove, 'soccorso' => $soccorso,
-                    'npc_name' => $npc['name'], 'npc_kind' => $npc['kind'], 'rounds' => 0,
-                    'attacker_lost' => 0, 'defender_lost' => 0, 'killed' => false, 'destroyed_self' => false,
-                    'raided' => null, 'loot' => 0, 'exp' => 0, 'drops' => ['items' => [], 'salvage' => 0],
-                    'player' => Database::first('SELECT * FROM players WHERE id = ?', [$atkPlayer['id']]),
-                    'ship'   => PlayerService::ship((int) $atkShip['id']),
-                ];
-            }
-        }
 
         // Aggredire un civile o una pattuglia e' un crimine, anche senza abbatterli.
         $crimini = match ($npc['kind']) {
@@ -733,10 +707,41 @@ final class Combat
                 $pdo->rollBack();
                 return ['ok' => false, 'error' => "Turni insufficienti (servono {$turnCost})."];
             }
+            // La nave sotto lucchetto prima di ogni lettura semplice: la prima
+            // (quella dell'occultamento) fissa la fotografia della transazione,
+            // e se il clock toccava la nave subito dopo, l'aggiornamento delle
+            // perdite falliva con «riga cambiata» (1020, sesto audit).
+            Database::first('SELECT id FROM ships WHERE id = ? FOR UPDATE', [$atkShip['id']]);
             // Solo adesso si apre il fuoco: occultamento che cade e Nucleo in
             // sovraccarico speso stanno nella transazione, e un attacco
             // respinto qui sopra non li brucia (prima si perdevano entrambi).
             Cloak::drop((int) $atkShip['id'], 'apertura del fuoco');
+
+            // Un mercantile sotto tiro, se puo', scappa prima dello scontro. Un
+            // proiettore d'interdizione toglie punti alla fuga. Anche la fuga
+            // sta dopo il controllo qui sopra: prima un attacco a un mercantile
+            // gia' cambiato o abbattuto costava turni, occultamento, un crimine
+            // e una pattuglia alle calcagna, e si leggeva «e' fuggito» (sesto
+            // audit).
+            if ($npc['kind'] === 'trader') {
+                $fuga = max(0, GameConfig::int('mercanti.fuga_pct', 35) - (int) ($atkShip['mod_effects']['interdict_pct'] ?? 0));
+                $verso = Universe::warpsFrom((int) $npc['sector_id']);
+                if ($verso !== [] && mt_rand(1, 100) <= $fuga) {
+                    $dove = (int) $verso[array_rand($verso)];
+                    Database::run('UPDATE npcs SET sector_id = ?, last_move_at = NOW() WHERE id = ?', [$dove, $npcId]);
+                    $pdo->commit();
+                    Legge::crimine((int) $atkPlayer['id'], 'mercantile', (int) $npc['sector_id']);
+                    $soccorso = Legge::chiamaSoccorso((int) $atkPlayer['id'], (int) $npc['sector_id']);
+                    return [
+                        'ok' => true, 'kind' => 'npc', 'fled' => true, 'fled_to' => $dove, 'soccorso' => $soccorso,
+                        'npc_name' => $npc['name'], 'npc_kind' => $npc['kind'], 'rounds' => 0,
+                        'attacker_lost' => 0, 'defender_lost' => 0, 'killed' => false, 'destroyed_self' => false,
+                        'raided' => null, 'loot' => 0, 'exp' => 0, 'drops' => ['items' => [], 'salvage' => 0],
+                        'player' => Database::first('SELECT * FROM players WHERE id = ?', [$atkPlayer['id']]),
+                        'ship'   => PlayerService::ship((int) $atkShip['id']),
+                    ];
+                }
+            }
             $aM = (float) ($atkShip['combat_rating'] ?? 1.0);
             if ($ab = Crew::consumePending((int) $atkPlayer['id'], 'attack_bonus_pct')) {
                 $aM *= 1 + $ab / 100;
@@ -848,6 +853,10 @@ final class Combat
 
         foreach ($crimini as $c) {
             Legge::crimine((int) $atkPlayer['id'], $c, (int) $npc['sector_id']);
+        }
+        // il mercantile aggredito chiama soccorso: solo per un attacco avvenuto
+        if ($npc['kind'] === 'trader') {
+            $soccorso = Legge::chiamaSoccorso((int) $atkPlayer['id'], (int) $npc['sector_id']);
         }
 
         // La flotta non sta a guardare: chi attacca una nave se la ritrova
@@ -1495,23 +1504,22 @@ final class Combat
         $lost = $hadPod ? 0 : (int) floor((int) $player['credits'] * 0.5);
         $podHolds = GameConfig::int('hardware.pod_holds', 5);
 
-        // moduli installati: persi, ma se ne recupera una parte in Leghe
-        try {
-            $refPct = GameConfig::float('loot.death_module_refund_pct', 0.5);
-            $refund = 0;
-            foreach (Database::all(
-                'SELECT it.base_salvage FROM ship_modules sm JOIN item_types it ON it.ckey = sm.item_key WHERE sm.ship_id = ?',
-                [$ship['id']]
-            ) as $mm) {
-                $refund += (int) round((int) $mm['base_salvage'] * $refPct);
-            }
-            if ($refund > 0) {
-                Database::run('UPDATE players SET salvage = salvage + ? WHERE id = ?', [$refund, $player['id']]);
-            }
-            Database::run('DELETE FROM ship_modules WHERE ship_id = ?', [$ship['id']]);
-        } catch (\Throwable) {
-            // tabelle non ancora migrate
+        // moduli installati: persi, ma se ne recupera una parte in Leghe.
+        // Niente piu' try che ingoia: era per le tabelle non ancora migrate, e
+        // dentro l'abbattimento nascondeva stalli e mezze operazioni (rimborso
+        // dato e moduli rimasti a bordo; sesto audit).
+        $refPct = GameConfig::float('loot.death_module_refund_pct', 0.5);
+        $refund = 0;
+        foreach (Database::all(
+            'SELECT it.base_salvage FROM ship_modules sm JOIN item_types it ON it.ckey = sm.item_key WHERE sm.ship_id = ?',
+            [$ship['id']]
+        ) as $mm) {
+            $refund += (int) round((int) $mm['base_salvage'] * $refPct);
         }
+        if ($refund > 0) {
+            Database::run('UPDATE players SET salvage = salvage + ? WHERE id = ?', [$refund, $player['id']]);
+        }
+        Database::run('DELETE FROM ship_modules WHERE ship_id = ?', [$ship['id']]);
 
         Database::run(
             "UPDATE ships SET type_key = 'escape_pod', name = ?, sector_id = ?, holds_total = ?,

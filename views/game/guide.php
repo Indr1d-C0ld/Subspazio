@@ -68,7 +68,8 @@ $sec = static function (string $icon, string $title, string $body, string $class
     . 'allo StarDock: perdi carico e moduli installati (in parte recuperati in Leghe). Dei crediti a bordo, chi ti abbatte '
     . 'ne prende metà; senza <strong>capsula di salvataggio</strong> ne perdi anche metà di quelli rimasti, con la capsula nulla. '
     . 'Se sei a secco chiedi una nave di soccorso al Cantiere: finché non ne compri una vera, abbatterla non vale esperienza, '
-    . 'uccisione, bottino né reputazione, come una capsula, nemmeno quando è lei ad attaccare e tu ti difendi. '
+    . 'uccisione, moduli né guadagni di reputazione, come una capsula, nemmeno quando è lei ad attaccare e tu ti difendi. '
+    . 'I crediti che ha a bordo li perde comunque, e un omicidio la Federazione lo conta lo stesso. '
     . 'Puoi dispiegare <strong>caccia</strong> e <strong>mine</strong> nei settori. '
     . '<a href="' . e(url('/gioco/battaglie')) . '">Registro battaglie</a></p>') ?>
 
@@ -103,7 +104,7 @@ $sec = static function (string $icon, string $title, string $body, string $class
     . 'fino all\'importo. Se non hai nulla, non incassa nulla: la Federazione non mette crediti di tasca sua. Lo stesso vale per la '
     . 'taglia che si accumula uccidendo comandanti onesti (il ' . (int) round(100 * \App\Game\GameConfig::float('combat.bounty_pct', 0.1))
     . '% di ogni bottino). Abbattuto o arrestato da una pattuglia, torni sotto la soglia di Ricercato.</p>'
-    . '<p>L\'<strong>ammenda</strong> azzera tutto, da ovunque: ' . number_format(\App\Game\GameConfig::int('legge.ammenda_per_punto', 400), 0, ',', '.')
+    . '<p>L\'<strong>ammenda</strong> azzera la notorietà, da ovunque: ' . number_format(\App\Game\GameConfig::int('legge.ammenda_per_punto', 400), 0, ',', '.')
     . ' cr per punto, di più se sei recidivo. Il mercato nero ripulisce la taglia da uccisioni. '
     . '<a href="' . e(url('/gioco/fazioni')) . '">Fazioni</a> · <a href="' . e(url('/gioco/mercato-nero')) . '">Mercato nero</a></p>', 'guide-wide') ?>
 
@@ -133,7 +134,9 @@ $sec = static function (string $icon, string $title, string $body, string $class
     . 'smonti (→ Leghe di recupero), li potenzi alla rarità successiva <em>della stessa famiglia</em> (gli affissi restano), '
     . 'o li <strong>produci su ricetta</strong> con la raffineria. Un modulo che alza un tetto (hangar, stive) si toglie solo '
     . 'se quel che hai a bordo ci sta ancora: prima schieri i caccia in un settore o scarichi la merce; gli scudi in più si '
-    . 'disperdono. Un modulo <strong>guasto</strong> non conta nei tetti finché non lo ripari al Cantiere. '
+    . 'disperdono. Un modulo <strong>guasto</strong> non conta nei tetti finché non torna in linea: lo ripari al Cantiere, '
+    . 'un Ingegnere a bordo può rimetterlo in sesto prima, e comunque si ripara da solo dopo '
+    . (int) \App\Game\Subsystems::autoRepairHours() . ' ore. '
     . '<a href="' . e(url('/gioco/moduli')) . '">Officina moduli</a></p>') ?>
 
   <?= $sec('👥', 'Equipaggio & missioni',

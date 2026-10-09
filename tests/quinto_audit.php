@@ -53,11 +53,14 @@ return static function (): void {
         Esito::uguale('chi si difende non conta un\'uccisione', 0, (int) $m['kills']);
         Esito::uguale('ne\' prende esperienza', 0, (int) $m['experience']);
 
-        // E abbattendo lui una nave di soccorso, niente reputazione da coltivare.
+        // E abbattendo lui una nave di soccorso, niente reputazione da coltivare
+        // (l'omicidio, pero', la Federazione lo conta: sesto audit).
         [$alt2, $alt2S] = Finti::comandante(0, ['fighters' => 5], $s1);
         Database::run("UPDATE ships SET type_key = 'scout_marauder', soccorso = 1, shields = 0 WHERE id = ?", [(int) $alt2S['id']]);
         Combat::attackShip($rileggi((int) $main['id']), PlayerService::ship((int) $mainS['id']), (int) $alt2['id']);
-        Esito::uguale('ne\' reputazione con le fazioni', $repPrima, $reputazione((int) $main['id']));
+        $repDopo = $reputazione((int) $main['id']);
+        unset($repPrima['fed'], $repDopo['fed']);
+        Esito::uguale('ne\' reputazione con le fazioni da guadagnare', $repPrima, $repDopo);
 
         Esito::sezione('Un attacco respinto all\'ultimo non brucia nulla');
 

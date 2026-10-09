@@ -43,6 +43,8 @@ final class Industry
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
+            // prima il comandante, poi la nave (sesto audit)
+            Database::first('SELECT id FROM players WHERE id = ? FOR UPDATE', [(int) $player['id']]);
             $scaricato = Database::run(
                 'UPDATE ships SET hold_ore = hold_ore - ?, hold_equipment = hold_equipment - ?
                   WHERE id = ? AND hold_ore >= ? AND hold_equipment >= ?',

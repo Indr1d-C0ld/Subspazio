@@ -182,13 +182,20 @@ final class Faction
         };
     }
 
-    public static function onKillPlayer(int $playerId, int $victimAlignment): void
+    /**
+     * $senzaPremio: la vittima era in capsula o su una nave di soccorso. Niente
+     * guadagni di reputazione, ma l'omicidio la Federazione lo conta lo stesso
+     * (sesto audit: prima si saltava tutto, penalita' compresa).
+     */
+    public static function onKillPlayer(int $playerId, int $victimAlignment, bool $senzaPremio = false): void
     {
         $g = GameConfig::int('faction.kill_gain', 6);
         if (!Ranks::isEvil($victimAlignment)) {
             self::adjust($playerId, 'fed', -$g, 'omicidio', false);
-            self::adjust($playerId, 'hegemony', (int) round($g / 2), 'un rivale in meno');
-        } else {
+            if (!$senzaPremio) {
+                self::adjust($playerId, 'hegemony', (int) round($g / 2), 'un rivale in meno');
+            }
+        } elseif (!$senzaPremio) {
             self::adjust($playerId, 'fed', (int) round($g / 2), 'eliminato un fuorilegge');
         }
     }

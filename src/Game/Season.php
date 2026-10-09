@@ -109,7 +109,10 @@ final class Season
      */
     public static function chiusuraAmmessa(?int $numero): ?string
     {
-        if ($numero !== null && (int) (self::current()['number'] ?? 0) !== $numero) {
+        // Sola lettura: current() apre una stagione se non ce n'e', e una
+        // verifica che le prove chiamano liberamente non deve scrivere nulla.
+        $attiva = Database::first("SELECT number FROM seasons WHERE status = 'active' ORDER BY number DESC LIMIT 1");
+        if ($numero !== null && (int) ($attiva['number'] ?? 0) !== $numero) {
             return "La stagione {$numero} e' gia' stata chiusa.";
         }
         return null;
@@ -169,12 +172,6 @@ final class Season
         Database::run('INSERT INTO seasons (number, name) VALUES (?, ?)', [$nextNum, "Stagione {$nextNum}"]);
         GameConfig::set('season.number', (string) $nextNum);
 
-        Radio::system("FINE STAGIONE {$season['number']} — vince {$winner}. Comincia la Stagione {$nextNum}: "
-            . ($totale
-                ? 'ripartenza totale. Tutti ripartono dallo StarDock con la nave iniziale: crediti, navi, pianeti, moduli, '
-                  . 'ufficiali, corporazioni, reputazione e notorietà azzerati. Restano nome, aspetto e traguardi.'
-                : 'crediti, navi, pianeti, materiali, tesori di corporazione e reputazione ripartono da zero; '
-                  . 'restano traguardi, esperienza degli ufficiali e moduli, che tornano in inventario.'));
 
         // reset
         $wipePlanets = GameConfig::bool('season.wipe_planets', true) || $regenUniverse;
@@ -288,6 +285,15 @@ final class Season
         }
         GameConfig::set('combat.bounty_mult', '1');
         GameConfig::forget();
+
+        // L'annuncio dopo l'azzeramento: prima andava in onda e la radio veniva
+        // svuotata subito dopo, e nessuno lo leggeva (sesto audit).
+        Radio::system("FINE STAGIONE {$season['number']} — vince {$winner}. Comincia la Stagione {$nextNum}: "
+            . ($totale
+                ? 'ripartenza totale. Tutti ripartono dallo StarDock con la nave iniziale: crediti, navi, pianeti, moduli, '
+                  . 'ufficiali, corporazioni, reputazione e notorietà azzerati. Restano nome, aspetto e traguardi.'
+                : 'crediti, navi, pianeti, materiali, tesori di corporazione e reputazione ripartono da zero; '
+                  . 'restano traguardi, esperienza degli ufficiali e moduli, che tornano in inventario.'));
 
         Admin::audit($actorUserId, 'season.close', [
             'closed' => (int) $season['number'], 'opened' => $nextNum,

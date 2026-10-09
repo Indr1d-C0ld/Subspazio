@@ -52,6 +52,7 @@ distinzione al centro dei test sull'integrità economica.
 | `integrita_economica.php` | Reperti 01 e 02 dell'audit: addebiti con guardia di capienza, scambi tutto-o-niente, confisca limitata al saldo reale, guardia sui nomi di colonna |
 | `percorsi_normali.php` | Non-regressione: cantiere, mercato nero, porto in acquisto e vendita, i task del tick toccati dalla correzione |
 | `temi.php` | Temi grafici: catalogo, fogli e caratteri coerenti (con la licenza accanto), ritorno solo a pagine interne, scelta sull'account e nel cookie, il tema più scelto e l'avviso sui temi nel notiziario, gli aiuti che elencano i temi dal catalogo |
+| `sesto_audit.php` | Sesto audit (09/10/2026): notiziario intero in radio, al più due comunicati e quelli scaduti tolti dalla plancia, omicidio contato anche su capsule e navi di soccorso, mercantile già sparito che non costa nulla, abilità usata una volta per ricarica, stive guaste, `chiusuraAmmessa` in sola lettura (dentro una transazione annullata), annuncio di fine stagione dopo l'azzeramento |
 | `quinto_audit.php` | Quinto audit (09/10/2026): niente premio per l'aggressore su nave di soccorso, attacco respinto che non brucia Nucleo e occultamento, hangar guasto, doppio «accendi», stalli rilanciati solo dentro le transazioni, stagione gia' chiusa, stream morti |
 | `quarto_audit.php` | Quarto audit (09/10/2026): gare su NPC, potenziamenti, navi, consumabili e arresti; taglie confiscate; ingaggi del clock su righe rilette; hangar, affissi, occultamento, fasce, traguardi, stream, migrazioni in attesa |
 

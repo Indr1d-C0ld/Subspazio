@@ -227,20 +227,19 @@ final class Shipyard
     /** Al cambio scafo i moduli si disinstallano: tornano in inventario (o si perdono). */
     private static function unshipModules(int $shipId, int $playerId): void
     {
-        try {
-            if (GameConfig::int('loot.keep_modules_on_refit', 1) === 1) {
-                foreach (Database::all('SELECT item_key, rolled, broken_at FROM ship_modules WHERE ship_id = ?', [$shipId]) as $m) {
-                    // il guasto resta: cambiare nave non e' una riparazione
-                    Database::run(
-                        'INSERT INTO player_items (player_id, item_key, rolled, broken_at, source) VALUES (?, ?, ?, ?, ?)',
-                        [$playerId, $m['item_key'], $m['rolled'], $m['broken_at'], 'shop']
-                    );
-                }
+        // Niente piu' try che ingoia (era per le tabelle non ancora migrate):
+        // un errore a meta' lasciava moduli in inventario E a bordo, o
+        // nascondeva uno stallo dentro l'acquisto della nave (sesto audit).
+        if (GameConfig::int('loot.keep_modules_on_refit', 1) === 1) {
+            foreach (Database::all('SELECT item_key, rolled, broken_at FROM ship_modules WHERE ship_id = ?', [$shipId]) as $m) {
+                // il guasto resta: cambiare nave non e' una riparazione
+                Database::run(
+                    'INSERT INTO player_items (player_id, item_key, rolled, broken_at, source) VALUES (?, ?, ?, ?, ?)',
+                    [$playerId, $m['item_key'], $m['rolled'], $m['broken_at'], 'shop']
+                );
             }
-            Database::run('DELETE FROM ship_modules WHERE ship_id = ?', [$shipId]);
-        } catch (\Throwable) {
-            // tabelle non ancora migrate
         }
+        Database::run('DELETE FROM ship_modules WHERE ship_id = ?', [$shipId]);
     }
 
     /**

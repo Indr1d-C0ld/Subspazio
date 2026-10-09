@@ -22,7 +22,7 @@ verso l'esterno è una scommessa fra guadagno e rischio.
   taglia sulla sua testa la paga lui: chi lo abbatte la incassa, confiscata dai
   crediti a bordo e poi dalla banca del ricercato; uno al verde non rende
   nulla, e la nave di soccorso gratuita, abbattuta, non vale né esperienza né
-  bottino né reputazione, nemmeno quando è lei ad attaccare. I mercantili
+  moduli né guadagni di reputazione, nemmeno quando è lei ad attaccare. I mercantili
   viaggiano scortati, fuggono e chiamano soccorso; vicino a Sol la loro scorta
   respinge chi li aggredisce.
 - **Equipaggiare la nave** con 88 moduli in 18 famiglie, da Civile a
@@ -85,7 +85,9 @@ testi o artwork della door proprietaria.
   (con recupero in «Leghe»), e sovrappongono i loro bonus alle statistiche
   della nave. Un modulo che alza un tetto (hangar, stive) si smonta solo se
   caccia e carico ci stanno ancora senza (gli scudi in più si disperdono); un
-  modulo guasto non conta, nemmeno nei tetti, finché non si ripara. Il catalogo conta **88 modelli in 18 famiglie**, ognuna con un
+  modulo guasto non conta, nemmeno nei tetti, finché non torna in linea (al
+  Cantiere, con un Ingegnere a bordo, o da solo dopo 18 ore) e non blocca lo
+  smontaggio degli altri. Il catalogo conta **88 modelli in 18 famiglie**, ognuna con un
   modello per rarità (l'occultamento solo dalle tre più alte):
 
   | Slot | Famiglie |
@@ -147,10 +149,13 @@ testi o artwork della door proprietaria.
   l'uccisione, la taglia e i contratti sulla sua testa. Abbattere una capsula
   di salvataggio, o la nave di soccorso gratuita dello StarDock finché non se
   ne compra una vera, non vale come uccisione: niente esperienza, moduli né
-  reputazione, nemmeno quando è lei ad attaccare e chi si difende la abbatte.
+  guadagni di reputazione, nemmeno quando è lei ad attaccare e chi si difende
+  la abbatte. I crediti a bordo, però, si perdono come sempre, e l'omicidio di
+  un onesto la Federazione lo conta comunque.
   Un attacco a un NPC che arriva tardi (già abbattuto da altri o cambiato nel
   frattempo) viene respinto senza costi: niente turni, consumabili od
-  occultamento persi.
+  occultamento persi. Vale anche per i mercantili: fuga e richiesta di
+  soccorso scattano solo se l'attacco parte davvero.
 
 - **Equipaggio** — ufficiali generati da archetipi, 6 ruoli con **bonus
   passivo** (fuso nelle statistiche dopo i moduli) e **abilità attiva**,
@@ -301,7 +306,8 @@ testi o artwork della door proprietaria.
   testa, finché non scadono, i **comunicati della Federazione**
   (`fednews.comunicato`, più testi separati da «|», fino a
   `fednews.comunicato_fino`), scritti dal pannello per ciò che i numeri non
-  raccontano: un disservizio, una regola cambiata.
+  raccontano: un disservizio, una regola cambiata. Al più due per bollettino,
+  perché non coprano le notizie, e uno scaduto sparisce subito dalla plancia.
 
 - **Meta-gioco** — **stagioni** con ladder e albo d'oro. Alla chiusura
   ripartono da zero crediti, navi, pianeti, materiali, tesori delle
@@ -637,11 +643,11 @@ php tests/run.php                # tutte
 php tests/run.php economica      # solo i file col nome che contiene "economica"
 ```
 
-Suite di integrazione senza dipendenze, 657 verifiche in 30 file: integrità
+Suite di integrazione senza dipendenze, 679 verifiche in 31 file: integrità
 economica, concorrenza, banca/contratti/Officina, combattimento, navigazione,
 nave e moduli, pianeti, porti, equipaggio, mondo, percorsi di gioco normali,
 universo, clock, sessioni e turni, difese, iscrizione e posta, immagini,
-configurazione, schema, notifiche in tempo reale, fasce di rischio, legge federale, bottino, temi grafici, il quarto e il quinto audit, e le regole decise per mercato nero, uccisioni e
+configurazione, schema, notifiche in tempo reale, fasce di rischio, legge federale, bottino, temi grafici, il quarto, il quinto e il sesto audit, e le regole decise per mercato nero, uccisioni e
 stagioni. Ogni correzione ha una prova costruita per fallire sul codice di
 prima. Quando la gara sta nel database, la prova fa la prima richiesta a mano
 in una transazione aperta (blocca la riga e la cambia) e lancia la seconda in
@@ -737,7 +743,7 @@ deploy/                apache-subspazio.conf
   altro, quindi il browser di un giocatore non contatta nessuno fuori da
   SubSpazio. La scelta del tema passa da `POST /tema` (token CSRF come ogni
   form), il cookie `subspazio_tema` è HttpOnly e `SameSite=Lax`, e dopo la
-  scelta si torna solo a un percorso interno (con al più un'ancora semplice):
+  scelta si torna solo a un percorso interno (con al più una query e un'ancora semplice):
   mai un indirizzo intero o «//altro-sito».
 - **Immagini caricate** ricodificate lato server con GD (EXIF e payload
   spogliati), MIME riconosciuto dal contenuto e non dal nome, limiti di

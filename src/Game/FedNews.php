@@ -20,6 +20,9 @@ final class FedNews
         'Lyra Venn · Rete Comm della Flotta',
     ];
 
+    /** comunicati in testa al bollettino, al massimo */
+    public const MAX_COMUNICATI = 2;
+
     public static function enabled(): bool
     {
         return GameConfig::bool('fednews.enabled', true);
@@ -64,16 +67,28 @@ final class FedNews
         $anchor = self::ANCHORS[array_rand(self::ANCHORS)];
         $body = implode("\n", array_map(static fn ($h) => '• ' . $h, $headlines));
 
-        Database::run(
-            "INSERT INTO fednews (anchor, headlines, body) VALUES (?, ?, ?)",
-            [$anchor, json_encode($headlines, JSON_UNESCAPED_UNICODE), $body]
-        );
-        Database::run(
-            "INSERT INTO messages (channel, from_name, body) VALUES ('fedcomm', ?, ?)",
-            [$anchor, "NOTIZIARIO DELLA FEDERAZIONE\n\n" . $body]
-        );
+        // Archivio e radio insieme o niente: se la radio rifiutava il testo
+        // (colonna troppo corta, sesto audit) la riga d'archivio restava, e la
+        // guardia 1 rimandava il nuovo tentativo di un giorno intero.
+        $pdo = Database::pdo();
+        $pdo->beginTransaction();
         try {
-            Live::global('fedcomm', $anchor, $headlines[0] ?? 'Nuovo bollettino.');
+            Database::run(
+                "INSERT INTO fednews (anchor, headlines, body) VALUES (?, ?, ?)",
+                [$anchor, json_encode($headlines, JSON_UNESCAPED_UNICODE), $body]
+            );
+            Database::run(
+                "INSERT INTO messages (channel, from_name, body) VALUES ('fedcomm', ?, ?)",
+                [$anchor, "NOTIZIARIO DELLA FEDERAZIONE\n\n" . $body]
+            );
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+        try {
+            // la notifica annuncia la prima notizia del gioco, non il comunicato
+            Live::global('fedcomm', $anchor, $headlines[count(self::comunicati())] ?? $headlines[0] ?? 'Nuovo bollettino.');
         } catch (\Throwable) {
         }
 
@@ -94,9 +109,17 @@ final class FedNews
         if ((time() - strtotime((string) $r['created_at'])) > self::intervalHours() * 3600 * 2) {
             return null;
         }
+        $titoli = json_decode((string) $r['headlines'], true) ?: [];
+        // Il bollettino resta in plancia fino a due giorni: un comunicato
+        // scaduto (o tolto) nel frattempo sparisce subito, non al bollettino
+        // dopo (sesto audit).
+        if (self::comunicati() === []) {
+            $scaduti = self::spezza(GameConfig::str('fednews.comunicato', ''));
+            $titoli = array_values(array_filter($titoli, static fn ($t): bool => !in_array($t, $scaduti, true)));
+        }
         return [
             'anchor'     => (string) $r['anchor'],
-            'headlines'  => json_decode((string) $r['headlines'], true) ?: [],
+            'headlines'  => $titoli,
             'created_at' => (string) $r['created_at'],
         ];
     }
@@ -265,6 +288,14 @@ final class FedNews
                 return [];
             }
         }
+        // Al piu' due: la plancia mostra quattro titoli, e piu' comunicati
+        // coprivano tutte le notizie del gioco (sesto audit).
+        return array_slice(self::spezza($testo), 0, self::MAX_COMUNICATI);
+    }
+
+    /** @return list<string> */
+    private static function spezza(string $testo): array
+    {
         return array_values(array_filter(array_map('trim', explode('|', $testo)), static fn (string $c): bool => $c !== ''));
     }
 
