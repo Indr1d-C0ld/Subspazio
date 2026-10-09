@@ -64,6 +64,8 @@ $sec = static function (string $icon, string $title, string $body, string $class
     . 'invece che distrutto (vedi «Fasce di rischio»); se a vincere è la scorta di un mercantile vieni <strong>respinto</strong>, '
     . 'a caccia e scudi azzerati, senza razzia. Un attacco a un NPC che arriva tardi (già abbattuto da altri, o '
     . 'cambiato nel frattempo) viene respinto senza costi: non perdi turni, consumabili né occultamento. '
+    . 'Un <strong>mercantile</strong> sotto tiro può fuggire in un settore vicino e chiamare una pattuglia di soccorso, '
+    . 'ma solo se l\'attacco parte davvero: se è già sparito, niente fuga, niente pattuglia e niente crimine a tuo carico. '
     . 'Se ti distruggono sopravvivi in <strong>capsula di salvataggio</strong> '
     . 'allo StarDock: perdi carico e moduli installati (in parte recuperati in Leghe). Dei crediti a bordo, chi ti abbatte '
     . 'ne prende metà; senza <strong>capsula di salvataggio</strong> ne perdi anche metà di quelli rimasti, con la capsula nulla. '
@@ -134,13 +136,16 @@ $sec = static function (string $icon, string $title, string $body, string $class
     . 'smonti (→ Leghe di recupero), li potenzi alla rarità successiva <em>della stessa famiglia</em> (gli affissi restano), '
     . 'o li <strong>produci su ricetta</strong> con la raffineria. Un modulo che alza un tetto (hangar, stive) si toglie solo '
     . 'se quel che hai a bordo ci sta ancora: prima schieri i caccia in un settore o scarichi la merce; gli scudi in più si '
-    . 'disperdono. Un modulo <strong>guasto</strong> non conta nei tetti finché non torna in linea: lo ripari al Cantiere, '
+    . 'disperdono. Conta solo il modulo che togli: con un hangar o una stiva guasti e la nave piena, gli altri moduli (e '
+    . 'quello guasto) si smontano lo stesso. Un modulo <strong>guasto</strong> non conta nei tetti finché non torna in linea: lo ripari al Cantiere, '
     . 'un Ingegnere a bordo può rimetterlo in sesto prima, e comunque si ripara da solo dopo '
     . (int) \App\Game\Subsystems::autoRepairHours() . ' ore. '
     . '<a href="' . e(url('/gioco/moduli')) . '">Officina moduli</a></p>') ?>
 
   <?= $sec('👥', 'Equipaggio & missioni',
       '<p>Recluti <strong>ufficiali</strong> (6 ruoli) che occupano i posti dello scafo: danno bonus passivi, un\'abilità attiva '
+    . '(costa ' . \App\Game\GameConfig::int('crew.ability_turn_cost', 15) . ' turni, tranne quella del Medico, poi ' . \App\Game\GameConfig::int('crew.ability_cooldown_min', 90)
+    . ' minuti di ricarica: parte una volta sola anche se la chiedi due volte o da due schede) '
     . 'e alimentano le <strong>missioni away</strong> a skill-check con esiti da Trionfo a Disastro. Salgono di livello, hanno una '
     . 'missione di lealtà. '
     . '<a href="' . e(url('/gioco/equipaggio')) . '">Equipaggio</a> · <a href="' . e(url('/gioco/missioni')) . '">Missioni</a></p>') ?>
@@ -166,8 +171,11 @@ $sec = static function (string $icon, string $title, string $body, string $class
   <?= $sec('🏆', 'Meta',
       '<p><strong>Stagioni</strong> con ladder e Albo d\'Oro, <strong>traguardi</strong>, <strong>corporazioni</strong> e alleanze, '
     . '<strong>contratti</strong> e taglie fra giocatori, <strong>radio</strong> subspaziale. '
-    . 'Alla chiusura di una stagione il gioco si ferma per qualche istante («Fine stagione in corso»): basta ricaricare la pagina poco dopo. '
-    . 'In testa al notiziario della Federazione trovi i <strong>comunicati</strong> su disservizi e regole cambiate. '
+    . 'Alla chiusura di una stagione il gioco si ferma per qualche istante («Fine stagione in corso»): basta ricaricare la pagina poco dopo, '
+    . 'e la radio annuncia il vincitore e la stagione nuova. '
+    . 'In testa al notiziario della Federazione trovi i <strong>comunicati</strong> su disservizi e regole cambiate, al più due '
+    . 'per bollettino: quando scadono spariscono subito dalla plancia. In fondo, ogni giorno, un avviso di servizio ripassa una '
+    . 'regola (taglie, moduli guasti, ammenda, temi). '
     . 'L\'aspetto della plancia lo scegli tu: vedi «Temi grafici». '
     . '<a href="' . e(url('/gioco/classifica')) . '">Classifica</a> · <a href="' . e(url('/gioco/traguardi')) . '">Traguardi</a> · '
     . '<a href="' . e(url('/gioco/corp')) . '">Corp</a> · <a href="' . e(url('/gioco/albo')) . '">Albo</a></p>') ?>
@@ -194,10 +202,12 @@ $sec = static function (string $icon, string $title, string $body, string $class
       '<p>L\'interfaccia ha ' . count(\App\Core\Temi::CATALOGO) . ' <strong>temi</strong>, ispirati a plance e terminali '
     . 'della fantascienza. Un tema cambia colori, caratteri e forme di barre, pannelli e bottoni, e i colori della mappa '
     . 'stellare e delle fasce; <strong>non cambia il gioco</strong>: stesse pagine, stessi comandi, stessi numeri. In ogni '
-    . 'tema gli avvisi tengono il colore del loro tipo: rosso per attacchi e distruzione, giallo per gli eventi.</p>'
+    . 'tema gli avvisi tengono il colore del loro tipo: rosso per attacchi e distruzione, giallo per gli eventi, e chi usa la '
+    . 'tastiera vede sempre dove si trova, anche sui salti verso settori mai visitati.</p>'
     . '<div class="table-wrap"><table class="tbl compact"><tbody>' . $righeTemi . '</tbody></table></div>'
     . '<p>Si sceglie dal <a href="' . e(url('/gioco/profilo#tema')) . '">Profilo</a>, con un\'anteprima di ciascuno, '
-    . 'o dal menu <strong>Tema</strong> in fondo a ogni schermata, anche prima di entrare. La scelta resta legata al tuo '
+    . 'o dal menu <strong>Tema</strong> in fondo a ogni schermata, anche prima di entrare: col mouse si applica alla scelta, '
+    . 'da tastiera scorri le voci con le frecce e confermi con Invio. La scelta resta legata al tuo '
     . 'account e vale su ogni dispositivo. I caratteri dei temi stanno su SubSpazio: nessun servizio esterno, e scarichi '
     . 'solo quelli del tema che usi. Se il sistema chiede meno movimento, righe di scansione, pioggia e insegne restano ferme.</p>'
     . '<p class="hint">I temi sono omaggi, non riproduzioni: nessun logo, marchio o grafica originale, e nessuna affiliazione '

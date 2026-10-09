@@ -4,6 +4,23 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-09 — La guida racconta le correzioni del sesto audit
+
+- **[views/game/guide.php](views/game/guide.php)** — oltre a quanto già
+  corretto col sesto audit (crediti e omicidio per capsule e navi di
+  soccorso, ammenda, moduli guasti che si riparano da soli):
+  - «Combattimento»: un mercantile fugge e chiama soccorso solo se l'attacco
+    parte davvero; se è già sparito, niente fuga, pattuglia o crimine;
+  - «Cantiere & hardware»: conta solo il modulo che togli, quindi un hangar
+    o una stiva guasti non bloccano lo smontaggio degli altri;
+  - «Equipaggio & missioni»: costo e ricarica delle abilità, letti dalla
+    configurazione, e un uso solo per ricarica anche da due schede;
+  - «Meta»: la radio annuncia vincitore e stagione nuova; al più due
+    comunicati, che spariscono quando scadono; l'avviso di servizio
+    quotidiano;
+  - «Temi grafici»: il menu da tastiera (frecce e Invio) e il focus sempre
+    visibile, anche sui salti verso settori mai visitati.
+
 ## 2026-10-09 — Il notiziario racconta le correzioni del sesto audit
 
 - **[src/Game/FedNews.php](src/Game/FedNews.php)** — avvisi di servizio:
