@@ -62,6 +62,23 @@ return static function (): void {
     Esito::uguale('non un indirizzo intero', '/', $ritorno->invoke(null, 'https://altro-sito.example/'));
     Esito::uguale('non un percorso con trucchi', '/', $ritorno->invoke(null, '/gioco/../../etc'));
 
+    Esito::sezione('Temi — nel notiziario della Federazione');
+
+    // Sei comandanti col Terminale: piu' di quanti giocatori veri ci siano oggi.
+    $ids = [];
+    for ($i = 0; $i < 6; $i++) {
+        [$c] = Finti::comandante(0, []);
+        $ids[] = (int) $c['user_id'];
+    }
+    Database::run('UPDATE users SET tema = ? WHERE id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')', array_merge(['muthur'], $ids));
+    $titoli = (new ReflectionMethod(\App\Game\FedNews::class, 'compose'))->invoke(null);
+    $moda = (string) (array_values(array_filter($titoli, static fn ($t) => str_starts_with($t, 'Moda di plancia:')))[0] ?? '');
+    Esito::verifica('racconta il tema piu\' scelto', str_contains($moda, 'Terminale MU/TH/UR') && str_contains($moda, 'comandanti'), $moda);
+    $avvisi = (new ReflectionMethod(\App\Game\FedNews::class, 'avvisiDiServizio'))->invoke(null);
+    $temiNomi = array_column(Temi::CATALOGO, 'nome');
+    Esito::verifica('e fra gli avvisi di servizio c\'e\' quello sui temi, con tutti i nomi',
+        array_filter($avvisi, static fn ($a) => array_filter($temiNomi, static fn ($n) => !str_contains($a, $n)) === []) !== []);
+
     Esito::sezione('Temi — la scelta segue l\'account');
 
     [$p] = Finti::comandante(0, []);

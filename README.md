@@ -282,8 +282,9 @@ testi o artwork della door proprietaria.
   Ferrengi, ondata di pirateria, stagione delle taglie) annunciati via radio;
   il **notiziario della Federazione**, composto ogni giorno dallo stato reale
   del gioco (eventi, cronaca di frontiera, l'ultima taglia riscossa, i
-  ricercati più pericolosi con la loro taglia, nuove colonie, classifica) e
-  chiuso da un avviso di servizio a rotazione.
+  ricercati più pericolosi con la loro taglia, nuove colonie, classifica, il
+  tema grafico più scelto sulle plance) e chiuso da un avviso di servizio a
+  rotazione (protezione novizio, regola delle taglie, temi grafici).
 
 - **Meta-gioco** — **stagioni** con ladder e albo d'oro. Alla chiusura
   ripartono da zero crediti, navi, pianeti, materiali, tesori delle
@@ -590,7 +591,7 @@ php tests/run.php                # tutte
 php tests/run.php economica      # solo i file col nome che contiene "economica"
 ```
 
-Suite di integrazione senza dipendenze, 627 verifiche in 29 file: integrità
+Suite di integrazione senza dipendenze, 629 verifiche in 29 file: integrità
 economica, concorrenza, banca/contratti/Officina, combattimento, navigazione,
 nave e moduli, pianeti, porti, equipaggio, mondo, percorsi di gioco normali,
 universo, clock, sessioni e turni, difese, iscrizione e posta, immagini,

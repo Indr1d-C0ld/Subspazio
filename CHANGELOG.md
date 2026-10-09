@@ -4,6 +4,17 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-09 — Il notiziario della Federazione racconta i temi grafici
+
+- **[src/Game/FedNews.php](src/Game/FedNews.php)** — «Moda di plancia»: il tema
+  grafico più scelto e su quante plance (Console non conta, compare solo se
+  qualcuno ha scelto). Gli avvisi di servizio ruotano su tre giorni:
+  protezione novizio, taglie e temi grafici (nomi presi dal catalogo).
+- **[tests/temi.php](tests/temi.php)** — sezione «nel notiziario», 2 verifiche;
+  suite a 629.
+- **README.md** (progetto e pubblico), **tests/README.md** — notiziario
+  descritto con le notizie nuove.
+
 ## 2026-10-09 — Sei temi grafici a scelta
 
 *Scelti con l'autore*: Console (predefinito), LCARS, Terminale MU/TH/UR,

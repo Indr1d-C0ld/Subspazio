@@ -51,7 +51,7 @@ distinzione al centro dei test sull'integrità economica.
 |---|---|
 | `integrita_economica.php` | Reperti 01 e 02 dell'audit: addebiti con guardia di capienza, scambi tutto-o-niente, confisca limitata al saldo reale, guardia sui nomi di colonna |
 | `percorsi_normali.php` | Non-regressione: cantiere, mercato nero, porto in acquisto e vendita, i task del tick toccati dalla correzione |
-| `temi.php` | Temi grafici: catalogo, fogli e caratteri coerenti (con la licenza accanto), ritorno solo a pagine interne, scelta sull'account e nel cookie |
+| `temi.php` | Temi grafici: catalogo, fogli e caratteri coerenti (con la licenza accanto), ritorno solo a pagine interne, scelta sull'account e nel cookie, il tema più scelto e l'avviso sui temi nel notiziario |
 | `quarto_audit.php` | Quarto audit (09/10/2026): gare su NPC, potenziamenti, navi, consumabili e arresti; taglie confiscate; ingaggi del clock su righe rilette; hangar, affissi, occultamento, fasce, traguardi, stream, migrazioni in attesa |
 
 Le prove sull'integrità economica passano alle funzioni la **stessa fotografia

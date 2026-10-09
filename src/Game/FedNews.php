@@ -200,6 +200,20 @@ final class FedNews
             $h[] = "In vetta alla classifica dei comandanti: {$top['handle']} (rating " . number_format((int) $top['rating'], 0, ',', '.') . ').';
         }
 
+        // 4b) moda di plancia: il tema grafico piu' scelto (Console, quello di
+        // base, non conta: e' di chi non ha scelto)
+        $moda = Database::first(
+            "SELECT u.tema, COUNT(*) AS n FROM users u JOIN players p ON p.user_id = u.id
+             WHERE u.status = 'active' AND u.tema IS NOT NULL AND u.tema <> ?
+             GROUP BY u.tema ORDER BY n DESC, u.tema LIMIT 1",
+            [\App\Core\Temi::PREDEFINITO]
+        );
+        if ($moda !== null && \App\Core\Temi::valido((string) $moda['tema'])) {
+            $n = (int) $moda['n'];
+            $h[] = 'Moda di plancia: il tema grafico piu\' scelto e\' ' . \App\Core\Temi::CATALOGO[$moda['tema']]['nome']
+                . ($n === 1 ? ', sulla plancia di un comandante.' : ", sulle plance di {$n} comandanti.");
+        }
+
         // 5) traffico registrazioni
         $newCmd = (int) (Database::first(
             "SELECT COUNT(*) AS n FROM players WHERE created_at > DATE_SUB(NOW(), INTERVAL ? HOUR)",
@@ -215,14 +229,28 @@ final class FedNews
             $h[] = "Nessun evento di rilievo nelle ultime {$hrs} ore. Rotte sgombre, mercati stabili.";
         }
         // Gli avvisi di servizio si alternano giorno per giorno.
-        $servizio = [
+        $servizio = self::avvisiDiServizio();
+        $h[] = 'Bollettino di servizio: ' . $servizio[(int) date('z') % count($servizio)] . ' Buona rotta, comandanti.';
+
+        return $h;
+    }
+
+    /**
+     * Gli avvisi che chiudono il bollettino, uno al giorno a rotazione.
+     *
+     * @return list<string>
+     */
+    private static function avvisiDiServizio(): array
+    {
+        $temi = array_column(\App\Core\Temi::CATALOGO, 'nome');
+        return [
             'la protezione novizio resta attiva ' . GameConfig::int('newbie.protect_hours', 48) . ' ore dopo la registrazione.',
             'le taglie le paga chi le ha sulla testa. Chi abbatte un ricercato incassa la sua taglia, confiscata ai crediti a bordo'
                 . ' e poi alla banca del ricercato: da un ricercato al verde non si ricava nulla. Capsule e navi di soccorso abbattute'
                 . ' non valgono esperienza né bottino.',
+            'ogni comandante sceglie l\'aspetto della sua plancia fra ' . count($temi) . ' temi grafici: '
+                . implode(', ', array_slice($temi, 0, -1)) . ' e ' . end($temi) . '. Si cambia dal Profilo, o dal piè di pagina'
+                . ' di qualunque schermata; vale per l\'account su ogni dispositivo. Cambia l\'aspetto, non il gioco.',
         ];
-        $h[] = 'Bollettino di servizio: ' . $servizio[(int) date('z') % count($servizio)] . ' Buona rotta, comandanti.';
-
-        return $h;
     }
 }
