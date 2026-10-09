@@ -163,8 +163,13 @@ final class Combat
                 // una vittoria piena ottenuta per 2 turni, e un secondo account in
                 // capsula si poteva «coltivare» all'uscita della Federazione.
                 $eraCapsula = ($tShip['type_key'] ?? '') === 'escape_pod';
+                // Lo stesso per la nave di soccorso regalata dallo StarDock: un
+                // secondo account la ritirava, la faceva abbattere e ne ritirava
+                // un'altra, e il principale incassava esperienza e moduli. Vale
+                // finche' non se ne compra una vera.
+                $senzaPremio = $eraCapsula || !empty($tShip['soccorso']);
                 $loot = (int) floor((int) $target['credits'] * GameConfig::float('combat.loot_pct', 0.5));
-                $expGain = $eraCapsula ? 0 : GameConfig::int('combat.exp_per_kill', 50)
+                $expGain = $senzaPremio ? 0 : GameConfig::int('combat.exp_per_kill', 50)
                     + (int) round($r['def_lost'] * GameConfig::float('combat.exp_per_fighter', 0.02));
                 // Chi e' fuorilegge lo decide Ranks::isEvil, la stessa soglia che
                 // da' l'etichetta e che governa NPC e cannoni. Qui c'era `>= 0`:
@@ -184,17 +189,22 @@ final class Combat
                 $loot = Wallet::seize((int) $target['id'], $loot);
                 Database::run(
                     'UPDATE players SET credits = credits + ?, kills = kills + ?, experience = experience + ?, alignment = alignment + ?, bounty = bounty + ? WHERE id = ?',
-                    [$loot, $eraCapsula ? 0 : 1, $expGain, $align, $bounty, $atkPlayer['id']]
+                    [$loot, $senzaPremio ? 0 : 1, $expGain, $align, $bounty, $atkPlayer['id']]
                 );
                 if (!$eraCapsula) {
-                    $drops = Loot::rollKill((int) $atkPlayer['id'], 'pvp', $sectorId,
-                        (float) ($tShip['combat_rating'] ?? 1.0), null, $target);
-                    Crew::awardKillXp((int) $atkPlayer['id']);
-                    // La taglia sulla testa del bersaglio la paga la Federazione a chi
-                    // lo abbatte. Prima restava un numero che nessuno incassava mai.
-                    self::riscuotiTaglia((int) $target['id'], (int) $atkPlayer['id']);
-                    Legge::riscuoti((int) $target['id'], (int) $atkPlayer['id']);
-                    Stats::add((int) $atkPlayer['id'], 'comandanti_abbattuti');
+                    if (!$senzaPremio) {
+                        $drops = Loot::rollKill((int) $atkPlayer['id'], 'pvp', $sectorId,
+                            (float) ($tShip['combat_rating'] ?? 1.0), null, $target);
+                        Crew::awardKillXp((int) $atkPlayer['id']);
+                        Stats::add((int) $atkPlayer['id'], 'comandanti_abbattuti');
+                    }
+                    // Chi abbatte un ricercato incassa la sua taglia, confiscata a
+                    // lui. Una riscossione sola per abbattimento, anche se le
+                    // taglie sono due.
+                    if (self::riscuotiTaglia((int) $target['id'], (int) $atkPlayer['id'])
+                        + Legge::riscuoti((int) $target['id'], (int) $atkPlayer['id']) > 0) {
+                        Stats::add((int) $atkPlayer['id'], 'taglie_riscosse');
+                    }
                 }
                 Faction::onKillPlayer((int) $atkPlayer['id'], (int) $target['alignment']);
                 self::destroyShip($target);
@@ -224,8 +234,10 @@ final class Combat
                     [GameConfig::int('combat.exp_per_kill', 50), (int) $target['id']]
                 );
                 Crew::awardKillXp((int) $target['id']);
-                self::riscuotiTaglia((int) $atkPlayer['id'], (int) $target['id']);
-                Legge::riscuoti((int) $atkPlayer['id'], (int) $target['id']);
+                if (self::riscuotiTaglia((int) $atkPlayer['id'], (int) $target['id'])
+                    + Legge::riscuoti((int) $atkPlayer['id'], (int) $target['id']) > 0) {
+                    Stats::add((int) $target['id'], 'taglie_riscosse');
+                }
                 self::destroyShip($atkPlayer);
                 Contracts::onPlayerKilled((int) $atkPlayer['id'], (int) $target['id']);
                 Live::alert((int) $target['id'], 'combat', 'Attacco respinto',
@@ -705,11 +717,25 @@ final class Combat
         $exp = 0;
         $drops = ['items' => [], 'salvage' => 0];
         try {
+            // Due attacchi insieme allo stesso NPC (due giocatori, o due
+            // account): il duello e' calcolato su una lettura, e solo il primo
+            // che arriva qui la ritrova intatta. Prima pagavano l'abbattimento
+            // entrambi, modulo e progetto garantiti dell'elite compresi, e un
+            // colpo non letale cancellava il danno dell'altro.
+            $ora = Database::first('SELECT fighters, shields, sector_id FROM npcs WHERE id = ? FOR UPDATE', [$npcId]);
+            if ($ora === null || (int) $ora['fighters'] !== (int) $npc['fighters']
+                || (int) $ora['shields'] !== (int) $npc['shields'] || (int) $ora['sector_id'] !== (int) $npc['sector_id']) {
+                $pdo->rollBack();
+                return self::err('Il bersaglio e\' cambiato mentre lo ingaggiavi: guarda di nuovo il settore.');
+            }
             if (!Wallet::charge((int) $atkPlayer['id'], ['turns' => $turnCost])) {
                 $pdo->rollBack();
                 return ['ok' => false, 'error' => "Turni insufficienti (servono {$turnCost})."];
             }
-            Database::run('UPDATE ships SET fighters = ?, shields = ? WHERE id = ?', [max(0, $atkFtrLeft), $r['att_shd'], $atkShip['id']]);
+            // Perdite, non valori assoluti: il clock puo' aver toccato la nave
+            // fra la lettura e qui.
+            Database::run('UPDATE ships SET fighters = GREATEST(0, fighters - ?), shields = GREATEST(0, shields - ?) WHERE id = ?',
+                [$r['att_lost'], max(0, (int) $atkShip['shields'] - $r['att_shd']), $atkShip['id']]);
 
             if ($killed) {
                 $ship = Database::first('SELECT * FROM ships WHERE id = ?', [$atkShip['id']]);
@@ -777,7 +803,12 @@ final class Combat
             }
 
             $razzia = null;
-            if ($destroyedAtk && self::razziaInveceDiDistruzione($npc)) {
+            if ($destroyedAtk && $npc['kind'] === 'trader' && self::razziaInveceDiDistruzione(['kind' => 'pirate'] + $npc)) {
+                // Vicino a Sol la scorta di un mercantile respinge chi l'ha
+                // aggredito, a caccia e scudi azzerati: non lo spoglia come un
+                // predone (e non gli regala la tregua dai predoni veri).
+                $destroyedAtk = false;
+            } elseif ($destroyedAtk && self::razziaInveceDiDistruzione($npc)) {
                 // Vicino a Sol chi perde viene spogliato, non abbattuto.
                 $razzia = self::razzia($npc, $atkPlayer, (int) $atkShip['id']);
                 $destroyedAtk = false;
@@ -858,20 +889,52 @@ final class Combat
      */
     public static function npcEngagePlayer(array $npc, array $player, array $ship, bool $fromTick = false): array
     {
-        $r = self::duel(
-            (int) $npc['fighters'], (int) $npc['shields'], (float) $npc['combat_rating'] * self::colpiSubiti($ship, true),
-            (int) $ship['fighters'], (int) $ship['shields'], (float) ($ship['combat_rating'] ?? 1.0)
-        );
+        // Lo scontro si calcola su NPC e nave riletti e bloccati: il clock li
+        // aveva letti all'inizio del giro, e scriveva valori assoluti. Caccia
+        // appena comprati sparivano, il danno appena inflitto all'NPC si
+        // annullava, e un NPC gia' abbattuto combatteva da fantasma.
+        $pdo = Database::pdo();
+        $propria = !$pdo->inTransaction();
+        if ($propria) {
+            $pdo->beginTransaction();
+        }
+        try {
+            $ora = Database::first('SELECT fighters, shields, sector_id FROM npcs WHERE id = ? FOR UPDATE', [$npc['id']]);
+            $nave = Database::first('SELECT fighters, shields, sector_id, type_key FROM ships WHERE id = ? FOR UPDATE', [$ship['id']]);
+            if ($ora === null || $nave === null || $nave['type_key'] === 'escape_pod' || (int) $ora['sector_id'] !== (int) $nave['sector_id']) {
+                if ($propria) {
+                    $pdo->commit();
+                }
+                return ['event' => "{$npc['name']} non e' piu' in vista.", 'destroyed' => false];
+            }
+            $npc['fighters'] = (int) $ora['fighters'];
+            $npc['shields'] = (int) $ora['shields'];
+            $ship['fighters'] = (int) $nave['fighters'];
+            $ship['shields'] = (int) $nave['shields'];
 
-        Database::run('UPDATE ships SET fighters = ?, shields = ? WHERE id = ?', [$r['def_ftr'], $r['def_shd'], $ship['id']]);
+            $r = self::duel(
+                (int) $npc['fighters'], (int) $npc['shields'], (float) $npc['combat_rating'] * self::colpiSubiti($ship, true),
+                (int) $ship['fighters'], (int) $ship['shields'], (float) ($ship['combat_rating'] ?? 1.0)
+            );
 
-        $npcDead = $r['att_ftr'] <= 0 && $r['att_shd'] <= 0;
-        $playerDead = $r['def_ftr'] <= 0 && $r['def_shd'] <= 0 && $r['att_ftr'] > 0;
+            Database::run('UPDATE ships SET fighters = ?, shields = ? WHERE id = ?', [$r['def_ftr'], $r['def_shd'], $ship['id']]);
 
-        if ($npcDead) {
-            Database::run('DELETE FROM npcs WHERE id = ?', [$npc['id']]);
-        } else {
-            Database::run('UPDATE npcs SET fighters = ?, shields = ? WHERE id = ?', [$r['att_ftr'], $r['att_shd'], $npc['id']]);
+            $npcDead = $r['att_ftr'] <= 0 && $r['att_shd'] <= 0;
+            $playerDead = $r['def_ftr'] <= 0 && $r['def_shd'] <= 0 && $r['att_ftr'] > 0;
+
+            if ($npcDead) {
+                Database::run('DELETE FROM npcs WHERE id = ?', [$npc['id']]);
+            } else {
+                Database::run('UPDATE npcs SET fighters = ?, shields = ? WHERE id = ?', [$r['att_ftr'], $r['att_shd'], $npc['id']]);
+            }
+            if ($propria) {
+                $pdo->commit();
+            }
+        } catch (\Throwable $e) {
+            if ($propria && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
         }
 
         $razzia = $playerDead && self::razziaInveceDiDistruzione($npc)
@@ -1267,7 +1330,8 @@ final class Combat
     public static function razziaInveceDiDistruzione(array $npc): bool
     {
         $band = Fasce::diSettore((int) $npc['sector_id']);
-        return $band >= 1 && $band <= Fasce::razziaFinoA() && $npc['name'] !== self::CACCIATORE && $npc['kind'] !== 'patrol';
+        return $band >= 1 && $band <= Fasce::razziaFinoA() && $npc['name'] !== self::CACCIATORE
+            && !in_array($npc['kind'], ['patrol', 'trader'], true);
     }
 
     /**
@@ -1357,7 +1421,12 @@ final class Combat
         $pid = (int) $player['id'];
         if ($npc['kind'] === 'patrol') {
             // le pattuglie fermano i ricercati, e chi hanno colto in flagrante
-            if (!empty($npc['target_player_id']) && (int) $npc['target_player_id'] === $pid) {
+            // (quelle accorse a un soccorso, che hanno una scadenza). Una
+            // squadra d'intercettazione invece caccia un ricercato: se non lo e'
+            // piu' (ammenda appena pagata, notorieta' scesa da sola) lo lascia
+            // stare. Prima lo abbatteva e lo arrestava comunque, finche' il clock
+            // non la congedava.
+            if (!empty($npc['target_player_id']) && (int) $npc['target_player_id'] === $pid && !empty($npc['scade_at'])) {
                 return false;
             }
             return !Legge::ricercato(Database::first('SELECT * FROM players WHERE id = ?', [$pid]) ?? $player);
@@ -1386,11 +1455,15 @@ final class Combat
         if (Database::run('UPDATE players SET bounty = 0 WHERE id = ? AND bounty = ?', [$vittimaId, $taglia])->rowCount() === 0) {
             return 0;
         }
-        Wallet::credit($cacciatoreId, ['credits' => $taglia]);
-        Stats::add($cacciatoreId, 'taglie_riscosse');
-        ShipLog::write($cacciatoreId, 'contract', 'info', 'Taglia federale riscossa',
-            'La Federazione ha versato ' . number_format($taglia, 0, ',', '.') . ' cr per l\'abbattimento di un ricercato.');
-        return $taglia;
+        // Come quella federale, la paga chi ce l'ha sulla testa (Legge::confisca):
+        // versata dalla Federazione creava il 10% di ogni bottino dal nulla.
+        $pagata = Legge::confisca($vittimaId, $taglia);
+        if ($pagata > 0) {
+            Wallet::credit($cacciatoreId, ['credits' => $pagata]);
+            ShipLog::write($cacciatoreId, 'contract', 'info', 'Taglia riscossa',
+                'Confiscati al ricercato e versati a te ' . number_format($pagata, 0, ',', '.') . ' cr per il suo abbattimento.');
+        }
+        return $pagata;
     }
 
     /** Nome degli NPC che la Federazione manda dietro ai ricercati. */

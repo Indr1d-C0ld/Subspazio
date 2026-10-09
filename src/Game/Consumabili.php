@@ -153,9 +153,8 @@ final class Consumabili
                     return 'Nucleo in sovraccarico: il prossimo attacco colpisce il 25% più forte.';
                 })(),
                 'codice_amnistia' => (function () use ($pid): string {
-                    $p = Legge::puntiDi($pid);
-                    Database::run('UPDATE players SET notorieta = ?, notorieta_at = NOW() WHERE id = ?', [max(0, round($p - 60, 2)), $pid]);
-                    return 'Il fascicolo federale perde ' . number_format(min(60, $p), 1, ',', '.') . ' punti di notorietà.';
+                    [$prima, $dopo] = Legge::riduci($pid, static fn (float $p): float => $p - 60);
+                    return 'Il fascicolo federale perde ' . number_format($prima - $dopo, 1, ',', '.') . ' punti di notorietà.';
                 })(),
                 'sonda_fortuna' => (function () use ($pid, $fra): string {
                     Crew::addPending($pid, 'guaranteed_drop', 1, $fra(240));

@@ -69,7 +69,7 @@ $buy = static function (
     <strong>Sei in capsula di salvataggio.</strong>
     Compra uno scafo dalla tabella «Navi» (il più economico costa <?= number_format((int) $cheapest, 0, ',', '.') ?> cr).
     <?php if ($cr < (int) $cheapest): ?>
-      Non hai crediti a sufficienza: la Federazione può assegnarti una nave di soccorso.
+      Non hai crediti a sufficienza: la Federazione può assegnarti una nave di soccorso. Finché non ne compri una vera, chi la abbatte non ne ricava né esperienza né bottino.
       <form method="post" action="<?= e(url('/gioco/cantiere/soccorso')) ?>" class="inline">
         <?= csrf_field() ?><button class="btn xs" type="submit">Richiedi nave di soccorso</button>
       </form>

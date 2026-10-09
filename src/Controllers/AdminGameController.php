@@ -72,6 +72,12 @@ final class AdminGameController
             return redirect('/admin/gioco#stagione');
         }
         $res = \App\Game\Season::close(Auth::id() ?? 0, $request->str('regen') === '1', $request->str('totale') === '1');
+        // Un doppio invio (o il clock al lavoro) torna con un errore: prima si
+        // annunciava comunque «Stagione chiusa», con numero e albo vuoti.
+        if (empty($res['ok'])) {
+            Session::flash('error', (string) ($res['error'] ?? 'Chiusura non riuscita.'));
+            return redirect('/admin/gioco#stagione');
+        }
         Session::flash('success', 'Stagione chiusa. Aperta la Stagione ' . $res['number'] . ' (snapshot ' . $res['snapshot'] . ' comandanti).');
         return redirect('/admin/gioco#stagione');
     }

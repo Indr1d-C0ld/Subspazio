@@ -158,6 +158,9 @@ final class Reperti
         }
         $modulo = Loot::grant($pid, 'collezione', true, $rarita);
         Stats::add($pid, 'collezioni');
+        // «tutte e tre» vuol dire insieme, non in tre stagioni diverse
+        Stats::max($pid, 'collezioni_insieme', (int) (Database::first(
+            'SELECT COUNT(*) n FROM player_collezioni WHERE player_id = ?', [$pid])['n'] ?? 0));
         return ['ok' => true, 'name' => $nome, 'credits' => $crediti, 'xp' => $xp, 'modulo' => $modulo];
     }
 
@@ -204,6 +207,8 @@ final class Reperti
             return null;
         }
         Stats::add($playerId, 'progetti');
+        Stats::max($playerId, 'progetti_insieme', (int) (Database::first(
+            'SELECT COUNT(*) n FROM player_progetti WHERE player_id = ?', [$playerId])['n'] ?? 0));
         $m = array_values(array_filter($mancanti, static fn ($x) => $x['ckey'] === $k))[0];
         return ['key' => $k, 'name' => 'Progetto: ' . $m['label'], 'rarity' => $m['rarity']];
     }

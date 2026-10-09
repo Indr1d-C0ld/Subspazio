@@ -56,13 +56,18 @@ return static function (): void {
         Esito::uguale('e non da\' esperienza', 0, (int) $c['experience']);
 
         Esito::scenario('abbattere in nave un ricercato con una taglia');
-        [$ric, $sr] = Finti::comandante(0, ['fighters' => 5], $arena);
+        [$ric, $sr] = Finti::comandante(2000, ['fighters' => 5], $arena);
         Database::run('UPDATE players SET bounty = 7000, alignment = -300 WHERE id = ?', [(int) $ric['id']]);
+        \App\Game\Bank::account((int) $ric['id']);
+        Database::run('UPDATE bank_accounts SET balance = 10000, last_interest_at = NOW() WHERE player_id = ?', [(int) $ric['id']]);
         [$cac2, $sa2] = Finti::comandante(0, ['fighters' => 5000], $arena);
         $prima = (int) $rileggi((int) $cac2['id'])['credits'];
         Combat::attackShip($rileggi((int) $cac2['id']), PlayerService::ship((int) $sa2['id']), (int) $ric['id']);
-        Esito::verifica('il cacciatore incassa la taglia', (int) $rileggi((int) $cac2['id'])['credits'] - $prima >= 7000,
-            ((int) $rileggi((int) $cac2['id'])['credits'] - $prima) . ' cr');
+        // meta' dei 2.000 a bordo come bottino, poi la taglia: i 1.000 rimasti
+        // e 6.000 dalla banca del ricercato (09/10: non la paga piu' la Federazione)
+        Esito::uguale('il cacciatore incassa bottino e taglia', 8000, (int) $rileggi((int) $cac2['id'])['credits'] - $prima);
+        Esito::uguale('confiscata al ricercato, anche in banca', 4000,
+            (int) Database::first('SELECT balance FROM bank_accounts WHERE player_id = ?', [(int) $ric['id']])['balance']);
         Esito::uguale('e la taglia si azzera', 0, (int) $rileggi((int) $ric['id'])['bounty']);
 
         Esito::scenario('chi si difende e distrugge l\'attaccante');

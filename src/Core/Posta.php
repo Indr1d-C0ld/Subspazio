@@ -126,7 +126,7 @@ final class Posta
             'UPDATE mail_queue SET tentativi = ?, prossimo_at = DATE_ADD(NOW(), INTERVAL ? MINUTE), ultimo_errore = ? WHERE id = ?',
             [$tentativi, $attesa, $errore, $id]
         );
-        logger("posta: tentativo {$tentativi} fallito verso {$m['destinatario']}, riprovo fra {$attesa} minuti — {$errore}", 'warning');
+        logger("posta: tentativo {$tentativi} fallito verso {$m['destinatario']}, riprovo fra {$attesa} minut" . ($attesa === 1 ? 'o' : 'i') . " — {$errore}", 'warning');
         return ['ok' => false, 'error' => $errore];
     }
 

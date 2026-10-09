@@ -407,7 +407,12 @@ final class Crew
             if ($row === null) {
                 return null;
             }
-            Database::run('DELETE FROM crew_pending WHERE id = ?', [(int) $row['id']]);
+            // Vale solo per chi la toglie davvero: due richieste insieme
+            // leggevano la stessa riga e la usavano entrambe (un Acceleratore,
+            // N salti gratis).
+            if (Database::run('DELETE FROM crew_pending WHERE id = ?', [(int) $row['id']])->rowCount() === 0) {
+                return null;
+            }
             return (float) $row['magnitude'];
         } catch (\Throwable) {
             return null;

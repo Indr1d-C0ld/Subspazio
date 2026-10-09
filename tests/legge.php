@@ -175,18 +175,47 @@ return static function (): void {
         }
         Esito::verifica('venti assalti, nessuna fuga', $mai);
 
-        Esito::sezione('Taglia — abbattere un ricercato rende');
+        Esito::sezione('Taglia — la paga il ricercato');
 
-        [$e] = Finti::comandante(0, [], $s1);
+        [$e] = Finti::comandante(20000, [], $s1);
         $notorieta((int) $e['id'], 200);
+        \App\Game\Bank::account((int) $e['id']);
+        Database::run('UPDATE bank_accounts SET balance = 50000, last_interest_at = NOW() WHERE player_id = ?', [(int) $e['id']]);
         $attesa = Legge::taglia($rileggi((int) $e['id']));
         [$f] = Finti::comandante(0, [], $s1);
-        Esito::uguale('la Federazione paga 300 cr per punto', 60000, $attesa);
-        Esito::uguale('e li versa a chi lo abbatte', $attesa, Legge::riscuoti((int) $e['id'], (int) $f['id']));
+        Esito::uguale('300 cr per punto', 60000, $attesa);
+        Esito::uguale('chi lo abbatte la incassa', $attesa, Legge::riscuoti((int) $e['id'], (int) $f['id']));
+        Esito::uguale('presa prima dai crediti a bordo', 0, (int) $rileggi((int) $e['id'])['credits']);
+        // Prima la versava la Federazione: crediti creati dal nulla.
+        Esito::uguale('e il resto dalla banca', 10000,
+            (int) Database::first('SELECT balance FROM bank_accounts WHERE player_id = ?', [(int) $e['id']])['balance']);
         // Prima della correzione restava a 100 punti, ancora ricercato: un
         // complice poteva abbatterlo di nuovo e incassare ancora.
         Esito::verifica('e il ricercato torna sotto la soglia', !Legge::ricercato($rileggi((int) $e['id'])));
         Esito::uguale('quindi un secondo abbattimento non paga', 0, Legge::riscuoti((int) $e['id'], (int) $f['id']));
+
+        Esito::scenario('il secondo account con la nave di soccorso');
+        // Il giro segnalato dall'audit del 09/10: il secondo account ritira la
+        // nave di soccorso gratuita, attacca quattro volte il principale con
+        // un caccia e diventa ricercato; il principale lo abbatte e incassava
+        // 41.250 cr, esperienza e un tiro di bottino. Poi si ricominciava.
+        [$alt, $altS] = Finti::comandante(0, ['fighters' => 250], $s1);
+        Database::run("UPDATE ships SET type_key = 'scout_marauder', soccorso = 1 WHERE id = ?", [(int) $altS['id']]);
+        [$main, $mainS] = Finti::comandante(0, ['fighters' => 5000, 'shields' => 1000], $s1);
+        for ($i = 0; $i < 4; $i++) {
+            Combat::attackShip($rileggi((int) $alt['id']), PlayerService::ship((int) $altS['id']), (int) $main['id'], 1);
+        }
+        Esito::verifica('quattro attacchi da un caccia: ricercato', Legge::ricercato($rileggi((int) $alt['id'])),
+            (string) round(Legge::puntiDi((int) $alt['id']), 1));
+        $oggetti = (int) Database::first('SELECT COUNT(*) n FROM player_items WHERE player_id = ?', [(int) $main['id']])['n'];
+        $out = Combat::attackShip($rileggi((int) $main['id']), PlayerService::ship((int) $mainS['id']), (int) $alt['id']);
+        $m = $rileggi((int) $main['id']);
+        Esito::verifica('il principale lo abbatte', !empty($out['ok']) && PlayerService::ship((int) $altS['id'])['type_key'] === 'escape_pod');
+        Esito::uguale('ma da un ricercato al verde non incassa nulla', 0, (int) $m['credits']);
+        Esito::uguale('una nave di soccorso non da\' esperienza', 0, (int) $m['experience']);
+        Esito::uguale('ne\' conta come uccisione', 0, (int) $m['kills']);
+        Esito::uguale('ne\' lascia bottino', $oggetti,
+            (int) Database::first('SELECT COUNT(*) n FROM player_items WHERE player_id = ?', [(int) $main['id']])['n']);
     } finally {
         if ($npcIds !== []) {
             Database::run('DELETE FROM npcs WHERE id IN (' . implode(',', array_fill(0, count($npcIds), '?')) . ')', $npcIds);

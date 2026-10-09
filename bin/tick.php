@@ -37,6 +37,25 @@ if ($lock === false || !flock($lock, LOCK_EX | LOCK_NB)) {
     exit(0);
 }
 
+// Il codice e' piu' nuovo dello schema (pubblicato prima di `migrate`): ogni
+// lavoro che tocca le colonne nuove fallirebbe, e quelli che passano
+// lavorerebbero a meta'. Accaduto il 30/09 (fasce) e il 07/10 (legge). Si
+// aspetta, e lo si dice una volta al minuto nel registro. Lo stesso a fine
+// stagione rimasta a meta' (Season::close lascia il gioco in manutenzione).
+try {
+    $attese = (new \App\Cli\Migrator($projectRoot . '/db/migrations'))->pending();
+    $fermo = $attese !== []
+        ? 'migrazioni non applicate (' . implode(', ', $attese) . '): php bin/console.php migrate'
+        : (\App\Game\GameConfig::str('game.status', 'active') === 'manutenzione' ? 'gioco in manutenzione (fine stagione)' : null);
+} catch (\Throwable) {
+    $fermo = null;   // database irraggiungibile: se ne occupa l'apertura qui sotto
+}
+if ($fermo !== null) {
+    logTick('IN ATTESA: ' . $fermo);
+    flock($lock, LOCK_UN);
+    exit(0);
+}
+
 $startedAt = microtime(true);
 $runId = null;
 

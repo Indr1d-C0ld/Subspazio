@@ -191,8 +191,19 @@ final class Navigation
                 'turns_left' => (int) $player['turns'],
             ];
         }
-        if ($rottaRapida) {
-            \App\Game\Crew::consumePending((int) $player['id'], 'free_warp');
+        if ($rottaRapida && \App\Game\Crew::consumePending((int) $player['id'], 'free_warp') === null) {
+            // Un'altra richiesta (un'altra scheda, un altro dispositivo) l'ha
+            // appena spesa: questo salto si paga per intero.
+            $cost = max(1, (int) ($ship['turns_per_warp'] ?? 1)) + $grav;
+            $warpNote = $grav > 0 ? "Pozzo gravitazionale: +{$grav} turno/i." : null;
+            if ((int) $player['turns'] < $cost) {
+                return [
+                    'ok' => false,
+                    'code' => 'no_turns',
+                    'error' => "Turni insufficienti: servono {$cost}, disponibili " . (int) $player['turns'] . '.',
+                    'turns_left' => (int) $player['turns'],
+                ];
+            }
         }
 
         $pdo = Database::pdo();

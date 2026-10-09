@@ -22,6 +22,27 @@ final class Migrator
     }
 
     /** @return list<string> messaggi di log */
+    /**
+     * Migrazioni presenti su disco e non ancora applicate (versioni, in
+     * ordine). Il clock non gira finche' ce ne sono: il codice e' gia' quello
+     * nuovo e lo schema no.
+     *
+     * @return list<string>
+     */
+    public function pending(): array
+    {
+        $applied = array_flip(array_column(Database::all('SELECT version FROM schema_migrations'), 'version'));
+        $files = glob(rtrim($this->migrationsDir, '/') . '/*.sql') ?: [];
+        sort($files);
+        $out = [];
+        foreach ($files as $file) {
+            if (!isset($applied[basename($file, '.sql')])) {
+                $out[] = basename($file, '.sql');
+            }
+        }
+        return $out;
+    }
+
     public function migrate(): array
     {
         $log = [];

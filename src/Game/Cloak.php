@@ -74,18 +74,45 @@ final class Cloak
      */
     public static function consuma(int $shipId): bool
     {
-        $s = Database::first('SELECT cloak_carica, cloak_carica_at FROM ships WHERE id = ?', [$shipId]);
-        if ($s === null) {
-            return false;
+        // Due salti insieme (due schede) leggono la stessa riserva: il secondo
+        // trova la riga cambiata e rilegge, invece di dichiararla esaurita.
+        for ($tentativo = 0; $tentativo < 3; $tentativo++) {
+            $s = Database::first('SELECT cloak_carica, cloak_carica_at FROM ships WHERE id = ?', [$shipId]);
+            if ($s === null) {
+                return false;
+            }
+            $ora = self::carica($s);
+            if ($ora < 1) {
+                return false;
+            }
+            if (Database::run(
+                'UPDATE ships SET cloak_carica = ?, cloak_carica_at = ? WHERE id = ? AND cloak_carica = ? AND cloak_carica_at <=> ?',
+                [$ora - 1, self::orologioDopo($s, $ora), $shipId, $s['cloak_carica'], $s['cloak_carica_at']]
+            )->rowCount() > 0) {
+                return true;
+            }
         }
-        $ora = self::carica($s);
-        if ($ora < 1) {
-            return false;
+        return false;
+    }
+
+    /**
+     * Da quando contare la prossima carica. Si avanza dei soli periodi interi
+     * gia' maturati: riportare l'orologio a adesso buttava la ricarica in
+     * corso, e chi saltava occultato ogni nove minuti non ricaricava mai.
+     * A riserva piena l'orologio riparte da adesso.
+     *
+     * @param array<string,mixed> $s
+     */
+    private static function orologioDopo(array $s, int $ora): string
+    {
+        $adesso = date('Y-m-d H:i:s');
+        if ($ora >= self::caricaMax() || empty($s['cloak_carica_at'])) {
+            return $adesso;
         }
-        return Database::run(
-            'UPDATE ships SET cloak_carica = ?, cloak_carica_at = NOW() WHERE id = ? AND cloak_carica = ? AND cloak_carica_at <=> ?',
-            [$ora - 1, $shipId, $s['cloak_carica'], $s['cloak_carica_at']]
-        )->rowCount() > 0;
+        $da = (int) strtotime((string) $s['cloak_carica_at']);
+        $periodo = self::ricaricaMin() * 60;
+        $maturati = intdiv(max(0, time() - $da), $periodo);
+        return date('Y-m-d H:i:s', min(time(), $da + $maturati * $periodo));
     }
 
     // --- rilevamento ------------------------------------------------------------
@@ -120,7 +147,10 @@ final class Cloak
      */
     public static function toggle(array $player, array $ship, bool $on): array
     {
-        if (!self::has($ship)) {
+        // Spegnere si puo' sempre, anche su una nave che il dispositivo non
+        // l'ha piu' (cambiata al Cantiere mentre si accendeva): prima restava
+        // occultata senza alcun modo di farla riapparire.
+        if ($on && !self::has($ship)) {
             return ['ok' => false, 'error' => 'Nessun dispositivo di occultamento installato.'];
         }
         if ($on === self::isActive($ship)) {
@@ -135,7 +165,19 @@ final class Cloak
                 return ['ok' => false, 'error' => 'I sensori della Federazione impediscono l\'occultamento in questo spazio.'];
             }
         }
-        Database::run('UPDATE ships SET cloaked = ? WHERE id = ?', [$on ? 1 : 0, (int) $ship['id']]);
+        // Dispositivo e settore si verificano anche nella scrittura: un
+        // acquisto al Cantiere o un salto in Fedspace arrivati nel frattempo
+        // lasciavano accesa una nave senza dispositivo, o occultata in Fedspace.
+        $acceso = $on
+            ? Database::run(
+                "UPDATE ships SET cloaked = 1 WHERE id = ? AND dev_cloak = 1 AND type_key <> 'escape_pod'
+                   AND (? = 0 OR NOT EXISTS (SELECT 1 FROM sectors s WHERE s.id = ships.sector_id AND s.is_fedspace = 1))",
+                [(int) $ship['id'], self::fedspaceForbidden() ? 1 : 0]
+            )->rowCount() > 0
+            : Database::run('UPDATE ships SET cloaked = 0 WHERE id = ?', [(int) $ship['id']])->rowCount() >= 0;
+        if (!$acceso) {
+            return ['ok' => false, 'error' => 'La nave e\' cambiata nel frattempo: ricarica la plancia e riprova.'];
+        }
         ShipLog::write((int) $player['id'], 'system', 'info',
             $on ? 'Occultamento attivato' : 'Occultamento disattivato',
             $on

@@ -461,9 +461,12 @@ final class GameApiController
         $pidForStream = (int) (Ctx::$player['id'] ?? 0);
         // Ogni stream occupa un processo del server fino a live.stream_max_s
         // secondi. Senza limite un solo account poteva aprirne a centinaia e
-        // lasciare gli altri senza processi. Una scheda normale ne apre uno ogni
-        // cinque minuti (e uno in piu' a ogni riconnessione): il margine e' ampio.
-        if (!\App\Core\RateLimiter::hit('stream:' . $pidForStream, GameConfig::int('live.stream_opens_per_min', 6), 60)) {
+        // lasciare gli altri senza processi. Il vero tetto e' sugli stream
+        // aperti (Live::streamSuperato: vince la pagina piu' nuova); questo
+        // ferma solo i cicli impazziti. Prima era il solo tetto, a 6 aperture
+        // al minuto: ogni pagina ne apre una, e chi navigava svelto restava
+        // senza avvisi sulle pagine successive.
+        if (!\App\Core\RateLimiter::hit('stream:' . $pidForStream, GameConfig::int('live.stream_opens_per_min', 30), 60)) {
             return Response::json(['ok' => false, 'error' => 'Troppe connessioni in tempo reale aperte.'], 429);
         }
         if (session_status() === PHP_SESSION_ACTIVE) {
@@ -491,14 +494,27 @@ final class GameApiController
         header('Content-Encoding: none');
 
         $lastId = (int) ($request->header('Last-Event-ID') ?: $request->int('last', 0));
-        if ($lastId <= 0) {
+        // Un cursore oltre l'ultimo evento viene da prima di un azzeramento
+        // (fine stagione): tenerlo voleva dire non ricevere piu' nulla.
+        if ($lastId <= 0 || $lastId > Live::lastId()) {
             $lastId = Live::lastId();
         }
 
         // padding per vincere eventuali buffer intermedi
         echo ':' . str_repeat(' ', 2048) . "\n";
         echo "retry: 3000\n\n";
+        // Da dove riparte la pagina successiva, se arriva entro un minuto: senza
+        // eventi recenti il cursore restava vecchio e la nuova pagina perdeva
+        // cio' che arrivava mentre si caricava.
+        echo "event: cursore\ndata: {$lastId}\n\n";
         flush();
+
+        $streamId = $pidForStream > 0 ? Live::apriStream($pidForStream) : 0;
+        register_shutdown_function(static function () use ($streamId): void {
+            if ($streamId > 0) {
+                Live::chiudiStream($streamId);
+            }
+        });
 
         $maxS = GameConfig::int('live.stream_max_s', 300);
         $tickMs = max(500, GameConfig::int('live.tick_ms', 2000));
@@ -507,6 +523,13 @@ final class GameApiController
 
         $stato = Live::statoStream($lastId);
         while (!connection_aborted() && (time() - $start) < $maxS) {
+            if ($streamId > 0 && Live::streamSuperato($pidForStream, $streamId)) {
+                // la pagina non deve riconnettersi da sola: lo fara' quando
+                // tornera' in primo piano
+                echo "event: superato\ndata: 1\n\n";
+                @flush();
+                break;
+            }
             $player = \App\Game\PlayerService::forUser((int) \App\Auth\Auth::id())
                 ?? ($pidForStream > 0 ? Database::first('SELECT * FROM players WHERE id = ?', [$pidForStream]) : null);
             if ($player === null) {
@@ -528,8 +551,13 @@ final class GameApiController
                 echo "event: {$ev['kind']}\n";
                 echo 'data: ' . $data . "\n\n";
             }
-            if (time() - $lastBeat >= 15) {
-                echo ": keepalive\n\n";
+            // Solo scrivendo ci si accorge che la pagina e' stata chiusa: ogni
+            // cinque secondi (erano quindici, e ogni cambio di schermata
+            // lasciava un processo appeso fino ad allora).
+            if (time() - $lastBeat >= 5) {
+                // il battito porta il cursore: la pagina sa sempre da dove
+                // ripartire, anche se non le arriva nessun evento
+                echo "event: cursore\ndata: " . (int) $stato['cursore'] . "\n\n";
                 $lastBeat = time();
             }
             @flush();

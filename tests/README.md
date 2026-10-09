@@ -51,7 +51,15 @@ distinzione al centro dei test sull'integrità economica.
 |---|---|
 | `integrita_economica.php` | Reperti 01 e 02 dell'audit: addebiti con guardia di capienza, scambi tutto-o-niente, confisca limitata al saldo reale, guardia sui nomi di colonna |
 | `percorsi_normali.php` | Non-regressione: cantiere, mercato nero, porto in acquisto e vendita, i task del tick toccati dalla correzione |
+| `quarto_audit.php` | Quarto audit (09/10/2026): gare su NPC, potenziamenti, navi, consumabili e arresti; taglie confiscate; ingaggi del clock su righe rilette; hangar, affissi, occultamento, fasce, traguardi, stream, migrazioni in attesa |
 
 Le prove sull'integrità economica passano alle funzioni la **stessa fotografia
 più volte**: è esattamente ciò che vedrebbero due richieste concorrenti, e
 riproduce la corsa senza dover orchestrare processi in parallelo.
+
+Quando la corsa sta nel database (un lucchetto, una riga cambiata fra lettura
+e scrittura) la fotografia non basta. `quarto_audit.php` fa la prima richiesta
+a mano dentro una transazione aperta (blocca la riga, la cambia), lancia la
+seconda in un processo separato (`_corsa.php`) e conferma solo quando quella
+e' ferma ad aspettare: l'intreccio e' sempre lo stesso, senza affidarsi al
+caso.

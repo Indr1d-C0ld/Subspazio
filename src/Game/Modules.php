@@ -144,6 +144,20 @@ final class Modules
                 $pdo->rollBack();
                 return ['ok' => false, 'error' => "Senza questo modulo il carico non ci sta: scarica prima {$eccesso} unita'."];
             }
+            // Lo stesso per l'hangar: smontato, i caccia restavano a bordo oltre
+            // il tetto per sempre (nessuno li riporta sotto), e il posto liberato
+            // si dava a moduli d'attacco. Gli scudi in piu' si disperdono.
+            $senza = PlayerService::ship((int) $ship['id']) ?? [];
+            $tetto = (int) ($senza['max_fighters'] ?? PHP_INT_MAX);
+            if ((int) $nave['fighters'] > $tetto) {
+                $pdo->rollBack();
+                $n = number_format((int) $nave['fighters'] - $tetto, 0, ',', '.');
+                return ['ok' => false, 'error' => "Senza questo modulo l'hangar porta " . number_format($tetto, 0, ',', '.')
+                    . " caccia: schierane prima {$n} in un settore."];
+            }
+            if (isset($senza['max_shields'])) {
+                Database::run('UPDATE ships SET shields = LEAST(shields, ?) WHERE id = ?', [(int) $senza['max_shields'], (int) $ship['id']]);
+            }
             Database::run(
                 'INSERT INTO player_items (player_id, item_key, rolled, broken_at, source) VALUES (?, ?, ?, ?, ?)',
                 [(int) $player['id'], $m['item_key'], $m['rolled'], $m['broken_at'], 'shop']
@@ -232,7 +246,11 @@ final class Modules
         foreach ($vecchi as $af) {
             if (isset(Loot::AFFISSI[$af['a'] ?? ''])) {
                 $rapporto = (Loot::MOLT_RARITA[$next] ?? 1.0) / (Loot::MOLT_RARITA[$it['rarity']] ?? 1.0);
-                $nuovi[] = ['a' => $af['a'], 'k' => Loot::AFFISSI[$af['a']][1], 'v' => max(1, (int) round(round((float) $af['v'] * $rapporto, 6)))];
+                // Dal valore esatto, se c'e': arrotondando a ogni gradino una
+                // Corazza civile portata fino a Precursore valeva il 10% piu'
+                // di una trovata Precursore.
+                $x = round((float) ($af['x'] ?? $af['v']) * $rapporto, 4);
+                $nuovi[] = ['a' => $af['a'], 'k' => Loot::AFFISSI[$af['a']][1], 'v' => max(1, (int) round(round($x, 6))), 'x' => $x];
             }
         }
         $rolled = json_encode(Loot::conAffissi(ShipStats::decode($target['effects']) ?? [], $nuovi), JSON_UNESCAPED_UNICODE);
@@ -243,8 +261,14 @@ final class Modules
                 $pdo->rollBack();
                 return ['ok' => false, 'error' => "Servono {$costCr} cr e {$costMat} Leghe di recupero."];
             }
-            Database::run('UPDATE player_items SET item_key = ?, rolled = ? WHERE id = ?',
-                [$target['ckey'], $rolled, $itemId]);
+            // Vincolata al modulo letto: un doppio click, o un'installazione
+            // arrivata nel frattempo, facevano pagare due volte (o pagare per
+            // nulla) un modulo che saliva una volta sola.
+            if (Database::run('UPDATE player_items SET item_key = ?, rolled = ? WHERE id = ? AND player_id = ? AND item_key = ?',
+                [$target['ckey'], $rolled, $itemId, (int) $player['id'], $it['ckey']])->rowCount() === 0) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'Il modulo e\' cambiato nel frattempo: ricarica la pagina.'];
+            }
             $pdo->commit();
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) {

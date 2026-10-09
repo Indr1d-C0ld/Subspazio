@@ -12,6 +12,11 @@ declare(strict_types=1);
  *   carica_pianeta    <playerId> <planetId> <qty>
  *   evento_lento      <playerId> <ms>  (avviso scritto in una transazione che
  *                                       resta aperta <ms> millisecondi)
+ *   attacca_npc       <playerId> <npcId>
+ *   potenzia          <playerId> <itemId>
+ *   compra_nave       <playerId> <0=merchant_freighter,1=cargo_transport>
+ *   effetto_pendente  <playerId>         (consuma un «free_warp»)
+ *   arresto           <playerId>
  * Esce con 0 se l'azione e' riuscita, 1 altrimenti.
  */
 require dirname(__DIR__) . '/bin/_bootstrap.php';
@@ -40,6 +45,14 @@ $r = match ($azione) {
         Live::player($a[0], 'destroyed', 'Evento lento', 'scritto dentro una transazione');
         usleep(($a[1] ?? 0) * 1000);
         Database::pdo()->commit();
+        return ['ok' => true];
+    })(),
+    'attacca_npc'       => \App\Game\Combat::attackNpc($player, PlayerService::ship((int) $player['ship_id']), $a[1]),
+    'potenzia'          => \App\Game\Modules::upgrade($player, $a[1]),
+    'compra_nave'       => Shipyard::buyShip($player, PlayerService::ship((int) $player['ship_id']), ['merchant_freighter', 'cargo_transport'][$a[1]] ?? ''),
+    'effetto_pendente'  => ['ok' => \App\Game\Crew::consumePending($a[0], 'free_warp') !== null],
+    'arresto'           => (static function () use ($a): array {
+        \App\Game\Legge::arresto($a[0]);
         return ['ok' => true];
     })(),
     default             => ['ok' => false],

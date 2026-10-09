@@ -139,7 +139,10 @@ return static function (): void {
         }
 
         Esito::scenario(sprintf('tre NPC nel settore %d, che ha %d rotte uscenti', $da, count($vicini)));
-        $mossi = Npc::tick()['moved'];
+        // Solo il movimento: il tick intero fa anche nascere, congedare e
+        // ingaggiare NPC veri nell'universo vero (e la prova lo lanciava a
+        // ogni esecuzione, un tick in piu' al minuto).
+        $mossi = (int) (new ReflectionMethod(Npc::class, 'move'))->invoke(null);
         Esito::verifica('il tick li ha mossi', $mossi >= 3, "mossi {$mossi}");
 
         $dopo = Database::all(

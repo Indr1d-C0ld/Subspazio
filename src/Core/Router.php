@@ -119,6 +119,11 @@ final class Router
         if ($user === null) {
             return Response::redirect(url('/login'));
         }
+        // Fine stagione in corso (Season::close): il gioco e' fermo per tutti
+        // tranne che per l'amministratore.
+        if (\App\Game\GameConfig::str('game.status', 'active') === 'manutenzione' && !Auth::isAdmin()) {
+            return $this->fail(503, 'Fine stagione in corso: il nuovo universo apre fra pochi istanti.');
+        }
         try {
             $bundle = \App\Game\PlayerService::ensureForUser($user);
         } catch (\RuntimeException $e) {

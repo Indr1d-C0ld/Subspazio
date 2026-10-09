@@ -448,7 +448,9 @@ final class Economy
                 return ['ok' => false, 'error' => 'Il porto non tratta questa merce in quel verso.'];
             }
 
-            $freshShip = Database::first('SELECT * FROM ships WHERE id = ?', [$ship['id']]);
+            // La nave bloccata: uno smontaggio di un modulo stiva allo StarDock
+            // arrivato in mezzo lasciava il carico oltre la capienza.
+            $freshShip = Database::first('SELECT * FROM ships WHERE id = ? FOR UPDATE', [$ship['id']]);
             $freshPlayer = Database::first('SELECT * FROM players WHERE id = ?', [$player['id']]);
             $max = self::maxQty($port, $freshPlayer, $freshShip, $commodity, $action);
             if ($qty > $max) {

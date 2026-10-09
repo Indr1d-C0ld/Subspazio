@@ -24,8 +24,9 @@ final class Stats
                  ON DUPLICATE KEY UPDATE valore = valore + VALUES(valore)',
                 [$playerId, $chiave, $n]
             );
-        } catch (\Throwable) {
-            // un contatore non deve mai far fallire un'azione di gioco
+        } catch (\Throwable $e) {
+            // un contatore non deve mai far fallire un'azione di gioco...
+            self::seAnnullata($e);
         }
     }
 
@@ -41,7 +42,22 @@ final class Stats
                  ON DUPLICATE KEY UPDATE valore = GREATEST(valore, VALUES(valore))',
                 [$playerId, $chiave, $v]
             );
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            self::seAnnullata($e);
+        }
+    }
+
+    /**
+     * ...tranne quando il database ha gia' annullato la transazione in cui il
+     * contatore stava (stallo fra due richieste): ingoiare l'errore lasciava
+     * proseguire il chiamante in autocommit, come se il salto o lo scambio
+     * fossero andati a buon fine, con turni e merce mai scalati.
+     */
+    private static function seAnnullata(\Throwable $e): void
+    {
+        $info = $e instanceof \PDOException ? ($e->errorInfo ?? []) : [];
+        if (($info[0] ?? '') === '40001' || (int) ($info[1] ?? 0) === 1213) {
+            throw $e;
         }
     }
 

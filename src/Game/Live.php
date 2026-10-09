@@ -163,6 +163,37 @@ final class Live
         return (int) (Database::first('SELECT COALESCE(MAX(id),0) m FROM live_events')['m'] ?? 0);
     }
 
+    // --- stream aperti -------------------------------------------------
+
+    /** Registra uno stream appena aperto: ne ritorna il numero. */
+    public static function apriStream(int $playerId): int
+    {
+        Database::run('INSERT INTO live_streams (player_id) VALUES (?)', [$playerId]);
+        return Database::lastInsertId();
+    }
+
+    /**
+     * Lo stream va chiuso? Si', se il comandante ne ha aperti altri
+     * live.stream_paralleli piu' recenti: ogni pagina ne apre uno, e quella
+     * appena lasciata resta appesa finche' non prova a scrivere. Vince sempre
+     * la pagina piu' nuova, che e' quella davanti agli occhi.
+     */
+    public static function streamSuperato(int $playerId, int $streamId): bool
+    {
+        return (int) (Database::first(
+            'SELECT COUNT(*) n FROM live_streams WHERE player_id = ? AND id > ?',
+            [$playerId, $streamId]
+        )['n'] ?? 0) >= max(1, GameConfig::int('live.stream_paralleli', 3));
+    }
+
+    public static function chiudiStream(int $streamId): void
+    {
+        try {
+            Database::run('DELETE FROM live_streams WHERE id = ?', [$streamId]);
+        } catch (\Throwable) {
+        }
+    }
+
     // --- alert (campanella) ------------------------------------------
 
     /** @return list<array<string,mixed>> */
@@ -191,6 +222,9 @@ final class Live
         $n = 0;
         try {
             $n = Database::run('DELETE FROM live_events WHERE created_at < DATE_SUB(NOW(), INTERVAL ? MINUTE)', [$min])->rowCount();
+            // stream di processi finiti male (riavvio del server)
+            Database::run('DELETE FROM live_streams WHERE aperto_at < DATE_SUB(NOW(), INTERVAL ? SECOND)',
+                [GameConfig::int('live.stream_max_s', 300) + 120]);
             Database::run('DELETE FROM alerts WHERE read_at IS NOT NULL AND read_at < DATE_SUB(NOW(), INTERVAL 14 DAY)');
         } catch (\Throwable) {
         }

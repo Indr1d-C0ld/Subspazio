@@ -243,7 +243,11 @@ final class Loot
         $out = [];
         foreach (array_slice($chiavi, 0, $quanti) as $a) {
             [, $k, $base] = self::AFFISSI[$a];
-            $out[] = ['a' => $a, 'k' => $k, 'v' => self::valoreAffisso($base, $rarity, 0.8 + self::frand() * 0.4)];
+            $var = 0.8 + self::frand() * 0.4;
+            // «x» e' il valore esatto, prima di arrotondare: i potenziamenti
+            // riscalano quello, e non un intero gia' arrotondato a ogni gradino.
+            $out[] = ['a' => $a, 'k' => $k, 'v' => self::valoreAffisso($base, $rarity, $var),
+                      'x' => round($base * (self::MOLT_RARITA[$rarity] ?? 1.0) * $var, 4)];
         }
         return $out;
     }

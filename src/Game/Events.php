@@ -105,7 +105,9 @@ final class Events
     {
         $wave = mt_rand(6, 14);
         for ($i = 0; $i < $wave; $i++) {
-            Npc::spawnOne('ferrengi');
+            if (($id = Npc::spawnOne('ferrengi')) !== null) {
+                Npc::diPassaggio($id);
+            }
         }
         $da = Fasce::ferrengiDa();
         return self::record('ferrengi_incursion', 'Incursione Ferrengi',
@@ -120,7 +122,9 @@ final class Events
         // l'Anello dei Coloni restano il posto dove imparare il mestiere.
         $wave = mt_rand(5, 10);
         for ($i = 0; $i < $wave; $i++) {
-            Npc::spawnOne('pirate', mt_rand(3, Fasce::MAX));
+            if (($id = Npc::spawnOne('pirate', mt_rand(3, Fasce::MAX))) !== null) {
+                Npc::diPassaggio($id);
+            }
         }
         return self::record('pirate_surge', 'Ondata di pirateria',
             "Bande di predoni ({$wave}) infestano le rotte dalla Frontiera in fuori (fasce III-V).", 4, ['wave' => $wave]);

@@ -38,7 +38,7 @@
 
   function notify(title, body) {
     if (document.hidden && window.Notification && Notification.permission === 'granted') {
-      try { new Notification(title, { body, tag: 'subspazio', icon: base + '/assets/icon-192.png' }); } catch (e) {}
+      try { new Notification(title, { body, tag: 'subspazio', icon: base + '/assets/icons/icon-192.png' }); } catch (e) {}
     }
   }
 
@@ -63,13 +63,29 @@
 
   // --- stream ------------------------------------------------------
   let es = null;
+  let fermo = false;   // chiuso dal server: si riapre tornando in primo piano
+  let riprova = null;
   function connect() {
+    fermo = false;
+    if (riprova) { clearTimeout(riprova); riprova = null; }
+    if (es) es.close();
     // Si riprende dal cursore della pagina precedente solo se e' fresco: dopo
     // una lunga assenza si riparte da adesso (gli avvisi restano nella campanella).
     const c = leggi(K_CURSORE, null);
     const riprendi = c && c.id > 0 && Date.now() - c.t < 60000 ? '?last=' + encodeURIComponent(c.id) : '';
     es = new EventSource(base + '/api/stream' + riprendi);
-    es.addEventListener('error', () => { /* EventSource ritenta da solo */ });
+    // EventSource ritenta da solo dopo una chiusura normale, ma non dopo un
+    // rifiuto (429, 503): allora si riprova fra un po', se la pagina e' in vista.
+    es.addEventListener('error', () => {
+      if (es.readyState !== EventSource.CLOSED || fermo || riprova) return;
+      riprova = setTimeout(() => { riprova = null; if (!document.hidden) connect(); else fermo = true; }, 15000);
+    });
+    // Troppe pagine aperte: il server tiene le piu' recenti e chiude questa.
+    es.addEventListener('superato', () => { fermo = true; es.close(); });
+    // Dove si e' arrivati, anche senza eventi: la prossima pagina riparte da qui.
+    es.addEventListener('cursore', (ev) => {
+      scrivi(K_CURSORE, { id: parseInt(ev.data, 10) || 0, t: Date.now() });
+    });
 
     const handle = (ev) => {
       let d;
@@ -162,4 +178,8 @@
   };
 
   connect();
+  // una scheda lasciata indietro (troppe aperte) si riaggancia tornando in vista
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && fermo) connect();
+  });
 })();

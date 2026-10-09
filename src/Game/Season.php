@@ -61,6 +61,33 @@ final class Season
      */
     public static function close(int $actorUserId, bool $regenUniverse, bool $totale = false): array
     {
+        // Mentre si azzera il gioco si ferma: il clock aspetta (stesso lucchetto
+        // del cron) e le pagine di gioco rispondono «fine stagione in corso».
+        // Prima un tick o uno scambio arrivati a meta' scrivevano su uno stato
+        // gia' mezzo azzerato. Se la chiusura si interrompe con un errore il
+        // gioco resta chiuso, invece di riaprire su uno stato a meta'.
+        $lock = @fopen(rtrim((string) ($GLOBALS['__project_root'] ?? dirname(__DIR__, 2)), '/') . '/storage/tick.lock', 'c');
+        $preso = false;
+        for ($i = 0; $lock !== false && $i < 60 && !($preso = flock($lock, LOCK_EX | LOCK_NB)); $i++) {
+            usleep(500000);
+        }
+        if (!$preso) {
+            return ['ok' => false, 'error' => 'Il clock e\' al lavoro: riprova fra un minuto.'];
+        }
+        GameConfig::set('game.status', 'manutenzione');
+        try {
+            $esito = self::chiudi($actorUserId, $regenUniverse, $totale);
+            GameConfig::set('game.status', 'active');
+            return $esito;
+        } finally {
+            flock($lock, LOCK_UN);
+            fclose($lock);
+        }
+    }
+
+    /** @return array<string,mixed> */
+    private static function chiudi(int $actorUserId, bool $regenUniverse, bool $totale): array
+    {
         $season = self::current();
         $sid = (int) $season['id'];
 
@@ -139,10 +166,14 @@ final class Season
         $pdo = Database::pdo();
         $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
         foreach (['contracts', 'combat_log', 'trade_log', 'move_log', 'sector_fighters', 'sector_mines',
-            'ship_limpets', 'player_visited_sectors', 'bank_accounts', 'live_events', 'alerts',
+            'ship_limpets', 'player_visited_sectors', 'bank_accounts', 'alerts',
             'messages', 'msg_state', 'player_sector_notes'] as $t) {
             $pdo->exec("TRUNCATE TABLE {$t}");
         }
+        // DELETE, non TRUNCATE: la numerazione degli eventi live deve
+        // proseguire. Ripartendo da 1, le pagine aperte (che rimandano l'ultimo
+        // id visto a ogni riconnessione) non ricevevano piu' nessuna notifica.
+        $pdo->exec('DELETE FROM live_events');
         if ($wipePlanets) {
             $pdo->exec('TRUNCATE TABLE planets');
         }
@@ -173,7 +204,7 @@ final class Season
             "UPDATE ships SET type_key = ?, sector_id = ?, holds_total = ?,
              hold_ore = 0, hold_organics = 0, hold_equipment = 0, hold_colonists = 0,
              fighters = ?, shields = ?, mines_armid = 0, mines_limpet = 0, probes = 0, genesis = 0,
-             escape_pod = 1, dev_scanner = 'none', dev_transwarp = 0, dev_cloak = 0, cloaked = 0, mining_laser = 0",
+             escape_pod = 1, dev_scanner = 'none', dev_transwarp = 0, dev_cloak = 0, cloaked = 0, mining_laser = 0, soccorso = 0",
             [$startShip, $dock, max($startHolds, (int) $type['base_holds']), (int) $type['base_fighters'], (int) $type['base_shields']]
         );
         Database::run('INSERT IGNORE INTO player_visited_sectors (player_id, sector_id) SELECT id, ? FROM players', [$dock]);
@@ -201,7 +232,8 @@ final class Season
             // Ripartenza totale: anche il progresso del comandante riparte da zero.
             $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
             foreach (['ship_modules', 'player_items', 'officers', 'recruit_candidates', 'away_missions',
-                'away_mission_log', 'player_progetti', 'player_collezioni', 'faction_log', 'ship_log'] as $t) {
+                'away_mission_log', 'player_progetti', 'player_collezioni', 'faction_log', 'ship_log',
+                'player_feature_state'] as $t) {
                 $pdo->exec("TRUNCATE TABLE {$t}");
             }
             $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');

@@ -86,6 +86,13 @@ final class Shipyard
             // Si rilegge bloccando la riga: un acquisto di stive o caccia
             // arrivato nel frattempo entra nel conto invece di andare perso.
             $grezza = Database::first('SELECT * FROM ships WHERE id = ? FOR UPDATE', [(int) $ship['id']]);
+            // Prezzo e permuta valgono per lo scafo letto all'inizio: un doppio
+            // invio pagava la nuova nave due volte, la seconda con la permuta
+            // di uno scafo che non c'era piu'.
+            if ($grezza === null || $grezza['type_key'] !== $ship['type_key']) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'La nave e\' cambiata nel frattempo: ricarica il Cantiere.'];
+            }
             $eredita = self::eredita($grezza, $type);
             if (Economy::holdsUsed($grezza) > $eredita['holds_total']) {
                 $pdo->rollBack();
@@ -100,7 +107,7 @@ final class Shipyard
             // occultamento no; sonde, mine e Genesi si'.
             Database::run(
                 "UPDATE ships SET type_key = ?, name = ?, holds_total = ?, fighters = ?, shields = ?,
-                 dev_scanner = 'none', dev_transwarp = 0, dev_cloak = 0, cloaked = 0
+                 dev_scanner = 'none', dev_transwarp = 0, dev_cloak = 0, cloaked = 0, soccorso = 0
                  WHERE id = ?",
                 [
                     $type['ckey'],
@@ -197,7 +204,7 @@ final class Shipyard
         Database::run(
             "UPDATE ships SET type_key = ?, name = ?, holds_total = ?, fighters = ?, shields = ?,
              hold_ore = 0, hold_organics = 0, hold_equipment = 0, hold_colonists = 0,
-             dev_scanner = 'none', dev_transwarp = 0, dev_cloak = 0, cloaked = 0
+             dev_scanner = 'none', dev_transwarp = 0, dev_cloak = 0, cloaked = 0, soccorso = 1
              WHERE id = ?",
             [
                 $type['ckey'],

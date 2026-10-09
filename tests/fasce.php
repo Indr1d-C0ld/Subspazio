@@ -25,6 +25,14 @@ use App\Game\Universe;
 
 return static function (): void {
     $npcIds = [];
+    // I gregari nati con un capo vanno tolti con lui: prima restavano
+    // nell'universo vero come Ferrengi e predoni solitari, a ogni esecuzione
+    // (27 Ferrengi in piu' l'8 ottobre, fra le 20:15 e le 20:29).
+    $gregari = static function (?int $capo) use (&$npcIds): void {
+        foreach ($capo === null ? [] : Database::all('SELECT id FROM npcs WHERE flotta_id = ?', [$capo]) as $g) {
+            $npcIds[] = (int) $g['id'];
+        }
+    };
     $featIds = [];
     $settoreDi = static fn (int $band): int => (int) Database::first(
         'SELECT id FROM sectors WHERE is_fedspace = 0 AND band = ? ORDER BY id LIMIT 1', [$band]
@@ -86,6 +94,7 @@ return static function (): void {
         for ($i = 0; $i < 6; $i++) {
             $id = Npc::spawnOne('pirate', 1);
             $npcIds[] = (int) $id;
+            $gregari($id);
             $n = Database::first('SELECT n.*, s.band sb FROM npcs n JOIN sectors s ON s.id = n.sector_id WHERE n.id = ?', [$id]);
             [$a, $z] = Fasce::predoniCaccia(1);
             $okI = $okI && (int) $n['sb'] === 1 && (int) $n['band'] === 1
@@ -98,6 +107,7 @@ return static function (): void {
         for ($i = 0; $i < 6; $i++) {
             $id = Npc::spawnOne('ferrengi');
             $npcIds[] = (int) $id;
+            $gregari($id);
             $okF = $okF && (int) Database::first('SELECT s.band FROM npcs n JOIN sectors s ON s.id = n.sector_id WHERE n.id = ?', [$id])['band'] >= Fasce::ferrengiDa();
         }
         Esito::verifica('i Ferrengi nascono solo nelle fasce esterne', $okF);
@@ -224,11 +234,9 @@ return static function (): void {
         for ($i = 0; $i < 4; $i++) {
             $id = Npc::spawnOne('pirate', 5);
             $npcIds[] = (int) $id;
+            $gregari($id);
             $f = (int) Database::first('SELECT fighters FROM npcs WHERE id = ?', [$id])['fighters'];
             $okV = $okV && $f >= 25000 && $f <= 90000;
-            foreach (Database::all('SELECT id FROM npcs WHERE flotta_id = ?', [$id]) as $g) {
-                $npcIds[] = (int) $g['id'];
-            }
         }
         // Prima: 4.500-11.000 caccia, un'ammiraglia da 50.000 li spazzava via.
         Esito::verifica('un predone dell\'Orlo ha 25.000-90.000 caccia', $okV);

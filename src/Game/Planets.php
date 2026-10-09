@@ -389,6 +389,9 @@ final class Planets
             Database::run('UPDATE players SET credits = ? WHERE id = ?', [$pc, $player['id']]);
             Database::run('UPDATE planets SET credits = ? WHERE id = ?', [$tc, $planetId]);
             $pdo->commit();
+            // Attraccare a un pianeta fa cadere l'occultamento (guida e
+            // migrazione 0060): tesoreria, Citadel e Quasar lo dimenticavano.
+            Cloak::drop((int) ($player['ship_id'] ?? 0), 'attracco a un pianeta');
             return ['ok' => true, 'credits' => $pc, 'treasury' => $tc];
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) {
@@ -477,6 +480,7 @@ final class Planets
             }
             throw $e;
         }
+        Cloak::drop((int) ($player['ship_id'] ?? 0), 'attracco a un pianeta');
         return ['ok' => true, 'level' => $nx['level'], 'hours' => $c['hours']];
     }
 
@@ -532,6 +536,7 @@ final class Planets
             }
             throw $e;
         }
+        Cloak::drop((int) ($player['ship_id'] ?? 0), 'attracco a un pianeta');
         return ['ok' => true, 'quasar_level' => (int) $p['quasar_level'] + 1];
     }
 

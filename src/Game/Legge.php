@@ -215,9 +215,16 @@ final class Legge
     }
 
     /**
-     * Un comandante abbatte un ricercato: la Federazione paga la taglia e il
-     * ricercato torna sotto la soglia (dopoLaPena). Lettura e riduzione nella
-     * stessa istruzione vincolata: pagata una volta sola.
+     * Un comandante abbatte un ricercato: incassa la taglia e il ricercato
+     * torna sotto la soglia (dopoLaPena). Lettura e riduzione nella stessa
+     * istruzione vincolata: pagata una volta sola.
+     *
+     * La paga il ricercato, con i crediti a bordo e poi con la banca, fino
+     * all'importo (confisca). Prima la versava la Federazione, e cioe' nessuno:
+     * un secondo account con la nave di soccorso gratuita si faceva ricercato
+     * con quattro attacchi da un caccia, il principale lo abbatteva e
+     * incassava 40.000 cr nuovi, e il giro ricominciava. Un ricercato al
+     * verde non rende nulla; un pirata vero paga davvero.
      */
     public static function riscuoti(int $vittimaId, int $cacciatoreId): int
     {
@@ -231,19 +238,83 @@ final class Legge
         )->rowCount() === 0) {
             return 0;
         }
-        Wallet::credit($cacciatoreId, ['credits' => $taglia]);
-        Stats::add($cacciatoreId, 'taglie_riscosse');
+        $pagata = self::confisca($vittimaId, $taglia);
+        if ($pagata > 0) {
+            Wallet::credit($cacciatoreId, ['credits' => $pagata]);
+        }
         ShipLog::write($cacciatoreId, 'contract', 'info', 'Taglia federale su un ricercato',
-            'La Federazione ha versato ' . number_format($taglia, 0, ',', '.') . ' cr per l\'abbattimento di un ricercato.');
-        return $taglia;
+            $pagata > 0
+                ? 'La Federazione ha confiscato al ricercato e ti ha versato ' . number_format($pagata, 0, ',', '.') . ' cr'
+                  . ($pagata < $taglia ? ' (la taglia era di ' . number_format($taglia, 0, ',', '.') . ', non aveva altro).' : '.')
+                : 'Il ricercato non aveva nulla da confiscare: niente taglia.');
+        return $pagata;
+    }
+
+    /**
+     * Toglie fino a $importo crediti al comandante: prima quelli a bordo, poi
+     * il conto in banca. Ritorna quanto ha preso davvero. Ogni taglia la paga
+     * chi ce l'ha sulla testa: nessun credito nasce dal nulla.
+     */
+    public static function confisca(int $playerId, int $importo): int
+    {
+        if ($importo <= 0) {
+            return 0;
+        }
+        $preso = Wallet::seize($playerId, $importo);
+        $resto = $importo - $preso;
+        if ($resto > 0 && Bank::enabled()) {
+            $saldo = (int) Bank::account($playerId)['balance'];   // matura gli interessi
+            $dallaBanca = min($resto, $saldo);
+            if ($dallaBanca > 0 && Database::run(
+                'UPDATE bank_accounts SET balance = balance - ? WHERE player_id = ? AND balance >= ?',
+                [$dallaBanca, $playerId, $dallaBanca]
+            )->rowCount() > 0) {
+                $preso += $dallaBanca;
+            }
+        }
+        return $preso;
     }
 
     /** Abbattuto da una pattuglia: torna sotto la soglia di Ricercato. */
     public static function arresto(int $playerId): void
     {
-        Database::run('UPDATE players SET notorieta = ?, notorieta_at = NOW() WHERE id = ?',
-            [self::dopoLaPena(self::puntiDi($playerId)), $playerId]);
+        self::riduci($playerId, static fn (float $p): float => self::dopoLaPena($p));
         Stats::add($playerId, 'arresti');
+    }
+
+    /**
+     * Abbassa la notorieta' a $nuova(punti di adesso), con la riga bloccata
+     * fra lettura e scrittura. Arresto e codice d'amnistia riscrivevano un
+     * valore letto prima: un'ammenda pagata nel frattempo tornava «Sospetto»,
+     * un crimine registrato nel frattempo spariva. Non alza mai.
+     *
+     * @param callable(float):float $nuova
+     * @return array{0:float,1:float} punti prima e dopo
+     */
+    public static function riduci(int $playerId, callable $nuova): array
+    {
+        $pdo = Database::pdo();
+        $propria = !$pdo->inTransaction();
+        if ($propria) {
+            $pdo->beginTransaction();
+        }
+        try {
+            $v = Database::first('SELECT notorieta, notorieta_at FROM players WHERE id = ? FOR UPDATE', [$playerId]);
+            $prima = $v === null ? 0.0 : self::punti($v);
+            $dopo = min($prima, max(0.0, round((float) $nuova($prima), 2)));
+            if ($v !== null && $dopo < $prima) {
+                Database::run('UPDATE players SET notorieta = ?, notorieta_at = NOW() WHERE id = ?', [$dopo, $playerId]);
+            }
+            if ($propria) {
+                $pdo->commit();
+            }
+            return [$prima, $dopo];
+        } catch (\Throwable $e) {
+            if ($propria && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
     }
 
     /** Costo dell'ammenda che azzera la notorieta': cresce con la recidiva. */

@@ -4,6 +4,81 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-09 — Quarto audit: taglie dal nulla, doppi pagamenti, clock e stream
+
+Audit delle novità d'ottobre. Prove dal campo (log, 153 pagine come ospite,
+giocatore e admin, invarianti sui dati reali), poi quattro letture parallele
+del codice; ogni reperto fatto accadere, ogni correzione con una prova (29
+delle 34 nuove falliscono sul codice di prima). *Deciso con l'autore*: ogni
+taglia la paga chi ce l'ha sulla testa; la nave di soccorso abbattuta non vale
+esperienza né bottino.
+
+- **[src/Game/Legge.php](src/Game/Legge.php)**, **[src/Game/Combat.php](src/Game/Combat.php)**
+  — la taglia la versava la Federazione: un secondo account con la nave di
+  soccorso gratuita si faceva ricercato con quattro attacchi da un caccia, e il
+  principale incassava 41.250 cr a giro. Ora `Legge::confisca` la toglie al
+  ricercato (crediti a bordo, poi banca); al verde non rende nulla. «Taglie
+  riscosse» contata una volta per abbattimento.
+- **[src/Game/Shipyard.php](src/Game/Shipyard.php)** — contrassegno
+  `ships.soccorso`: la nave di soccorso abbattuta non dà esperienza, uccisione
+  né moduli. Sotto lucchetto `buyShip` verifica che lo scafo sia ancora quello
+  (doppio invio pagato due volte).
+- **[src/Game/Combat.php](src/Game/Combat.php)** — `attackNpc` rilegge l'NPC
+  bloccato prima di pagare (doppio abbattimento, bottino d'élite incluso);
+  `npcEngagePlayer` lavora su NPC e nave riletti e bloccati (il clock scriveva
+  valori vecchi); le squadre lasciano chi non è più ricercato; la scorta di un
+  mercantile respinge, non razzia.
+- **[src/Game/Modules.php](src/Game/Modules.php)** — potenziamento vincolato
+  al modello letto (pagato due volte); un hangar non si smonta con i caccia
+  oltre il tetto; affissi riscalati dal valore esatto
+  ([src/Game/Loot.php](src/Game/Loot.php)).
+- **[src/Game/Crew.php](src/Game/Crew.php)**, **[src/Game/Navigation.php](src/Game/Navigation.php)**
+  — un effetto pendente vale per chi lo toglie davvero (un Acceleratore, N
+  salti gratis).
+- **[src/Game/Legge.php](src/Game/Legge.php)**, **[src/Game/Consumabili.php](src/Game/Consumabili.php)**
+  — arresto e amnistia con la riga bloccata (l'ammenda pagata tornava
+  «Sospetto»).
+- **[src/Game/Economy.php](src/Game/Economy.php)** — l'acquisto al porto blocca
+  la nave. **[src/Game/Stats.php](src/Game/Stats.php)** — uno stallo del
+  database non viene più ingoiato dentro una transazione.
+- **[src/Game/Npc.php](src/Game/Npc.php)**, **[src/Game/Events.php](src/Game/Events.php)**
+  — 96 Ferrengi contro una quota di 40: ondate di passaggio
+  (`eventi.ondata_ore`), quote contate coi gregari, eccesso tolto poco per
+  volta; Ferrengi che non scendono di fascia, ronde fuori dalla Fedspace, una
+  fascia vuota che non ferma più i predoni.
+  **[src/Game/Fasce.php](src/Game/Fasce.php)** — soglie con refusi → default.
+  **bin/console.php** — `universe:generate --force` toglie gli NPC.
+- **[src/Game/Cloak.php](src/Game/Cloak.php)**, **[src/Game/Planets.php](src/Game/Planets.php)**
+  — la ricarica maturata non si perde a ogni salto; niente falsa «riserva
+  esaurita»; spegnere sempre, accendere con guardia su dispositivo e settore;
+  tesoreria, Citadel e Quasar fanno cadere l'occultamento.
+- **[src/Game/Season.php](src/Game/Season.php)**, **[src/Core/Router.php](src/Core/Router.php)**
+  — fine stagione col lucchetto del clock e il gioco in manutenzione;
+  `live_events` svuotata con DELETE (col TRUNCATE le pagine aperte restavano
+  mute); anomalie azzerate nella ripartenza totale; il pannello dice l'errore.
+- **[src/Controllers/GameApiController.php](src/Controllers/GameApiController.php)**,
+  **[src/Game/Live.php](src/Game/Live.php)**, **[assets/js/live.js](assets/js/live.js)**
+  — tetto sugli stream aperti (3, vince la pagina più nuova) invece che sulle
+  aperture al minuto; abbandono rilevato in 5 s; cursore riallineato dopo un
+  azzeramento e portato dal battito; ripresa dopo un rifiuto; icona delle
+  notifiche corretta.
+- **[bin/tick.php](bin/tick.php)**, **[src/Cli/Migrator.php](src/Cli/Migrator.php)**
+  — il clock aspetta se ci sono migrazioni non applicate o il gioco è in
+  manutenzione.
+- **[src/Game/Reperti.php](src/Game/Reperti.php)**,
+  **[db/migrations/0063_traguardi_insieme.sql](db/migrations/0063_traguardi_insieme.sql)**
+  — i traguardi completisti contano ciò che si possiede insieme.
+- **[db/migrations/0062_audit_ottobre.sql](db/migrations/0062_audit_ottobre.sql)**
+  — `ships.soccorso`, tabella `live_streams`, nuove chiavi di configurazione.
+- **[tests/quarto_audit.php](tests/quarto_audit.php)** (nuovo),
+  **tests/_corsa.php**, **tests/legge.php**, **tests/regole_decise.php** — le
+  gare provate bloccando la riga come la prima richiesta e lanciando la
+  seconda in un processo a parte. **tests/fasce.php**, **tests/universo.php**
+  — le prove lasciavano Ferrengi veri nell'universo e lanciavano il tick NPC
+  intero. Suite: 606 verifiche.
+- **README.md**, **docs/roadmap.md**, **tests/README.md**, testi di Fazioni,
+  Cantiere e aiuto, **sw.js** v51.
+
 ## 2026-10-08 — Presentazione del gioco aggiornata
 
 La pagina iniziale e la presentazione su GitHub erano rimaste indietro di

@@ -153,11 +153,14 @@ final class Npc
                 return false;
             }
             if ($npc['kind'] === 'ferrengi') {
-                return $b >= Fasce::ferrengiDa();
+                // Come i predoni, mai verso Sol: un Ferrengi dell'Orlo (fino a
+                // 160.000 caccia, 240.000 un'elite) scendeva in fascia IV.
+                return $b >= max(Fasce::ferrengiDa(), $nascita ?? 0);
             }
             if ($npc['kind'] === 'patrol') {
-                // le ronde restano nelle fasce vicine a Sol
-                return $b <= Legge::rondeFinoA();
+                // le ronde restano nelle fasce vicine a Sol, fuori dalla
+                // Federazione (dentro non ingaggiano: erano ronde perse)
+                return $b >= 1 && $b <= max(1, Legge::rondeFinoA());
             }
             if ($npc['kind'] === 'pirate' && $nascita !== null) {
                 return $b >= $nascita && $b <= $nascita + 1;
@@ -217,8 +220,11 @@ final class Npc
                 continue;
             }
             $player = Database::first('SELECT * FROM players WHERE id = ?', [$r['player_id']]);
-            // le pattuglie non razziano: la tregua dalle razzie non le ferma
-            if (!$pattuglia && Combat::treguaVale($player, $band)) {
+            // le pattuglie non razziano: la tregua dalle razzie non le ferma;
+            // e nemmeno il cacciatore di taglie, come all'ingresso nel settore
+            // (prima un ricercato in tregua gli stava accanto indisturbato, ma
+            // usciva e rientrava e veniva distrutto)
+            if (!$pattuglia && $r['name'] !== Combat::CACCIATORE && Combat::treguaVale($player, $band)) {
                 continue;
             }
             $ship = PlayerService::ship((int) $player['ship_id']);
@@ -273,10 +279,16 @@ final class Npc
             if ($scelta === null) {
                 break;
             }
-            if (self::spawnOne('pirate', $scelta) === null) {
-                break;
+            $id = self::spawnOne('pirate', $scelta);
+            if ($id === null) {
+                // Una fascia senza settori adatti (soglie cambiate dal
+                // pannello) non deve fermare le altre: prima il «break» qui
+                // azzerava per sempre la nascita dei predoni in tutte le fasce.
+                $perFascia[$scelta] = Fasce::predoniVoluti($scelta);
+                continue;
             }
-            $perFascia[$scelta] = ($perFascia[$scelta] ?? 0) + 1;
+            // il capo e i suoi gregari: tutti contano nella quota
+            $perFascia[$scelta] = ($perFascia[$scelta] ?? 0) + self::navi($id);
             $n++;
         }
 
@@ -297,14 +309,39 @@ final class Npc
             ['trader', GameConfig::int('npc.trader_target', 30)],
         ] as [$kind, $target]) {
             $have = (int) (Database::first('SELECT COUNT(*) c FROM npcs WHERE kind = ?', [$kind])['c'] ?? 0);
-            $deficit = min($perTick, max(0, $target - $have));
-            for ($i = 0; $i < $deficit; $i++) {
-                if (self::spawnOne($kind) !== null) {
-                    $n++;
+            // Il conto si aggiorna a ogni nascita, gregari compresi: prima il
+            // deficit si calcolava una volta e ogni capo arrivava con fino a tre
+            // gregari, e la quota dei Ferrengi si superava di una dozzina a tick.
+            for ($i = 0; $i < $perTick && $have < $target; $i++) {
+                $id = self::spawnOne($kind);
+                if ($id === null) {
+                    break;
                 }
+                $have += self::navi($id);
+                $n++;
             }
         }
         return $n;
+    }
+
+    /** Navi di una flotta: il capo piu' i suoi gregari. */
+    public static function navi(int $capoId): int
+    {
+        return 1 + (int) (Database::first('SELECT COUNT(*) c FROM npcs WHERE flotta_id = ?', [$capoId])['c'] ?? 0);
+    }
+
+    /**
+     * Le ondate degli eventi (incursione Ferrengi, pirateria) sono di
+     * passaggio: dopo eventi.ondata_ore se ne vanno, gregari compresi. Prima
+     * restavano sette giorni oltre la quota, e a regime i Ferrengi erano il
+     * doppio e mezzo del previsto.
+     */
+    public static function diPassaggio(int $capoId): void
+    {
+        Database::run(
+            'UPDATE npcs SET scade_at = DATE_ADD(NOW(), INTERVAL ? HOUR) WHERE id = ? OR flotta_id = ?',
+            [max(1, GameConfig::int('eventi.ondata_ore', 48)), $capoId, $capoId]
+        );
     }
 
     /**
@@ -472,16 +509,33 @@ final class Npc
     private static function despawn(): int
     {
         // NPC finiti in Fedspace (Ferrengi/pirati), fuori dal loro territorio
-        // (le soglie delle fasce possono cambiare dal pannello), o troppo
-        // vecchi e inerti.
-        return Database::run(
-            "DELETE n FROM npcs n JOIN sectors s ON s.id = n.sector_id
-             WHERE (n.kind IN ('ferrengi','pirate') AND s.is_fedspace = 1)
+        // (le soglie delle fasce possono cambiare dal pannello), troppo
+        // vecchi e inerti, o arrivati con un'ondata ormai passata.
+        $n = Database::run(
+            "DELETE n FROM npcs n LEFT JOIN sectors s ON s.id = n.sector_id
+             WHERE s.id IS NULL
+                OR (n.kind IN ('ferrengi','pirate') AND s.is_fedspace = 1)
                 OR (n.kind = 'ferrengi' AND s.band < ?)
                 OR (n.kind = 'pirate' AND n.band IS NOT NULL AND (s.band < n.band OR s.band > n.band + 1))
+                OR (n.kind <> 'patrol' AND n.scade_at IS NOT NULL AND n.scade_at < NOW())
                 OR (n.created_at < DATE_SUB(NOW(), INTERVAL 7 DAY))",
             [Fasce::ferrengiDa()]
         )->rowCount();
+
+        // Oltre la quota (nati prima di questa regola, o in un universo
+        // rigenerato) i Ferrengi piu' vecchi se ne vanno, pochi per volta e
+        // mai sotto gli occhi di un comandante. Elite e ondate hanno regole loro.
+        $oltre = (int) (Database::first(
+            "SELECT COUNT(*) c FROM npcs WHERE kind = 'ferrengi' AND elite = 0 AND scade_at IS NULL"
+        )['c'] ?? 0) - GameConfig::int('npc.ferrengi_target', 40);
+        if ($oltre > 0) {
+            $n += Database::run(
+                "DELETE FROM npcs WHERE kind = 'ferrengi' AND elite = 0 AND scade_at IS NULL
+                   AND NOT EXISTS (SELECT 1 FROM players p WHERE p.sector_id = npcs.sector_id)
+                 ORDER BY created_at, id LIMIT " . min($oltre, GameConfig::int('npc.spawn_per_tick', 4))
+            )->rowCount();
+        }
+        return $n;
     }
 
     public static function remove(int $id): void

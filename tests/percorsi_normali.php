@@ -92,7 +92,7 @@ return static function (): void {
     }
 
     $compra = Database::first(
-        "SELECT p.*, s.id sid FROM ports p JOIN sectors s ON s.id = p.sector_id
+        "SELECT p.*, s.id sid, s.region_id, s.band FROM ports p JOIN sectors s ON s.id = p.sector_id
          WHERE p.destroyed = 0 AND p.ore_mode = 'buy' AND p.credits > 5000 LIMIT 1"
     );
     if ($compra === null) {

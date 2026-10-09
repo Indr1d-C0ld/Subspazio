@@ -45,7 +45,7 @@ $max = \App\Game\GameConfig::int('faction.max', 100);
     <?php if ((float) $legge['ore'] > 0): ?><span class="mut">· torni sotto la soglia di ricercato fra circa <?= (int) ceil((float) $legge['ore']) ?> ore</span><?php endif; ?></p>
   <p class="hint"><?= e(\App\Game\Legge::RIASSUNTI[$lg]) ?></p>
   <?php if ((int) $legge['taglia'] > 0): ?>
-    <p>Taglia federale sulla tua testa: <strong><?= number_format((int) $legge['taglia'], 0, ',', '.') ?> cr</strong>, a chi ti abbatte.</p>
+    <p>Taglia federale sulla tua testa: <strong><?= number_format((int) $legge['taglia'], 0, ',', '.') ?> cr</strong>. Chi ti abbatte la incassa, confiscata a te: prima i crediti a bordo, poi la banca.</p>
   <?php endif; ?>
   <?php if ((int) $legge['recenti'] > 0): ?>
     <p class="hint">Recidiva: <?= (int) $legge['recenti'] ?> crimini nelle ultime <?= \App\Game\GameConfig::int('legge.recidiva_ore', 72) ?> ore, ognuno pesa sul successivo.</p>

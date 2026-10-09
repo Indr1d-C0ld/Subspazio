@@ -91,10 +91,19 @@ final class Fasce
     {
         $out = [];
         foreach (explode(',', GameConfig::str('fasce.soglie', '0.36,0.53,0.69,0.84')) as $v) {
-            $out[] = max(0.0, min(1.0, (float) trim($v)));
+            // Un refuso («O.69») valeva 0 e svuotava la fascia I: ora una voce
+            // che non e' un numero fra 0 e 1, o soglie non crescenti, fanno
+            // tornare tutte quelle di default.
+            $v = trim($v);
+            if (!is_numeric($v) || (float) $v <= 0.0 || (float) $v >= 1.0) {
+                return [0.36, 0.53, 0.69, 0.84];
+            }
+            $out[] = (float) $v;
         }
-        sort($out);
-        return count($out) === self::MAX - 1 ? $out : [0.36, 0.53, 0.69, 0.84];
+        $ordinate = $out;
+        sort($ordinate);
+        return count($out) === self::MAX - 1 && $ordinate === $out && count(array_unique($out, SORT_REGULAR)) === count($out)
+            ? $out : [0.36, 0.53, 0.69, 0.84];
     }
 
     /** @return array{cx:float, cy:float, rmax:float} */

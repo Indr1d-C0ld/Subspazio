@@ -196,6 +196,10 @@ try {
             out("Generazione universo: {$cfg['sectors']} settori, densita' {$cfg['warp_density']}"
                 . ($force ? ' (--force)' : '') . ' ...');
             $stats = (new UniverseGenerator($cfg))->generate($force);
+            // Come il Big Bang dal pannello: gli NPC del vecchio universo
+            // restavano su settori che non esistono piu' (o che ora sono altrove)
+            // e contavano nelle quote, frenando le nascite fino a sette giorni.
+            $stats['npc_rimossi'] = $force ? Database::run('DELETE FROM npcs')->rowCount() : 0;
             foreach ($stats as $k => $v) {
                 out('  ' . str_pad($k, 16) . ' = ' . (is_bool($v) ? ($v ? 'si' : 'no') : $v));
             }
