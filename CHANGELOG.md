@@ -4,6 +4,16 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-09 — La presentazione racconta le nuove regole sulle taglie
+
+- **[views/home.php](views/home.php)** — voce «La legge»: la taglia la paga il
+  ricercato, confiscata dai crediti a bordo e poi dalla banca a favore di chi
+  lo abbatte; un ricercato al verde non rende nulla; la nave di soccorso
+  gratuita abbattuta non vale esperienza né bottino.
+- **README.md** — le stesse regole in «Il gioco in breve».
+- **Descrizione del repository su GitHub** — «legge, pattuglie e taglie pagate
+  dai ricercati».
+
 ## 2026-10-09 — Quarto audit: taglie dal nulla, doppi pagamenti, clock e stream
 
 Audit delle novità d'ottobre. Prove dal campo (log, 153 pagine come ospite,

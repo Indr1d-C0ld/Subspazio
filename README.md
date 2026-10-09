@@ -18,8 +18,11 @@ verso l'esterno è una scommessa fra guadagno e rischio.
 - **Combattere** predoni, Ferrengi, flotte e comandanti d'élite, o altri
   comandanti; assaltare porti e pianeti.
 - **Fare i conti con la legge**: chi aggredisce civili accumula notorietà, e
-  pattuglie e squadre federali tarate sulla sua nave gli danno la caccia. I
-  mercantili viaggiano scortati, fuggono e chiamano soccorso.
+  pattuglie e squadre federali tarate sulla sua nave gli danno la caccia. La
+  taglia sulla sua testa la paga lui: chi lo abbatte la incassa, confiscata dai
+  crediti a bordo e poi dalla banca del ricercato; uno al verde non rende
+  nulla, e la nave di soccorso gratuita, abbattuta, non vale né esperienza né
+  bottino. I mercantili viaggiano scortati, fuggono e chiamano soccorso.
 - **Equipaggiare la nave** con 88 moduli in 18 famiglie, da Civile a
   Precursore, con affissi casuali; consumabili monouso, reperti da collezionare,
   progetti che sbloccano ricette d'Officina.
