@@ -188,6 +188,8 @@ $sec = static function (string $icon, string $title, string $body, string $class
     . '<p>Si sceglie dal <a href="' . e(url('/gioco/profilo#tema')) . '">Profilo</a>, con un\'anteprima di ciascuno, '
     . 'o dal menu <strong>Tema</strong> in fondo a ogni schermata, anche prima di entrare. La scelta resta legata al tuo '
     . 'account e vale su ogni dispositivo. I caratteri dei temi stanno su SubSpazio: nessun servizio esterno, e scarichi '
-    . 'solo quelli del tema che usi. Se il sistema chiede meno movimento, righe di scansione, pioggia e insegne restano ferme.</p>',
+    . 'solo quelli del tema che usi. Se il sistema chiede meno movimento, righe di scansione, pioggia e insegne restano ferme.</p>'
+    . '<p class="hint">I temi sono omaggi, non riproduzioni: nessun logo, marchio o grafica originale, e nessuna affiliazione '
+    . 'con le opere a cui si ispirano, i cui nomi appartengono ai rispettivi titolari.</p>',
       'guide-wide') ?>
 </div>

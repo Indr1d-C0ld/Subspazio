@@ -285,11 +285,16 @@ return static function (): void {
         $stallo = new PDOException('Deadlock found');
         $stallo->errorInfo = ['40001', 1213, 'Deadlock found when trying to get lock'];
         $rilanciato = false;
+        // dentro la transazione del salto: fuori non c'e' nulla da salvare e
+        // l'errore si ingoia (quinto audit)
+        Database::pdo()->beginTransaction();
         try {
             (new ReflectionMethod(Stats::class, 'seAnnullata'))->invoke(null, $stallo);
         } catch (PDOException) {
             $rilanciato = true;
         } catch (ReflectionException) {
+        } finally {
+            Database::pdo()->rollBack();
         }
         // Prima: il contatore ingoiava l'errore e il salto proseguiva su una
         // transazione gia' annullata, con i turni mai scalati.

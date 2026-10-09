@@ -59,7 +59,13 @@ final class Season
      * consumabili e reperti si azzerano in ogni caso: sono ricchezza e stato,
      * non progresso.
      */
-    public static function close(int $actorUserId, bool $regenUniverse, bool $totale = false): array
+    /**
+     * @param int|null $numero la stagione che si intende chiudere (quella che
+     *        l'amministratore aveva davanti). Un doppio invio del modulo,
+     *        servito dopo il primo, trovava aperta la stagione nuova e chiudeva
+     *        anche quella: col numero atteso viene respinto.
+     */
+    public static function close(int $actorUserId, bool $regenUniverse, bool $totale = false, ?int $numero = null): array
     {
         // Mentre si azzera il gioco si ferma: il clock aspetta (stesso lucchetto
         // del cron) e le pagine di gioco rispondono «fine stagione in corso».
@@ -67,12 +73,21 @@ final class Season
         // gia' mezzo azzerato. Se la chiusura si interrompe con un errore il
         // gioco resta chiuso, invece di riaprire su uno stato a meta'.
         $lock = @fopen(rtrim((string) ($GLOBALS['__project_root'] ?? dirname(__DIR__, 2)), '/') . '/storage/tick.lock', 'c');
+        if ($lock === false) {
+            return ['ok' => false, 'error' => 'Non riesco ad aprire storage/tick.lock (permessi): la stagione non e\' stata chiusa.'];
+        }
         $preso = false;
-        for ($i = 0; $lock !== false && $i < 60 && !($preso = flock($lock, LOCK_EX | LOCK_NB)); $i++) {
+        for ($i = 0; $i < 60 && !($preso = flock($lock, LOCK_EX | LOCK_NB)); $i++) {
             usleep(500000);
         }
         if (!$preso) {
+            fclose($lock);
             return ['ok' => false, 'error' => 'Il clock e\' al lavoro: riprova fra un minuto.'];
+        }
+        if (($errore = self::chiusuraAmmessa($numero)) !== null) {
+            flock($lock, LOCK_UN);
+            fclose($lock);
+            return ['ok' => false, 'error' => $errore];
         }
         GameConfig::set('game.status', 'manutenzione');
         try {
@@ -83,6 +98,21 @@ final class Season
             flock($lock, LOCK_UN);
             fclose($lock);
         }
+    }
+
+    /**
+     * Si puo' chiudere la stagione $numero? Null se si', altrimenti il motivo.
+     * A parte da close() perche' le prove la verifichino senza mai chiudere
+     * nulla: il 09/10 una prova che chiamava close() su una copia del codice
+     * di prima (che il numero non lo conosceva) ha chiuso davvero la stagione
+     * in corso.
+     */
+    public static function chiusuraAmmessa(?int $numero): ?string
+    {
+        if ($numero !== null && (int) (self::current()['number'] ?? 0) !== $numero) {
+            return "La stagione {$numero} e' gia' stata chiusa.";
+        }
+        return null;
     }
 
     /** @return array<string,mixed> */
@@ -159,6 +189,9 @@ final class Season
                 'stardock_sector' => GameConfig::int('universe.stardock_sector', 1),
                 'warp_density'    => GameConfig::float('universe.warp_density', 3.2),
             ]))->generate(true);
+            // il generatore dichiara il gioco «active» appena finito: qui
+            // l'azzeramento e' ancora a meta', e il gioco resta chiuso
+            GameConfig::set('game.status', 'manutenzione');
             PortGenerator::generate(true);
             $dock = (int) (Database::first('SELECT id FROM sectors WHERE is_stardock = 1 LIMIT 1')['id'] ?? 1);
         }

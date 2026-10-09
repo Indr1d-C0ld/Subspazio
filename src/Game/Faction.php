@@ -30,7 +30,8 @@ final class Faction
                 'SELECT value FROM player_reputation WHERE player_id = ? AND faction = ?',
                 [$playerId, $faction]
             )['value'] ?? 0);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            \App\Core\Database::rilanciaSeAnnullata($e);
             return 0;
         }
     }
@@ -45,7 +46,8 @@ final class Faction
                     $out[$r['faction']] = (int) $r['value'];
                 }
             }
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            \App\Core\Database::rilanciaSeAnnullata($e);
         }
         return $out;
     }
@@ -115,7 +117,8 @@ final class Faction
                     }
                 }
             }
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            \App\Core\Database::rilanciaSeAnnullata($e);
             // tabelle non migrate
         }
     }
@@ -277,7 +280,8 @@ final class Faction
                  ORDER BY fo.faction, fo.sort',
                 []
             );
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            \App\Core\Database::rilanciaSeAnnullata($e);
             return [];
         }
         foreach ($rows as &$r) {
@@ -330,7 +334,8 @@ final class Faction
         try {
             $f = Database::first('SELECT faction FROM regions WHERE id = ?', [$regionId])['faction'] ?? null;
             return $f !== null && $f !== '' ? (string) $f : null;
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            \App\Core\Database::rilanciaSeAnnullata($e);
             return null;
         }
     }

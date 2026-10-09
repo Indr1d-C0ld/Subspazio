@@ -85,6 +85,8 @@ final class Shipyard
         try {
             // Si rilegge bloccando la riga: un acquisto di stive o caccia
             // arrivato nel frattempo entra nel conto invece di andare perso.
+            // prima il comandante, poi la nave: lo stesso ordine degli altri percorsi
+            Database::first('SELECT id FROM players WHERE id = ? FOR UPDATE', [(int) $player['id']]);
             $grezza = Database::first('SELECT * FROM ships WHERE id = ? FOR UPDATE', [(int) $ship['id']]);
             // Prezzo e permuta valgono per lo scafo letto all'inizio: un doppio
             // invio pagava la nuova nave due volte, la seconda con la permuta

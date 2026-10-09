@@ -229,8 +229,11 @@ return static function (): void {
         $riga = static fn (string $inizio): string => (string) (array_values(array_filter($titoli, static fn ($t) => str_starts_with($t, $inizio)))[0] ?? '');
         // Prima il notiziario non parlava mai di legge.
         Esito::verifica('racconta la taglia appena riscossa',
-            str_contains($riga('Taglia riscossa:'), $ca['handle'] . ' ha abbattuto il ricercato ' . $wa['handle']), $riga('Taglia riscossa:'));
-        Esito::verifica('con l\'importo confiscato', str_contains($riga('Taglia riscossa:'), 'confiscati al ricercato'));
+            str_contains($riga('Taglia riscossa:'), $ca['handle'] . ' ha abbattuto ' . $wa['handle'] . ', che aveva una taglia'), $riga('Taglia riscossa:'));
+        Esito::verifica('con l\'importo confiscato', str_contains($riga('Taglia riscossa:'), 'confiscati a lui'));
+        // Prima la stessa uccisione compariva anche nella cronaca di frontiera.
+        Esito::verifica('e una volta sola, non anche nella cronaca',
+            !str_contains($riga('Cronaca di frontiera:'), $ca['handle'] . ' ha avuto la meglio su ' . $wa['handle']));
         Esito::verifica('elenca i ricercati con la loro taglia',
             str_contains($riga('Ricercat'), $wb['handle'] . ' (nemico pubblico, 1.500.000 cr)'), $riga('Ricercat'));
         Esito::verifica('e dice chi la paga', str_contains($riga('Ricercat'), 'La taglia la paga il ricercato'));

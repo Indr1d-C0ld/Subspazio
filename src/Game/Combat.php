@@ -208,7 +208,9 @@ final class Combat
                         Stats::add((int) $atkPlayer['id'], 'taglie_riscosse');
                     }
                 }
-                Faction::onKillPlayer((int) $atkPlayer['id'], (int) $target['alignment']);
+                if (!$senzaPremio) {
+                    Faction::onKillPlayer((int) $atkPlayer['id'], (int) $target['alignment']);
+                }
                 self::destroyShip($target);
                 Contracts::onPlayerKilled((int) $target['id'], (int) $atkPlayer['id']);
                 Live::alert((int) $target['id'], 'destroyed', 'Sei stato distrutto', "{$atkPlayer['handle']} ti ha distrutto nel settore {$sectorId}.", '/gioco');
@@ -230,12 +232,17 @@ final class Combat
             if ($destroyedAtk) {
                 // Chi si difende e distrugge l'attaccante ne ha il merito: prima
                 // non riceveva nulla, e i contratti sulla testa dell'attaccante
-                // restavano aperti.
-                Database::run(
-                    'UPDATE players SET kills = kills + 1, experience = experience + ? WHERE id = ?',
-                    [GameConfig::int('combat.exp_per_kill', 50), (int) $target['id']]
-                );
-                Crew::awardKillXp((int) $target['id']);
+                // restavano aperti. Ma non se l'aggressore viaggiava su una nave
+                // di soccorso gratuita (o in capsula): un secondo account
+                // attaccava apposta per farsi abbattere e regalare uccisioni ed
+                // esperienza al principale.
+                if (($atkShip['type_key'] ?? '') !== 'escape_pod' && empty($atkShip['soccorso'])) {
+                    Database::run(
+                        'UPDATE players SET kills = kills + 1, experience = experience + ? WHERE id = ?',
+                        [GameConfig::int('combat.exp_per_kill', 50), (int) $target['id']]
+                    );
+                    Crew::awardKillXp((int) $target['id']);
+                }
                 $taglia = self::riscuotiTaglia((int) $atkPlayer['id'], (int) $target['id'])
                     + Legge::riscuoti((int) $atkPlayer['id'], (int) $target['id']);
                 if ($taglia > 0) {
@@ -670,8 +677,6 @@ final class Combat
             return self::err('Non hai caccia da lanciare.');
         }
 
-        Cloak::drop((int) $atkShip['id'], 'apertura del fuoco');
-
         // Un mercantile sotto tiro chiama soccorso e, se puo', scappa prima
         // dello scontro. Un proiettore d'interdizione toglie punti alla fuga.
         $soccorso = false;
@@ -683,6 +688,7 @@ final class Combat
                 if (!Wallet::charge((int) $atkPlayer['id'], ['turns' => $turnCost])) {
                     return self::err("Turni insufficienti (servono {$turnCost}).");
                 }
+                Cloak::drop((int) $atkShip['id'], 'apertura del fuoco');
                 $dove = (int) $verso[array_rand($verso)];
                 Database::run('UPDATE npcs SET sector_id = ?, last_move_at = NOW() WHERE id = ?', [$dove, $npcId]);
                 Legge::crimine((int) $atkPlayer['id'], 'mercantile', (int) $npc['sector_id']);
@@ -696,17 +702,6 @@ final class Combat
                 ];
             }
         }
-
-        $aM = (float) ($atkShip['combat_rating'] ?? 1.0);
-        if ($ab = Crew::consumePending((int) $atkPlayer['id'], 'attack_bonus_pct')) {
-            $aM *= 1 + $ab / 100;
-        }
-        $r = self::duel($commit, (int) $atkShip['shields'], $aM,
-            (int) $npc['fighters'], (int) $npc['shields'], (float) $npc['combat_rating'] * self::colpiSubiti($atkShip, true));
-
-        $atkFtrLeft = (int) $atkShip['fighters'] - $r['att_lost'];
-        $killed = $r['def_ftr'] <= 0 && $atkFtrLeft > 0;
-        $destroyedAtk = $atkFtrLeft <= 0 && $r['att_shd'] <= 0 && $r['def_ftr'] > 0;
 
         // Aggredire un civile o una pattuglia e' un crimine, anche senza abbatterli.
         $crimini = match ($npc['kind']) {
@@ -731,10 +726,28 @@ final class Combat
                 $pdo->rollBack();
                 return self::err('Il bersaglio e\' cambiato mentre lo ingaggiavi: guarda di nuovo il settore.');
             }
+            // Prima il comandante, poi la nave: lo stesso ordine di lucchetti
+            // del salto e degli altri attacchi, cosi' due richieste dello stesso
+            // giocatore non si aspettano a vicenda.
             if (!Wallet::charge((int) $atkPlayer['id'], ['turns' => $turnCost])) {
                 $pdo->rollBack();
                 return ['ok' => false, 'error' => "Turni insufficienti (servono {$turnCost})."];
             }
+            // Solo adesso si apre il fuoco: occultamento che cade e Nucleo in
+            // sovraccarico speso stanno nella transazione, e un attacco
+            // respinto qui sopra non li brucia (prima si perdevano entrambi).
+            Cloak::drop((int) $atkShip['id'], 'apertura del fuoco');
+            $aM = (float) ($atkShip['combat_rating'] ?? 1.0);
+            if ($ab = Crew::consumePending((int) $atkPlayer['id'], 'attack_bonus_pct')) {
+                $aM *= 1 + $ab / 100;
+            }
+            $r = self::duel($commit, (int) $atkShip['shields'], $aM,
+                (int) $npc['fighters'], (int) $npc['shields'], (float) $npc['combat_rating'] * self::colpiSubiti($atkShip, true));
+
+            $atkFtrLeft = (int) $atkShip['fighters'] - $r['att_lost'];
+            $killed = $r['def_ftr'] <= 0 && $atkFtrLeft > 0;
+            $destroyedAtk = $atkFtrLeft <= 0 && $r['att_shd'] <= 0 && $r['def_ftr'] > 0;
+
             // Perdite, non valori assoluti: il clock puo' aver toccato la nave
             // fra la lettura e qui.
             Database::run('UPDATE ships SET fighters = GREATEST(0, fighters - ?), shields = GREATEST(0, shields - ?) WHERE id = ?',

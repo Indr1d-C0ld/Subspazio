@@ -68,7 +68,8 @@ final class ShipLog
                     $data === [] ? null : json_encode($data, JSON_UNESCAPED_UNICODE),
                 ]
             );
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            \App\Core\Database::rilanciaSeAnnullata($e);
             // il giornale non deve mai far fallire un'azione di gioco
         }
     }
@@ -119,7 +120,8 @@ final class ShipLog
                  FROM ship_log WHERE player_id = ? ORDER BY id DESC LIMIT ?',
                 [$playerId, max(1, $limit)]
             );
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            \App\Core\Database::rilanciaSeAnnullata($e);
             return [];
         }
     }
@@ -144,7 +146,8 @@ final class ShipLog
                  FROM ship_log WHERE player_id = ? ORDER BY id DESC LIMIT ?',
                 [$playerId, max(1, $limit)]
             );
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            \App\Core\Database::rilanciaSeAnnullata($e);
             return [];
         }
     }
@@ -156,7 +159,8 @@ final class ShipLog
                 'SELECT COUNT(*) c FROM ship_log WHERE player_id = ? AND read_at IS NULL',
                 [$playerId]
             )['c'] ?? 0);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            \App\Core\Database::rilanciaSeAnnullata($e);
             return 0;
         }
     }
@@ -168,7 +172,8 @@ final class ShipLog
                 'UPDATE ship_log SET read_at = NOW() WHERE player_id = ? AND read_at IS NULL',
                 [$playerId]
             );
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            \App\Core\Database::rilanciaSeAnnullata($e);
         }
     }
 
@@ -195,7 +200,8 @@ final class ShipLog
                     )->rowCount();
                 }
             }
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            \App\Core\Database::rilanciaSeAnnullata($e);
         }
         return $deleted;
     }

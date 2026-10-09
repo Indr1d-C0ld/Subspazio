@@ -175,7 +175,9 @@ final class Cloak
                 [(int) $ship['id'], self::fedspaceForbidden() ? 1 : 0]
             )->rowCount() > 0
             : Database::run('UPDATE ships SET cloaked = 0 WHERE id = ?', [(int) $ship['id']])->rowCount() >= 0;
-        if (!$acceso) {
+        // rowCount conta le righe cambiate: un doppio «accendi» trova la nave
+        // gia' occultata e non cambia nulla, ma e' un successo, non un errore
+        if (!$acceso && !($on && (int) (Database::first('SELECT cloaked FROM ships WHERE id = ?', [(int) $ship['id']])['cloaked'] ?? 0) === 1)) {
             return ['ok' => false, 'error' => 'La nave e\' cambiata nel frattempo: ricarica la plancia e riprova.'];
         }
         ShipLog::write((int) $player['id'], 'system', 'info',

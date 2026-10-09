@@ -46,8 +46,20 @@
   });
 
   // Selettori che si applicano da soli (tema grafico nel piè di pagina):
-  // senza JavaScript resta il bottone «Applica» nel <noscript>.
+  // senza JavaScript resta il bottone «Applica» nel <noscript>. Col mouse si
+  // applica alla scelta; con la tastiera le frecce scorrono le voci senza
+  // inviare (su alcuni browser ogni freccia genera «change», e si veniva
+  // portati via alla prima), e si conferma con Invio o uscendo dal campo.
   document.querySelectorAll('select[data-autoinvio]').forEach((sel) => {
-    sel.addEventListener('change', () => { if (sel.form) sel.form.submit(); });
+    const iniziale = sel.value;
+    let tastiera = false;
+    const invia = () => { if (sel.form && sel.value !== iniziale) sel.form.submit(); };
+    sel.addEventListener('keydown', (e) => {
+      tastiera = true;
+      if (e.key === 'Enter') { e.preventDefault(); invia(); }
+    });
+    sel.addEventListener('pointerdown', () => { tastiera = false; });
+    sel.addEventListener('change', () => { if (!tastiera) invia(); });
+    sel.addEventListener('blur', () => { if (tastiera) invia(); });
   });
 })();

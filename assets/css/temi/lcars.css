@@ -154,9 +154,12 @@ html[data-tema="lcars"] {
 [data-tema="lcars"] .game-nav a:nth-child(4n+1) { background: var(--lc-pesca); }
 [data-tema="lcars"] .game-nav a:nth-child(4n+2) { background: var(--lc-lilla); }
 [data-tema="lcars"] .game-nav a:nth-child(4n+3) { background: var(--lc-oro); }
-[data-tema="lcars"] .game-nav a:hover { color: #000; filter: brightness(1.18); background-color: inherit; }
+/* al passaggio la capsula si accende: colore e fondo restano i suoi (con
+   «background-color: inherit» prendeva il nero della striscia e spariva) */
+[data-tema="lcars"] .game-nav a:hover { color: #000; filter: brightness(1.22); }
 
 @media (min-width: 1100px) {
+ @supports selector(:has(*)) {
   /* Sui monitor la striscia diventa la colonna di sinistra, unita alla barra
      superiore da un gomito: la forma piu' riconoscibile dell'interfaccia. */
   /* altezza fissa della barra, cosi' colonna e banda s'incontrano esatte:
@@ -188,6 +191,7 @@ html[data-tema="lcars"] {
   [data-tema="lcars"] body:has(.game-nav) .foot { padding-left: 12.4rem; }
   [data-tema="lcars"] body:has(.game-nav) .wrap { max-width: calc(62rem + 11rem); }
   [data-tema="lcars"] body:has(.game-nav) .wrap.wide { max-width: calc(86rem + 11rem); }
+ }
 }
 
 /* ----------------------------------------------- pannelli a parentesi --- */
@@ -343,3 +347,16 @@ html[data-tema="lcars"] {
 
 /* il titolo d'apertura della pagina iniziale resta grande */
 [data-tema="lcars"] .hero h1 { font-size: clamp(2.6rem, 7vw, 4.2rem); }
+
+/* le notifiche tengono il colore del loro tipo (il bordo pesca di base le
+   rendeva tutte uguali: «sei sotto attacco» come un messaggio radio) */
+[data-tema="lcars"] .toast.t-radio { border-left-color: var(--lc-lilla); }
+[data-tema="lcars"] .toast.t-sector { border-left-color: var(--lc-pervinca); }
+[data-tema="lcars"] .toast.t-event { border-left-color: var(--lc-oro); }
+[data-tema="lcars"] .toast.t-alert, [data-tema="lcars"] .toast.t-attacked, [data-tema="lcars"] .toast.t-npc_attack, [data-tema="lcars"] .toast.t-planet_hit, [data-tema="lcars"] .toast.t-entry_combat, [data-tema="lcars"] .toast.t-destroyed { border-left-color: var(--lc-rosso); }
+[data-tema="lcars"] .toast.t-destroyed { background: #2a0c08; }
+
+/* sul telefono i bottoni piccoli restano grandi abbastanza per il dito */
+@media (max-width: 820px) {
+  [data-tema="lcars"] .btn.xs { padding: .45rem .9rem .4rem; font-size: .92rem; }
+}

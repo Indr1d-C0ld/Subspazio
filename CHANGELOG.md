@@ -4,6 +4,32 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-09 — Quinto audit: soccorso, stalli, lucchetti, stagione, temi (e un incidente)
+
+Rilette a mente fresca le correzioni del quarto audit e il codice della
+giornata. **Incidente**: una controprova sul codice di prima ha chiuso davvero
+la Stagione 3 (non ancora giocata); *deciso con l'autore*: riaperta, albo e
+podi fasulli tolti; persi radio e avvisi dal 7/10. Regola nuova: le prove non
+chiamano mai le operazioni che azzerano il gioco.
+
+- **[src/Game/Combat.php](src/Game/Combat.php)** — niente premi né reputazione
+  per una nave di soccorso abbattuta anche quando è lei ad attaccare; attacco
+  respinto all'ultimo senza bruciare Nucleo e occultamento; ordine dei
+  lucchetti.
+- **[src/Core/Database.php](src/Core/Database.php)** — `rilanciaSeAnnullata`,
+  usato da Stats, Loot, Crew, Live, ShipLog, Faction.
+- **src/Game/Economy.php**, **src/Game/Shipyard.php** — comandante prima della
+  nave. **src/Game/Legge.php** — confisca senza maturare interessi.
+- **[src/Game/Season.php](src/Game/Season.php)** — manutenzione anche dopo il
+  Big Bang, numero di stagione atteso (`chiusuraAmmessa`), messaggi chiari.
+- **src/Game/Modules.php**, **src/Game/Cloak.php**, **src/Game/Live.php**
+  (+ **db/migrations/0065_battito_stream.sql**), **src/Game/FedNews.php**.
+- **Temi** — notifiche col colore per tipo, focus visibile in Cockpit, vetro di
+  Cintura senza spostare le tendine, contrasto dei bottoni Neon, hover LCARS,
+  warp con la fascia, selettore da tastiera, ritorno con query, prestazioni.
+- **[tests/quinto_audit.php](tests/quinto_audit.php)** (nuovo) — 18 verifiche;
+  suite a 653. **README**, **docs/roadmap.md**, **tests/README.md**, **sw.js** v53.
+
 ## 2026-10-09 — I README raccontano i temi grafici ovunque
 
 - **README.md** (copia pubblica) — i temi anche in «Come si gioca»,

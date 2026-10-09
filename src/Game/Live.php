@@ -35,7 +35,8 @@ final class Live
                 'INSERT INTO live_events (scope, scope_id, kind, title, body, payload) VALUES (?, ?, ?, ?, ?, ?)',
                 [$scope, $scopeId, $kind, $title, $body, $payload === [] ? null : json_encode($payload, JSON_UNESCAPED_UNICODE)]
             );
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            \App\Core\Database::rilanciaSeAnnullata($e);
             // il realtime non deve mai far fallire un'azione di gioco
         }
     }
@@ -70,7 +71,8 @@ final class Live
                 'INSERT INTO alerts (player_id, kind, title, body, link) VALUES (?, ?, ?, ?, ?)',
                 [$playerId, $kind, mb_substr($title, 0, 120), mb_substr($body, 0, 400), $link]
             );
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            \App\Core\Database::rilanciaSeAnnullata($e);
         }
         self::player($playerId, 'alert', $title, $body, ['link' => $link, 'alert_kind' => $kind]);
     }
@@ -180,17 +182,29 @@ final class Live
      */
     public static function streamSuperato(int $playerId, int $streamId): bool
     {
+        // solo gli stream vivi: chi non batte da 20 secondi e' di un processo
+        // morto senza chiudersi, e non deve far chiudere una pagina aperta
         return (int) (Database::first(
-            'SELECT COUNT(*) n FROM live_streams WHERE player_id = ? AND id > ?',
+            'SELECT COUNT(*) n FROM live_streams WHERE player_id = ? AND id > ? AND visto_at > DATE_SUB(NOW(), INTERVAL 20 SECOND)',
             [$playerId, $streamId]
         )['n'] ?? 0) >= max(1, GameConfig::int('live.stream_paralleli', 3));
+    }
+
+    /** Lo stream e' vivo: lo dice a ogni battito. */
+    public static function battitoStream(int $streamId): void
+    {
+        try {
+            Database::run('UPDATE live_streams SET visto_at = NOW() WHERE id = ?', [$streamId]);
+        } catch (\Throwable) {
+        }
     }
 
     public static function chiudiStream(int $streamId): void
     {
         try {
             Database::run('DELETE FROM live_streams WHERE id = ?', [$streamId]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            \App\Core\Database::rilanciaSeAnnullata($e);
         }
     }
 
@@ -223,10 +237,10 @@ final class Live
         try {
             $n = Database::run('DELETE FROM live_events WHERE created_at < DATE_SUB(NOW(), INTERVAL ? MINUTE)', [$min])->rowCount();
             // stream di processi finiti male (riavvio del server)
-            Database::run('DELETE FROM live_streams WHERE aperto_at < DATE_SUB(NOW(), INTERVAL ? SECOND)',
-                [GameConfig::int('live.stream_max_s', 300) + 120]);
+            Database::run('DELETE FROM live_streams WHERE visto_at < DATE_SUB(NOW(), INTERVAL 2 MINUTE)');
             Database::run('DELETE FROM alerts WHERE read_at IS NOT NULL AND read_at < DATE_SUB(NOW(), INTERVAL 14 DAY)');
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            \App\Core\Database::rilanciaSeAnnullata($e);
         }
         return $n;
     }

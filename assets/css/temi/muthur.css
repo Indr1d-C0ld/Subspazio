@@ -109,6 +109,10 @@ html[data-tema="muthur"] {
 [data-tema="muthur"] ::selection { background: var(--fosforo); color: #011a08; text-shadow: none; }
 [data-tema="muthur"] a { color: var(--fosforo-vivo); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--fosforo) 35%, transparent); text-underline-offset: 3px; }
 [data-tema="muthur"] a:hover { background: var(--fosforo); color: #011a08; text-decoration: none; text-shadow: none; }
+/* invertito il link, si invertono anche i figli col loro colore (voci della
+   campanella, invito a iscriversi): prima restavano verdi su verde */
+[data-tema="muthur"] a:hover * { color: #011a08 !important; text-shadow: none; }
+[data-tema="muthur"] .topbar .cta:hover { color: #011a08 !important; }
 [data-tema="muthur"] h1, [data-tema="muthur"] h2, [data-tema="muthur"] h3 {
   font-weight: 400; text-transform: uppercase; letter-spacing: .08em; color: var(--fosforo);
 }
@@ -219,3 +223,8 @@ html[data-tema="muthur"] {
 
 /* il titolo d'apertura della pagina iniziale resta grande */
 [data-tema="muthur"] .hero h1 { font-size: clamp(2.8rem, 8vw, 4.6rem); }
+
+/* il colore della fascia sotto i bottoni di warp (il bordo di questo tema lo
+   copriva) e il fondo rosso della nave perduta */
+[data-tema="muthur"] .btn.warp[class*="fascia-"]:not(.fascia-0) { border-bottom: 2px solid var(--fc); }
+[data-tema="muthur"] .toast.t-destroyed { background: #200805; }

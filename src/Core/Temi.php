@@ -70,10 +70,25 @@ final class Temi
         return isset(self::CATALOGO[$chiave]);
     }
 
+    /** @var array{0:?int,1:string}|null utente e tema gia' risolti in questa richiesta */
+    private static ?array $risolto = null;
+
     /** Il tema di chi sta guardando: account, poi cookie, poi quello di base. */
     public static function attuale(): string
     {
         $u = Auth::user();
+        $uid = $u !== null ? (int) $u['id'] : null;
+        if (self::$risolto !== null && self::$risolto[0] === $uid) {
+            return self::$risolto[1];   // una query sola per pagina, non una per chiamata
+        }
+        $t = self::leggi($u);
+        self::$risolto = [$uid, $t];
+        return $t;
+    }
+
+    /** @param array<string,mixed>|null $u */
+    private static function leggi(?array $u): string
+    {
         if ($u !== null) {
             try {
                 $t = (string) (Database::first('SELECT tema FROM users WHERE id = ?', [(int) $u['id']])['tema'] ?? '');
@@ -96,8 +111,13 @@ final class Temi
         }
         $u = Auth::user();
         if ($u !== null) {
-            Database::run('UPDATE users SET tema = ? WHERE id = ?', [$chiave, (int) $u['id']]);
+            try {
+                Database::run('UPDATE users SET tema = ? WHERE id = ?', [$chiave, (int) $u['id']]);
+            } catch (\Throwable) {
+                // colonna non ancora migrata: resta il cookie
+            }
         }
+        self::$risolto = null;
         if (!headers_sent()) {
             setcookie(self::COOKIE, $chiave, [
                 'expires'  => time() + 365 * 86400,

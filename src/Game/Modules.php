@@ -129,6 +129,8 @@ final class Modules
         if ($m === null) {
             return ['ok' => false, 'error' => 'Modulo non installato su questa nave.'];
         }
+        // i tetti di adesso, per sapere se e' questo smontaggio ad abbassarli
+        $con = PlayerService::ship((int) $ship['id']) ?? [];
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
@@ -147,15 +149,18 @@ final class Modules
             // Lo stesso per l'hangar: smontato, i caccia restavano a bordo oltre
             // il tetto per sempre (nessuno li riporta sotto), e il posto liberato
             // si dava a moduli d'attacco. Gli scudi in piu' si disperdono.
+            // Solo se e' questo modulo ad abbassare il tetto: con un hangar
+            // guasto (che non conta) e i caccia gia' oltre, prima si rifiutava
+            // lo smontaggio di qualunque modulo.
             $senza = PlayerService::ship((int) $ship['id']) ?? [];
             $tetto = (int) ($senza['max_fighters'] ?? PHP_INT_MAX);
-            if ((int) $nave['fighters'] > $tetto) {
+            if ($tetto < (int) ($con['max_fighters'] ?? $tetto) && (int) $nave['fighters'] > $tetto) {
                 $pdo->rollBack();
                 $n = number_format((int) $nave['fighters'] - $tetto, 0, ',', '.');
                 return ['ok' => false, 'error' => "Senza questo modulo l'hangar porta " . number_format($tetto, 0, ',', '.')
                     . " caccia: schierane prima {$n} in un settore."];
             }
-            if (isset($senza['max_shields'])) {
+            if (isset($senza['max_shields']) && (int) $senza['max_shields'] < (int) ($con['max_shields'] ?? $senza['max_shields'])) {
                 Database::run('UPDATE ships SET shields = LEAST(shields, ?) WHERE id = ?', [(int) $senza['max_shields'], (int) $ship['id']]);
             }
             Database::run(

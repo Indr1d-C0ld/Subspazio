@@ -558,6 +558,9 @@ final class GameApiController
                 // il battito porta il cursore: la pagina sa sempre da dove
                 // ripartire, anche se non le arriva nessun evento
                 echo "event: cursore\ndata: " . (int) $stato['cursore'] . "\n\n";
+                if ($streamId > 0) {
+                    Live::battitoStream($streamId);
+                }
                 $lastBeat = time();
             }
             @flush();

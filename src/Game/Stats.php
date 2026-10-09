@@ -47,18 +47,10 @@ final class Stats
         }
     }
 
-    /**
-     * ...tranne quando il database ha gia' annullato la transazione in cui il
-     * contatore stava (stallo fra due richieste): ingoiare l'errore lasciava
-     * proseguire il chiamante in autocommit, come se il salto o lo scambio
-     * fossero andati a buon fine, con turni e merce mai scalati.
-     */
+    /** ...tranne quando il database ha annullato la transazione: si rilancia. */
     private static function seAnnullata(\Throwable $e): void
     {
-        $info = $e instanceof \PDOException ? ($e->errorInfo ?? []) : [];
-        if (($info[0] ?? '') === '40001' || (int) ($info[1] ?? 0) === 1213) {
-            throw $e;
-        }
+        Database::rilanciaSeAnnullata($e);
     }
 
     /** @return array<string,int> */

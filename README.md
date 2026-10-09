@@ -619,11 +619,11 @@ php tests/run.php                # tutte
 php tests/run.php economica      # solo i file col nome che contiene "economica"
 ```
 
-Suite di integrazione senza dipendenze, 634 verifiche in 29 file: integrità
+Suite di integrazione senza dipendenze, 653 verifiche in 30 file: integrità
 economica, concorrenza, banca/contratti/Officina, combattimento, navigazione,
 nave e moduli, pianeti, porti, equipaggio, mondo, percorsi di gioco normali,
 universo, clock, sessioni e turni, difese, iscrizione e posta, immagini,
-configurazione, schema, notifiche in tempo reale, fasce di rischio, legge federale, bottino, temi grafici, il quarto audit, e le regole decise per mercato nero, uccisioni e
+configurazione, schema, notifiche in tempo reale, fasce di rischio, legge federale, bottino, temi grafici, il quarto e il quinto audit, e le regole decise per mercato nero, uccisioni e
 stagioni. Ogni correzione ha una prova costruita per fallire sul codice di
 prima. Quando la gara sta nel database, la prova fa la prima richiesta a mano
 in una transazione aperta (blocca la riga e la cambia) e lancia la seconda in
@@ -636,6 +636,11 @@ istante sono un caso reale, non teorico.
 quello configurato, ma creano e distruggono solo righe sintetiche col prefisso
 `__test_`, e ripuliscono anche in caso di errore. Da non lanciare mentre è in
 corso una sessione di gioco affollata: aprono transazioni su tabelle vive.
+E nessuna prova chiama le operazioni che azzerano il gioco (chiusura di
+stagione, Big Bang): si provano le regole che le governano, mai l'operazione.
+La regola ha un motivo concreto: il 9 ottobre 2026 una prova lanciata per
+controprova su una versione precedente del codice ha chiuso davvero la
+stagione in corso (poi riaperta).
 
 ## Console
 

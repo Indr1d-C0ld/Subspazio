@@ -263,7 +263,10 @@ final class Legge
         $preso = Wallet::seize($playerId, $importo);
         $resto = $importo - $preso;
         if ($resto > 0 && Bank::enabled()) {
-            $saldo = (int) Bank::account($playerId)['balance'];   // matura gli interessi
+            // Il saldo com'e', senza far maturare gli interessi: quella
+            // scrittura in piu', dentro la transazione dell'attacco, poteva
+            // scontrarsi col clock che li matura e far annullare l'attacco.
+            $saldo = (int) (Database::first('SELECT balance FROM bank_accounts WHERE player_id = ?', [$playerId])['balance'] ?? 0);
             $dallaBanca = min($resto, $saldo);
             if ($dallaBanca > 0 && Database::run(
                 'UPDATE bank_accounts SET balance = balance - ? WHERE player_id = ? AND balance >= ?',

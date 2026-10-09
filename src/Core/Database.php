@@ -96,4 +96,25 @@ final class Database
     {
         return (int) self::pdo()->lastInsertId();
     }
+
+    /**
+     * Per i blocchi che ingoiano gli errori «perche' un dettaglio non deve far
+     * fallire l'azione» (contatori, bottino, effetti pendenti): se il server
+     * ha annullato la transazione in cui stavano (stallo 1213/40001, riga
+     * cambiata 1020 con innodb_snapshot_isolation), l'errore va rilanciato.
+     * Ingoiato, il chiamante proseguiva in autocommit su una transazione che
+     * non c'era piu', e il commit finale falliva con mezze scritture fatte.
+     * Fuori da una transazione non c'e' niente da salvare: si ingoia.
+     */
+    public static function rilanciaSeAnnullata(\Throwable $e): void
+    {
+        if (!$e instanceof PDOException || !(self::$pdo instanceof PDO)) {
+            return;
+        }
+        $info = $e->errorInfo ?? [];
+        $annullata = ($info[0] ?? '') === '40001' || in_array((int) ($info[1] ?? 0), [1213, 1020], true);
+        if ($annullata && self::$pdo->inTransaction()) {
+            throw $e;
+        }
+    }
 }

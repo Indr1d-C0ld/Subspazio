@@ -58,10 +58,12 @@ html[data-tema="neon"] {
   --warn-ink:   #fff1b8;
   --err-ink:    #ffd0db;
 
-  --accent-hi:  #ff5fd3;
-  --accent-lo:  #c21f96;
-  --danger-hi:  #ff6a88;
-  --danger-lo:  #d01f48;
+  /* abbastanza scuri da reggere il testo bianco (almeno 4,5:1): il neon lo
+     fanno il bordo e il bagliore, non il fondo */
+  --accent-hi:  #b5137f;
+  --accent-lo:  #7d0b5a;
+  --danger-hi:  #b8143a;
+  --danger-lo:  #800d27;
   --danger-ink: #ffffff;
   --warp-hi:    #1e1033;
   --warp-lo:    #160b27;
@@ -101,13 +103,17 @@ html[data-tema="neon"] {
   background-attachment: fixed;
 }
 /* pioggia di sbieco al posto delle stelle: in citta' il cielo non si vede */
+/* Lo strato e' piu' grande dello schermo e scorre con transform: lo muove la
+   scheda grafica, senza ridisegnare la pagina a ogni fotogramma (spostare lo
+   sfondo, come prima, pesava sulla batteria dei telefoni). */
 [data-tema="neon"] body::before {
-  opacity: 1;
+  opacity: 1; inset: -260px -64px 0 -64px;
   background-image: repeating-linear-gradient(104deg, transparent 0 9px, rgba(190, 210, 255, .055) 9px 10px, transparent 10px 23px);
   background-size: 260px 260px;
+  will-change: transform;
   animation: neon-pioggia 1.4s linear infinite;
 }
-@keyframes neon-pioggia { to { background-position: -64px 260px; } }
+@keyframes neon-pioggia { to { transform: translate3d(-64px, 260px, 0); } }
 [data-tema="neon"] ::selection { background: var(--magenta); color: #fff; }
 [data-tema="neon"] a { color: var(--ciano); }
 [data-tema="neon"] h1, [data-tema="neon"] h2, [data-tema="neon"] h3 { font-weight: 400; }

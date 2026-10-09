@@ -97,7 +97,9 @@ html[data-tema="cintura"] {
     linear-gradient(180deg, #08121f, #050b14 60%, #07101b);
   background-attachment: fixed;
 }
-[data-tema="cintura"] body::before { opacity: .35; }
+/* stelle ferme: sotto il vetro sfocato, un fondo che si muove costringe a
+   ricalcolare la sfocatura di ogni pannello a ogni fotogramma */
+[data-tema="cintura"] body::before { opacity: .35; animation: none; }
 [data-tema="cintura"] h1, [data-tema="cintura"] h2, [data-tema="cintura"] h3 {
   text-transform: uppercase; font-weight: 300; letter-spacing: .22em;
 }
@@ -117,8 +119,17 @@ html[data-tema="cintura"] {
 [data-tema="cintura"] .game-nav a:hover { background: none; color: var(--accent); box-shadow: inset 0 -1px 0 var(--accent); }
 
 /* ------------------------------------------------- vetro e marcatori --- */
+/* Il vetro sfocato sta su uno strato dietro al contenuto: un backdrop-filter
+   sul pannello lo rende il riferimento delle tendine d'aiuto (position:
+   fixed), che finivano fuori posto o tagliate. */
 [data-tema="cintura"] .panel,
-[data-tema="cintura"] .statusbar,
+[data-tema="cintura"] .statusbar { background: none; }
+[data-tema="cintura"] .panel::before,
+[data-tema="cintura"] .statusbar::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit;
+  background: var(--panel);
+  backdrop-filter: blur(10px) saturate(1.2); -webkit-backdrop-filter: blur(10px) saturate(1.2);
+}
 [data-tema="cintura"] .toast,
 [data-tema="cintura"] .alert-panel {
   background: var(--panel);
@@ -176,3 +187,6 @@ html[data-tema="cintura"] {
 
 /* il titolo d'apertura della pagina iniziale resta grande */
 [data-tema="cintura"] .hero h1 { font-size: clamp(1.8rem, 5vw, 2.8rem); }
+
+[data-tema="cintura"] .btn.warp[class*="fascia-"]:not(.fascia-0) { border-bottom: 2px solid var(--fc); }
+[data-tema="cintura"] .toast.t-destroyed { background: rgba(60, 14, 20, .9); }

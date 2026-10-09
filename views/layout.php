@@ -6,10 +6,23 @@ $errors = flash('errors');
 $errors = is_array($errors) ? $errors : [];
 $tema = \App\Core\Temi::attuale();
 $foglioTema = \App\Core\Temi::foglio($tema);
-// la pagina a cui tornare dopo aver cambiato tema (percorso interno all'app)
-$percorso = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+// La pagina a cui tornare dopo aver cambiato tema (percorso interno all'app),
+// con la sua query se e' semplice (il link di reimpostazione della password
+// senza gettone non vale piu'). Dopo una POST (pagina d'errore, CSRF, 429)
+// si torna alla home: la stessa rotta in GET darebbe «metodo non consentito».
+$uriTema = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+$percorso = (string) parse_url($uriTema, PHP_URL_PATH);
 $prefisso = app_url_prefix();
-$percorso = $prefisso !== '' && str_starts_with($percorso, $prefisso) ? (substr($percorso, strlen($prefisso)) ?: '/') : '/';
+if ($prefisso !== '') {
+    $percorso = str_starts_with($percorso, $prefisso) ? (substr($percorso, strlen($prefisso)) ?: '/') : '/';
+}
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
+    $percorso = '/';
+}
+$queryTema = (string) parse_url($uriTema, PHP_URL_QUERY);
+if ($percorso !== '/' && preg_match('/^[A-Za-z0-9=&_.%-]{1,300}$/', $queryTema) === 1) {
+    $percorso .= '?' . $queryTema;
+}
 ?><!doctype html>
 <html lang="it" data-tema="<?= e($tema) ?>">
 <head>

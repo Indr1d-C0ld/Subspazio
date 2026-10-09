@@ -3,7 +3,12 @@
 Ospitati qui, non caricati da server esterni: i browser dei giocatori non
 chiamano nessuno fuori da SubSpazio. Tutti sotto **SIL Open Font License 1.1**
 (il testo di ciascuna licenza e' nel file `OFL-<famiglia>.txt` accanto),
-scaricati il 09/10/2026 da Google Fonts, solo il sottoinsieme latino in woff2.
+scaricati il 09/10/2026 da Google Fonts, solo il sottoinsieme latino in woff2,
+cosi' come Google Fonts li distribuisce: nessuna modifica ai file e nessun
+cambio di nome alle famiglie. Orbitron, Audiowide e Share (Share Tech Mono)
+hanno un Reserved Font Name: se un giorno questi file andassero modificati
+(sottoinsiemi diversi, ritocchi), la versione modificata dovrebbe portare un
+nome di famiglia diverso.
 
 | File | Famiglia | Tema |
 |---|---|---|

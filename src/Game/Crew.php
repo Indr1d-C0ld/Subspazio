@@ -414,7 +414,8 @@ final class Crew
                 return null;
             }
             return (float) $row['magnitude'];
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Database::rilanciaSeAnnullata($e);
             return null;
         }
     }
@@ -439,7 +440,8 @@ final class Crew
                   ORDER BY level DESC, id ASC",
                 [$playerId]
             ), 0, $posti);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            \App\Core\Database::rilanciaSeAnnullata($e);
             return $out;
         }
         $dim = GameConfig::float('crew.passive_diminish', 0.55);
@@ -486,7 +488,8 @@ final class Crew
             ) as $o) {
                 self::grantXp((int) $o['id'], $o, $amount, $max);
             }
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            \App\Core\Database::rilanciaSeAnnullata($e);
             // tabelle non migrate
         }
     }

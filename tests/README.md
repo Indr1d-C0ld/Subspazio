@@ -52,11 +52,20 @@ distinzione al centro dei test sull'integrità economica.
 | `integrita_economica.php` | Reperti 01 e 02 dell'audit: addebiti con guardia di capienza, scambi tutto-o-niente, confisca limitata al saldo reale, guardia sui nomi di colonna |
 | `percorsi_normali.php` | Non-regressione: cantiere, mercato nero, porto in acquisto e vendita, i task del tick toccati dalla correzione |
 | `temi.php` | Temi grafici: catalogo, fogli e caratteri coerenti (con la licenza accanto), ritorno solo a pagine interne, scelta sull'account e nel cookie, il tema più scelto e l'avviso sui temi nel notiziario, gli aiuti che elencano i temi dal catalogo |
+| `quinto_audit.php` | Quinto audit (09/10/2026): niente premio per l'aggressore su nave di soccorso, attacco respinto che non brucia Nucleo e occultamento, hangar guasto, doppio «accendi», stalli rilanciati solo dentro le transazioni, stagione gia' chiusa, stream morti |
 | `quarto_audit.php` | Quarto audit (09/10/2026): gare su NPC, potenziamenti, navi, consumabili e arresti; taglie confiscate; ingaggi del clock su righe rilette; hangar, affissi, occultamento, fasce, traguardi, stream, migrazioni in attesa |
 
 Le prove sull'integrità economica passano alle funzioni la **stessa fotografia
 più volte**: è esattamente ciò che vedrebbero due richieste concorrenti, e
 riproduce la corsa senza dover orchestrare processi in parallelo.
+
+**Mai chiamare dalle prove le operazioni che azzerano il gioco** — chiusura di
+stagione (`Season::close`), Big Bang, rigenerazione dell'universo. Si provano
+le regole che le governano (es. `Season::chiusuraAmmessa`) o il sorgente,
+mai l'operazione. Il 09/10/2026 una prova che chiamava `Season::close` con un
+parametro di sicurezza nuovo e' stata lanciata, per controprova, su una copia
+del codice di prima: quel codice il parametro non lo conosceva, PHP l'ha
+ignorato, e la stagione in corso e' stata chiusa davvero (poi riaperta).
 
 Quando la corsa sta nel database (un lucchetto, una riga cambiata fra lettura
 e scrittura) la fotografia non basta. `quarto_audit.php` fa la prima richiesta

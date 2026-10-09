@@ -121,7 +121,7 @@ final class FedNews
 
         // 2) cronaca di frontiera: kill PvP recente
         $kill = Database::first(
-            "SELECT a.handle AS att, d.handle AS def, c.sector_id
+            "SELECT c.id, a.handle AS att, d.handle AS def, c.sector_id
              FROM combat_log c
              JOIN players a ON a.id = c.attacker_player_id
              JOIN players d ON d.id = c.defender_player_id
@@ -130,15 +130,12 @@ final class FedNews
              ORDER BY c.id DESC LIMIT 1",
             [$hrs]
         );
-        if ($kill !== null) {
-            $h[] = "Cronaca di frontiera: {$kill['att']} ha avuto la meglio su {$kill['def']} nel settore " . (int) $kill['sector_id'] . '.';
-        }
 
         // 2b) legge: l'ultima taglia riscossa e i ricercati. Le regole sulle
         // taglie sono cambiate il 09/10 (le paga il ricercato): il notiziario
         // e' il posto dove i comandanti le vedono applicate.
         $riscossa = Database::first(
-            "SELECT c.sector_id, c.outcome, a.handle AS att, d.handle AS def,
+            "SELECT c.id, c.sector_id, c.outcome, a.handle AS att, d.handle AS def,
                     CAST(JSON_VALUE(c.detail, '$.taglia') AS UNSIGNED) AS taglia
              FROM combat_log c
              JOIN players a ON a.id = c.attacker_player_id
@@ -148,13 +145,21 @@ final class FedNews
              ORDER BY c.id DESC LIMIT 1",
             [$hrs]
         );
+        // La stessa uccisione non va in pagina due volte: se ha fruttato una
+        // taglia la racconta quella notizia, non la cronaca.
+        if ($kill !== null && ($riscossa === null || (int) $riscossa['id'] !== (int) $kill['id'])) {
+            $h[] = "Cronaca di frontiera: {$kill['att']} ha avuto la meglio su {$kill['def']} nel settore " . (int) $kill['sector_id'] . '.';
+        }
         if ($riscossa !== null) {
-            // chi si difende e abbatte l'aggressore ricercato incassa anche lui
+            // chi si difende e abbatte l'aggressore incassa anche lui; e la
+            // taglia puo' essere quella da uccisioni di uno che non e' (piu')
+            // ricercato: «aveva una taglia sulla testa» vale in tutti i casi
             [$cacciatore, $preda] = $riscossa['outcome'] === 'att_destroyed'
                 ? [$riscossa['def'], $riscossa['att']]
                 : [$riscossa['att'], $riscossa['def']];
-            $h[] = "Taglia riscossa: {$cacciatore} ha abbattuto il ricercato {$preda} nel settore " . (int) $riscossa['sector_id']
-                . ' e incassato ' . number_format((int) $riscossa['taglia'], 0, ',', '.') . ' cr, confiscati al ricercato.';
+            $h[] = "Taglia riscossa: {$cacciatore} ha abbattuto {$preda}, che aveva una taglia sulla testa, nel settore "
+                . (int) $riscossa['sector_id'] . ' e incassato ' . number_format((int) $riscossa['taglia'], 0, ',', '.')
+                . ' cr, confiscati a lui.';
         }
 
         $ricercati = [];
@@ -202,12 +207,16 @@ final class FedNews
 
         // 4b) moda di plancia: il tema grafico piu' scelto (Console, quello di
         // base, non conta: e' di chi non ha scelto)
-        $moda = Database::first(
-            "SELECT u.tema, COUNT(*) AS n FROM users u JOIN players p ON p.user_id = u.id
-             WHERE u.status = 'active' AND u.tema IS NOT NULL AND u.tema <> ?
-             GROUP BY u.tema ORDER BY n DESC, u.tema LIMIT 1",
-            [\App\Core\Temi::PREDEFINITO]
-        );
+        try {
+            $moda = Database::first(
+                "SELECT u.tema, COUNT(*) AS n FROM users u JOIN players p ON p.user_id = u.id
+                 WHERE u.status = 'active' AND u.tema IS NOT NULL AND u.tema <> ?
+                 GROUP BY u.tema ORDER BY n DESC, u.tema LIMIT 1",
+                [\App\Core\Temi::PREDEFINITO]
+            );
+        } catch (\Throwable) {
+            $moda = null;   // colonna non ancora migrata: il bollettino esce lo stesso
+        }
         if ($moda !== null && \App\Core\Temi::valido((string) $moda['tema'])) {
             $n = (int) $moda['n'];
             $h[] = 'Moda di plancia: il tema grafico piu\' scelto e\' ' . \App\Core\Temi::CATALOGO[$moda['tema']]['nome']

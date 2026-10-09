@@ -157,7 +157,8 @@ final class Loot
             if (($pg = Reperti::tiraProgetto($killerId, $band)) !== null) {
                 $out['progetti'][] = $pg;
             }
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            \App\Core\Database::rilanciaSeAnnullata($e);
             // catalogo non migrato: solo materiale
         }
 
@@ -207,7 +208,8 @@ final class Loot
             self::contaModulo($playerId, (string) $row['rarity'], $rolled);
             return ['key' => $row['ckey'], 'name' => self::nomeConAffissi((string) $row['name'], $rolled), 'rarity' => $row['rarity'],
                     'label' => self::RARITY_LABEL[$row['rarity']] ?? $row['rarity']];
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Database::rilanciaSeAnnullata($e);
             return null;
         }
     }
@@ -415,7 +417,8 @@ final class Loot
                 "SELECT 1 x FROM events WHERE kind = 'bounty_season' AND reverted = 0 AND (ends_at IS NULL OR ends_at > NOW()) LIMIT 1"
             );
             return $has ? GameConfig::float('loot.event_bounty_luck', 1.4) : 1.0;
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            \App\Core\Database::rilanciaSeAnnullata($e);
             return 1.0;
         }
     }
