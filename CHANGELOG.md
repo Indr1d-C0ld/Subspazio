@@ -4,6 +4,22 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-09 — Il notiziario della Federazione racconta legge e taglie
+
+- **[src/Game/FedNews.php](src/Game/FedNews.php)** — due notizie nuove dopo la
+  cronaca di frontiera: «Taglia riscossa» (chi, quale ricercato, dove, quanto
+  confiscato) e «Ricercati dalla Federazione» (fino a tre, con gradino e
+  taglia, e la regola: la paga il ricercato, confiscata a bordo e in banca).
+  L'avviso di servizio si alterna fra protezione novizio e regola delle
+  taglie.
+- **[src/Game/Combat.php](src/Game/Combat.php)** — il registro battaglie annota
+  la taglia riscossa (`detail.taglia`), da cui il notiziario legge l'importo
+  vero.
+- **[tests/legge.php](tests/legge.php)** — sezione «Notiziario», 5 verifiche
+  (suite a 611).
+- **README.md** — il notiziario descritto in «Mondo vivo»; conteggio delle
+  verifiche.
+
 ## 2026-10-09 — L'aiuto contestuale racconta le nuove taglie
 
 - **[src/Game/Help.php](src/Game/Help.php)** — `plancia.armi`: abbattere un

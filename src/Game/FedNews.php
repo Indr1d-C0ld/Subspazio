@@ -134,6 +134,50 @@ final class FedNews
             $h[] = "Cronaca di frontiera: {$kill['att']} ha avuto la meglio su {$kill['def']} nel settore " . (int) $kill['sector_id'] . '.';
         }
 
+        // 2b) legge: l'ultima taglia riscossa e i ricercati. Le regole sulle
+        // taglie sono cambiate il 09/10 (le paga il ricercato): il notiziario
+        // e' il posto dove i comandanti le vedono applicate.
+        $riscossa = Database::first(
+            "SELECT c.sector_id, c.outcome, a.handle AS att, d.handle AS def,
+                    CAST(JSON_VALUE(c.detail, '$.taglia') AS UNSIGNED) AS taglia
+             FROM combat_log c
+             JOIN players a ON a.id = c.attacker_player_id
+             JOIN players d ON d.id = c.defender_player_id
+             WHERE c.kind = 'ship' AND c.created_at > DATE_SUB(NOW(), INTERVAL ? HOUR)
+               AND CAST(JSON_VALUE(c.detail, '$.taglia') AS UNSIGNED) > 0
+             ORDER BY c.id DESC LIMIT 1",
+            [$hrs]
+        );
+        if ($riscossa !== null) {
+            // chi si difende e abbatte l'aggressore ricercato incassa anche lui
+            [$cacciatore, $preda] = $riscossa['outcome'] === 'att_destroyed'
+                ? [$riscossa['def'], $riscossa['att']]
+                : [$riscossa['att'], $riscossa['def']];
+            $h[] = "Taglia riscossa: {$cacciatore} ha abbattuto il ricercato {$preda} nel settore " . (int) $riscossa['sector_id']
+                . ' e incassato ' . number_format((int) $riscossa['taglia'], 0, ',', '.') . ' cr, confiscati al ricercato.';
+        }
+
+        $ricercati = [];
+        foreach (Database::all(
+            "SELECT p.handle, p.notorieta, p.notorieta_at FROM players p JOIN users u ON u.id = p.user_id
+             WHERE p.notorieta > 0 AND u.status = 'active'"
+        ) as $p) {
+            $punti = Legge::punti($p);
+            if (Legge::grado($punti) >= 2) {
+                $ricercati[] = ['handle' => (string) $p['handle'], 'grado' => Legge::grado($punti), 'taglia' => Legge::taglia($p)];
+            }
+        }
+        if ($ricercati !== []) {
+            usort($ricercati, static fn (array $x, array $y): int => $y['taglia'] <=> $x['taglia']);
+            $nomi = array_map(
+                static fn (array $r): string => $r['handle'] . ' (' . mb_strtolower(Legge::nome($r['grado'])) . ', '
+                    . number_format($r['taglia'], 0, ',', '.') . ' cr)',
+                array_slice($ricercati, 0, 3)
+            );
+            $h[] = (count($ricercati) === 1 ? 'Ricercato dalla Federazione: ' : 'Ricercati dalla Federazione: ') . implode(', ', $nomi)
+                . '. La taglia la paga il ricercato: chi lo abbatte la incassa, confiscata ai suoi crediti a bordo e in banca.';
+        }
+
         // 3) frontiera: nuova colonia
         $col = Database::first(
             "SELECT pl.name, pl.sector_id, p.handle
@@ -170,7 +214,14 @@ final class FedNews
         if ($h === []) {
             $h[] = "Nessun evento di rilievo nelle ultime {$hrs} ore. Rotte sgombre, mercati stabili.";
         }
-        $h[] = 'Bollettino di servizio: la protezione novizio resta attiva ' . GameConfig::int('newbie.protect_hours', 48) . ' ore dopo la registrazione. Buona rotta, comandanti.';
+        // Gli avvisi di servizio si alternano giorno per giorno.
+        $servizio = [
+            'la protezione novizio resta attiva ' . GameConfig::int('newbie.protect_hours', 48) . ' ore dopo la registrazione.',
+            'le taglie le paga chi le ha sulla testa. Chi abbatte un ricercato incassa la sua taglia, confiscata ai crediti a bordo'
+                . ' e poi alla banca del ricercato: da un ricercato al verde non si ricava nulla. Capsule e navi di soccorso abbattute'
+                . ' non valgono esperienza né bottino.',
+        ];
+        $h[] = 'Bollettino di servizio: ' . $servizio[(int) date('z') % count($servizio)] . ' Buona rotta, comandanti.';
 
         return $h;
     }

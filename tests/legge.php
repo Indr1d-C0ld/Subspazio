@@ -216,6 +216,25 @@ return static function (): void {
         Esito::uguale('ne\' conta come uccisione', 0, (int) $m['kills']);
         Esito::uguale('ne\' lascia bottino', $oggetti,
             (int) Database::first('SELECT COUNT(*) n FROM player_items WHERE player_id = ?', [(int) $main['id']])['n']);
+
+        Esito::sezione('Notiziario — la legge in prima pagina');
+
+        [$wa, $was] = Finti::comandante(40_000, ['fighters' => 5], $s1);
+        $notorieta((int) $wa['id'], 200);
+        [$ca, $cas] = Finti::comandante(0, ['fighters' => 5000], $s1);
+        Combat::attackShip($rileggi((int) $ca['id']), PlayerService::ship((int) $cas['id']), (int) $wa['id']);
+        [$wb] = Finti::comandante(0, [], $s1);
+        $notorieta((int) $wb['id'], 5000);   // in cima a qualunque elenco vero
+        $titoli = (new ReflectionMethod(\App\Game\FedNews::class, 'compose'))->invoke(null);
+        $riga = static fn (string $inizio): string => (string) (array_values(array_filter($titoli, static fn ($t) => str_starts_with($t, $inizio)))[0] ?? '');
+        // Prima il notiziario non parlava mai di legge.
+        Esito::verifica('racconta la taglia appena riscossa',
+            str_contains($riga('Taglia riscossa:'), $ca['handle'] . ' ha abbattuto il ricercato ' . $wa['handle']), $riga('Taglia riscossa:'));
+        Esito::verifica('con l\'importo confiscato', str_contains($riga('Taglia riscossa:'), 'confiscati al ricercato'));
+        Esito::verifica('elenca i ricercati con la loro taglia',
+            str_contains($riga('Ricercat'), $wb['handle'] . ' (nemico pubblico, 1.500.000 cr)'), $riga('Ricercat'));
+        Esito::verifica('e dice chi la paga', str_contains($riga('Ricercat'), 'La taglia la paga il ricercato'));
+        Esito::verifica('il bollettino chiude con un avviso di servizio', str_starts_with((string) end($titoli), 'Bollettino di servizio:'));
     } finally {
         if ($npcIds !== []) {
             Database::run('DELETE FROM npcs WHERE id IN (' . implode(',', array_fill(0, count($npcIds), '?')) . ')', $npcIds);

@@ -260,7 +260,11 @@ testi o artwork della door proprietaria.
   Ferrengi, pirati e mercanti che si muovono, ingaggiano e rinascono sul tick,
   ognuno nella sua fascia di rischio;
   **eventi globali** (shock di mercato, brillamento solare, incursione
-  Ferrengi, ondata di pirateria, stagione delle taglie) annunciati via radio.
+  Ferrengi, ondata di pirateria, stagione delle taglie) annunciati via radio;
+  il **notiziario della Federazione**, composto ogni giorno dallo stato reale
+  del gioco (eventi, cronaca di frontiera, l'ultima taglia riscossa, i
+  ricercati più pericolosi con la loro taglia, nuove colonie, classifica) e
+  chiuso da un avviso di servizio a rotazione.
 
 - **Meta-gioco** — **stagioni** con ladder e albo d'oro. Alla chiusura
   ripartono da zero crediti, navi, pianeti, materiali, tesori delle
@@ -545,7 +549,7 @@ php tests/run.php                # tutte
 php tests/run.php economica      # solo i file col nome che contiene "economica"
 ```
 
-Suite di integrazione senza dipendenze, 606 verifiche in 28 file: integrità
+Suite di integrazione senza dipendenze, 611 verifiche in 28 file: integrità
 economica, concorrenza, banca/contratti/Officina, combattimento, navigazione,
 nave e moduli, pianeti, porti, equipaggio, mondo, percorsi di gioco normali,
 universo, clock, sessioni e turni, difese, iscrizione e posta, immagini,

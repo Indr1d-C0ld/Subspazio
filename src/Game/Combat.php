@@ -148,6 +148,7 @@ final class Combat
         $loot = 0;
         $expGain = 0;
         $drops = ['items' => [], 'salvage' => 0];
+        $taglia = 0;   // riscossa in questo scontro: il notiziario la racconta
         try {
             if (!Wallet::charge((int) $atkPlayer['id'], ['turns' => $turnCost])) {
                 $pdo->rollBack();
@@ -201,8 +202,9 @@ final class Combat
                     // Chi abbatte un ricercato incassa la sua taglia, confiscata a
                     // lui. Una riscossione sola per abbattimento, anche se le
                     // taglie sono due.
-                    if (self::riscuotiTaglia((int) $target['id'], (int) $atkPlayer['id'])
-                        + Legge::riscuoti((int) $target['id'], (int) $atkPlayer['id']) > 0) {
+                    $taglia = self::riscuotiTaglia((int) $target['id'], (int) $atkPlayer['id'])
+                        + Legge::riscuoti((int) $target['id'], (int) $atkPlayer['id']);
+                    if ($taglia > 0) {
                         Stats::add((int) $atkPlayer['id'], 'taglie_riscosse');
                     }
                 }
@@ -234,8 +236,9 @@ final class Combat
                     [GameConfig::int('combat.exp_per_kill', 50), (int) $target['id']]
                 );
                 Crew::awardKillXp((int) $target['id']);
-                if (self::riscuotiTaglia((int) $atkPlayer['id'], (int) $target['id'])
-                    + Legge::riscuoti((int) $atkPlayer['id'], (int) $target['id']) > 0) {
+                $taglia = self::riscuotiTaglia((int) $atkPlayer['id'], (int) $target['id'])
+                    + Legge::riscuoti((int) $atkPlayer['id'], (int) $target['id']);
+                if ($taglia > 0) {
                     Stats::add((int) $target['id'], 'taglie_riscosse');
                 }
                 self::destroyShip($atkPlayer);
@@ -252,7 +255,7 @@ final class Combat
                     'ship', $sectorId, $atkPlayer['id'], $target['id'], $r['rounds'],
                     $r['att_lost'], $r['def_lost'],
                     $destroyedTarget ? 'def_destroyed' : ($destroyedAtk ? 'att_destroyed' : ($r['def_lost'] > $r['att_lost'] ? 'att_win' : 'draw')),
-                    $loot, json_encode(['duel' => $r, 'drops' => $drops], JSON_UNESCAPED_UNICODE),
+                    $loot, json_encode(['duel' => $r, 'drops' => $drops, 'taglia' => $taglia], JSON_UNESCAPED_UNICODE),
                 ]
             );
             $pdo->commit();
