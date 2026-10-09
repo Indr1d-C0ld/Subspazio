@@ -61,11 +61,14 @@ $sec = static function (string $icon, string $title, string $body, string $class
   <?= $sec('⚔️', 'Combattimento',
       '<p>Fuori dalla Federazione puoi attaccare navi, porti, pianeti e <strong>NPC</strong> (pirati, Ferrengi, mercanti). '
     . 'Il duello è a caccia con scudi; attaccare costa turni. Vicino a Sol chi perde contro un NPC viene <strong>razziato</strong> '
-    . 'invece che distrutto (vedi «Fasce di rischio»). Se ti distruggono sopravvivi in <strong>capsula di salvataggio</strong> '
+    . 'invece che distrutto (vedi «Fasce di rischio»); se a vincere è la scorta di un mercantile vieni <strong>respinto</strong>, '
+    . 'a caccia e scudi azzerati, senza razzia. Un attacco a un NPC che arriva tardi (già abbattuto da altri, o '
+    . 'cambiato nel frattempo) viene respinto senza costi: non perdi turni, consumabili né occultamento. '
+    . 'Se ti distruggono sopravvivi in <strong>capsula di salvataggio</strong> '
     . 'allo StarDock: perdi carico e moduli installati (in parte recuperati in Leghe). Dei crediti a bordo, chi ti abbatte '
     . 'ne prende metà; senza <strong>capsula di salvataggio</strong> ne perdi anche metà di quelli rimasti, con la capsula nulla. '
-    . 'Se sei a secco chiedi una nave di soccorso al Cantiere: finché non ne compri una vera, chi la abbatte non ne ricava '
-    . 'né esperienza né bottino, come da una capsula. '
+    . 'Se sei a secco chiedi una nave di soccorso al Cantiere: finché non ne compri una vera, abbatterla non vale esperienza, '
+    . 'uccisione, bottino né reputazione, come una capsula, nemmeno quando è lei ad attaccare e tu ti difendi. '
     . 'Puoi dispiegare <strong>caccia</strong> e <strong>mine</strong> nei settori. '
     . '<a href="' . e(url('/gioco/battaglie')) . '">Registro battaglie</a></p>') ?>
 
@@ -113,7 +116,7 @@ $sec = static function (string $icon, string $title, string $body, string $class
       '<p>L\'<strong>occultamento</strong> (hardware Cantiere) ti toglie dai sensori: ti vede solo chi ha uno '
     . 'scanner olografico nel tuo settore, e gli ostili possono non agganciarti. Ma è un attraversamento, non un rifugio: '
     . 'il dispositivo ha una <strong>riserva</strong> di ' . \App\Game\Cloak::caricaMax() . ' cariche (una per salto, ne torna una ogni '
-    . \App\Game\Cloak::ricaricaMin() . ' minuti); ogni aggancio può <strong>scoprirti</strong> (dal 5% nella Cintura al 40% nell\'Orlo, '
+    . \App\Game\Cloak::ricaricaMin() . ' minuti, e saltare non azzera la ricarica in corso); ogni aggancio può <strong>scoprirti</strong> (dal 5% nella Cintura al 40% nell\'Orlo, '
     . '+20% contro pattuglie ed élite, meno coi modelli rari del dispositivo); e <strong>cade</strong> se apri il fuoco, commerci, '
     . 'attracchi a un pianeta, spogli un relitto, estrai, scansioni, attracchi allo StarDock o salti in Transwarp. '
     . '+' . \App\Game\Cloak::warpPenalty() . ' turno/i per warp, vietato in spazio Federazione, non ferma mine né Quasar.</p>'
@@ -128,7 +131,9 @@ $sec = static function (string $icon, string $title, string $body, string $class
     . 'notorietà), stive, recupero, occultamento, fabbrica di caccia. Quelli trovati hanno spesso <strong>affissi</strong> '
     . 'casuali («…dell\'Assalto e della Fortuna») che aggiungono effetti: due moduli uguali non lo sono mai. In officina li '
     . 'smonti (→ Leghe di recupero), li potenzi alla rarità successiva <em>della stessa famiglia</em> (gli affissi restano), '
-    . 'o li <strong>produci su ricetta</strong> con la raffineria. '
+    . 'o li <strong>produci su ricetta</strong> con la raffineria. Un modulo che alza un tetto (hangar, stive) si toglie solo '
+    . 'se quel che hai a bordo ci sta ancora: prima schieri i caccia in un settore o scarichi la merce; gli scudi in più si '
+    . 'disperdono. Un modulo <strong>guasto</strong> non conta nei tetti finché non lo ripari al Cantiere. '
     . '<a href="' . e(url('/gioco/moduli')) . '">Officina moduli</a></p>') ?>
 
   <?= $sec('👥', 'Equipaggio & missioni',
@@ -158,6 +163,8 @@ $sec = static function (string $icon, string $title, string $body, string $class
   <?= $sec('🏆', 'Meta',
       '<p><strong>Stagioni</strong> con ladder e Albo d\'Oro, <strong>traguardi</strong>, <strong>corporazioni</strong> e alleanze, '
     . '<strong>contratti</strong> e taglie fra giocatori, <strong>radio</strong> subspaziale. '
+    . 'Alla chiusura di una stagione il gioco si ferma per qualche istante («Fine stagione in corso»): basta ricaricare la pagina poco dopo. '
+    . 'In testa al notiziario della Federazione trovi i <strong>comunicati</strong> su disservizi e regole cambiate. '
     . 'L\'aspetto della plancia lo scegli tu: vedi «Temi grafici». '
     . '<a href="' . e(url('/gioco/classifica')) . '">Classifica</a> · <a href="' . e(url('/gioco/traguardi')) . '">Traguardi</a> · '
     . '<a href="' . e(url('/gioco/corp')) . '">Corp</a> · <a href="' . e(url('/gioco/albo')) . '">Albo</a></p>') ?>
@@ -183,7 +190,8 @@ $sec = static function (string $icon, string $title, string $body, string $class
   <?= $sec('🎨', 'Temi grafici',
       '<p>L\'interfaccia ha ' . count(\App\Core\Temi::CATALOGO) . ' <strong>temi</strong>, ispirati a plance e terminali '
     . 'della fantascienza. Un tema cambia colori, caratteri e forme di barre, pannelli e bottoni, e i colori della mappa '
-    . 'stellare e delle fasce; <strong>non cambia il gioco</strong>: stesse pagine, stessi comandi, stessi numeri.</p>'
+    . 'stellare e delle fasce; <strong>non cambia il gioco</strong>: stesse pagine, stessi comandi, stessi numeri. In ogni '
+    . 'tema gli avvisi tengono il colore del loro tipo: rosso per attacchi e distruzione, giallo per gli eventi.</p>'
     . '<div class="table-wrap"><table class="tbl compact"><tbody>' . $righeTemi . '</tbody></table></div>'
     . '<p>Si sceglie dal <a href="' . e(url('/gioco/profilo#tema')) . '">Profilo</a>, con un\'anteprima di ciascuno, '
     . 'o dal menu <strong>Tema</strong> in fondo a ogni schermata, anche prima di entrare. La scelta resta legata al tuo '

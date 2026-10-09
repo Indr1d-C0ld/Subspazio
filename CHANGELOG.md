@@ -4,6 +4,14 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-09 — La guida di gioco racconta le regole cambiate dagli audit
+
+- **[views/game/guide.php](views/game/guide.php)** — Combattimento (scorta dei
+  mercantili che respinge, attacco tardivo a un NPC senza costi, nave di
+  soccorso che non rende nulla nemmeno quando attacca), Occultamento
+  (ricarica che non si azzera saltando), Moduli (tetti, carico, moduli
+  guasti), Meta (fine stagione, comunicati), Temi (colore degli avvisi).
+
 ## 2026-10-09 — Il notiziario apre con i comunicati della Federazione
 
 - **[src/Game/FedNews.php](src/Game/FedNews.php)** — `comunicati()`: i testi di
