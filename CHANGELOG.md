@@ -4,6 +4,17 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-09 — L'aiuto contestuale racconta i temi grafici
+
+- **[src/Game/Help.php](src/Game/Help.php)** — segnaposto `{temi}` (nomi dal
+  catalogo); `profilo.tema` aggiornata; nuova `tema.selettore`;
+  `plancia.mappa` non promette più colori fissi (e non cita più i «pericoli
+  noti in rosso», che la mappa non ha mai disegnato).
+- **[views/layout.php](views/layout.php)** — «?» accanto al selettore del tema
+  in fondo a ogni pagina.
+- **[tests/temi.php](tests/temi.php)** — 3 verifiche; suite a 632.
+- **README.md** (progetto e pubblico), **tests/README.md** — conteggi.
+
 ## 2026-10-09 — La guida di gioco spiega i temi grafici
 
 - **[views/game/guide.php](views/game/guide.php)** — nuova sezione «Temi

@@ -18,7 +18,7 @@ final class Help
         'plancia.warp'          => 'Salta a un settore adiacente. Ogni warp costa turni (di norma 1); l\'autopilota incatena più salti verso una destinazione nota.',
         'plancia.forze'         => 'Caccia schierati, campi minati e NPC presenti nel settore: possono intercettarti quando entri o riparti.',
         'plancia.servizi'       => 'Riepilogo della tua nave e situazione: scafo, moduli, equipaggio, risorse, griglia EPS, reputazione con le fazioni.',
-        'plancia.mappa'         => 'Mappa dei settori esplorati. Anello ciano = adiacente, anello ambra = una preda con la tua Limpet, rosso = pericolo noto. «Fasce» colora i settori per distanza da Sol.',
+        'plancia.mappa'         => 'Mappa dei settori esplorati. Anello pieno = settore adiacente, anello tratteggiato = una preda con la tua Limpet. I colori seguono il tema grafico: la legenda sotto la mappa li mostra. «Fasce» colora i settori per distanza da Sol.',
         'plancia.fasce'         => 'Lo spazio è diviso in cinque fasce attorno a Sol. Più ti allontani, più i nemici sono forti e frequenti, ma più rendono porti, bottino, anomalie e missioni. Vicino a Sol chi perde contro un NPC viene razziato (carico e parte dei crediti), non distrutto; più in là si perde la nave. Il numero romano sui bottoni di warp è la fascia di destinazione.',
         'plancia.giornale'      => 'Il registro di bordo: viaggi, combattimenti, incontri ed eventi che ti riguardano, dal più recente.',
         'plancia.rientro'       => 'Cosa è successo mentre eri via: turni ricaricati, colonie che hanno prodotto, lavori d\'officina finiti, contratti scaduti.',
@@ -85,7 +85,8 @@ final class Help
 
         // --- Identità -------------------------------------------
         'profilo.identita'      => 'Colore d\'accento, marca di flotta, motto e registro della nave: compaiono in plancia, classifica e liste.',
-        'profilo.tema'          => 'L\'aspetto dell\'interfaccia: Console (quello di sempre), LCARS, Terminale MU/TH/UR, Cockpit, Cintura o Neon. Cambia colori, caratteri e forme, non il gioco. Vale per il tuo account su ogni dispositivo.',
+        'profilo.tema'          => 'L\'aspetto dell\'interfaccia: {temi}. Cambia colori, caratteri, forme e mappa stellare, non il gioco. Vale per il tuo account su ogni dispositivo; la guida li descrive tutti.',
+        'tema.selettore'        => 'Cambia subito l\'aspetto di tutte le schermate: {temi}. Anche prima di entrare; da comandante la scelta resta sul tuo account. Anteprime nel Profilo.',
         'profilo.immagini'      => 'Avatar e logo di flotta. Scegli il file, poi sposta e ingrandisci nel riquadro per decidere l\'inquadratura: viene caricato quello che vedi. L\'immagine e\' subito pubblica.',
     ];
 
@@ -94,6 +95,12 @@ final class Help
         $t = self::TEXT[$key] ?? null;
         if ($t === null) {
             return null;
+        }
+        // I nomi dei temi grafici vengono dal catalogo: {temi} diventa
+        // «Console, LCARS, … o Neon», e un tema nuovo compare da solo.
+        if (str_contains($t, '{temi}')) {
+            $nomi = array_column(\App\Core\Temi::CATALOGO, 'nome');
+            $t = str_replace('{temi}', implode(', ', array_slice($nomi, 0, -1)) . ' o ' . end($nomi), $t);
         }
         // I numeri che dipendono dalla configurazione non si scrivono a mano:
         // {turni:chiave} diventa «1 turno» / «3 turni» col valore attuale. Prima

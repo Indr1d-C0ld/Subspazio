@@ -79,6 +79,18 @@ return static function (): void {
     Esito::verifica('e fra gli avvisi di servizio c\'e\' quello sui temi, con tutti i nomi',
         array_filter($avvisi, static fn ($a) => array_filter($temiNomi, static fn ($n) => !str_contains($a, $n)) === []) !== []);
 
+    Esito::sezione('Temi — nell\'aiuto contestuale');
+
+    $tuttiINomi = static fn (string $testo): bool => array_filter($temiNomi, static fn ($n) => !str_contains($testo, $n)) === [];
+    foreach (['profilo.tema', 'tema.selettore'] as $chiave) {
+        $testo = (string) \App\Game\Help::get($chiave);
+        Esito::verifica("«{$chiave}» elenca tutti i temi, dal catalogo", !str_contains($testo, '{temi}') && $tuttiINomi($testo), $testo);
+    }
+    // La mappa disegna adiacenti e prede col colore del tema, e i pericoli
+    // non li disegna affatto: «anello ciano», «rosso = pericolo» erano falsi.
+    $mappa = (string) \App\Game\Help::get('plancia.mappa');
+    Esito::verifica('l\'aiuto della mappa non promette colori fissi', !preg_match('/ciano|ambra|rosso/i', $mappa), $mappa);
+
     Esito::sezione('Temi — la scelta segue l\'account');
 
     [$p] = Finti::comandante(0, []);

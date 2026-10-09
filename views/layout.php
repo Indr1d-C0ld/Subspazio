@@ -119,7 +119,7 @@ $percorso = $prefisso !== '' && str_starts_with($percorso, $prefisso) ? (substr(
   <form method="post" action="<?= e(url('/tema')) ?>" class="inline tema-form">
     <?= csrf_field() ?>
     <input type="hidden" name="torna" value="<?= e($percorso) ?>">
-    <label><span>Tema</span>
+    <label><span>Tema<?= partial('help', ['key' => 'tema.selettore']) ?></span>
       <select name="tema" data-autoinvio aria-label="Tema grafico">
         <?php foreach (\App\Core\Temi::CATALOGO as $k => $t): ?>
           <option value="<?= e($k) ?>"<?= $k === $tema ? ' selected' : '' ?>><?= e($t['nome']) ?></option>
