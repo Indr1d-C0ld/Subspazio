@@ -4,6 +4,16 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-09 — L'aiuto contestuale racconta le nuove taglie
+
+- **[src/Game/Help.php](src/Game/Help.php)** — `plancia.armi`: abbattere un
+  ricercato rende la sua taglia, confiscata a lui (a bordo, poi banca; al
+  verde nulla), e capsule e navi di soccorso non valgono esperienza né
+  bottino. `mercatonero.taglia`: si cancella la taglia da uccisioni di
+  comandanti onesti, che altrimenti viene confiscata a chi ti abbatte; la
+  notorietà federale resta (ammenda in Fazioni). `fazioni.legge`: la taglia da
+  Ricercato la paghi tu.
+
 ## 2026-10-09 — La guida di gioco spiega legge e taglie
 
 - **[views/game/guide.php](views/game/guide.php)** — nuova sezione «Legge &
