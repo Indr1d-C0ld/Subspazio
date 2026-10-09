@@ -126,10 +126,15 @@ testi o artwork della door proprietaria.
   con un tetto) che intercettano all'ingresso nel settore, distruzione della
   nave con capsula di salvataggio, gradi e allineamento, protezione novizio,
   **replay round per round** di ogni battaglia.
-  **Taglie**: chi uccide comandanti onesti accumula una taglia, che la
-  Federazione paga a chi lo abbatte. Chi si difende e distrugge l'attaccante
-  riceve l'uccisione e i contratti sulla sua testa. Abbattere una capsula di
-  salvataggio non vale come uccisione.
+  **Taglie**: chi uccide comandanti onesti accumula una taglia, che incassa
+  chi lo abbatte. Ogni taglia la paga chi ce l'ha sulla testa: la Federazione
+  la confisca ai suoi crediti a bordo e poi alla sua banca, fino all'importo,
+  e da un ricercato al verde non si ricava nulla (versata dal nulla, un
+  secondo account si faceva ricercato apposta). Chi si difende e distrugge
+  l'attaccante riceve l'uccisione e i contratti sulla sua testa. Abbattere una
+  capsula di salvataggio, o la nave di soccorso gratuita dello StarDock finché
+  non se ne compra una vera, non vale come uccisione: niente esperienza né
+  moduli.
 
 - **Equipaggio** — ufficiali generati da archetipi, 6 ruoli con **bonus
   passivo** (fuso nelle statistiche dopo i moduli) e **abilità attiva**,
@@ -202,7 +207,7 @@ testi o artwork della door proprietaria.
   | Gradino | Da | Cosa succede |
   |---|---|---|
   | Sospetto | 25 | la Federazione ti tiene d'occhio |
-  | Ricercato | 100 | le pattuglie ti attaccano a vista, una squadra d'intercettazione ti caccia, taglia di 300 cr per punto a chi ti abbatte |
+  | Ricercato | 100 | le pattuglie ti attaccano a vista, una squadra d'intercettazione ti caccia, taglia di 300 cr per punto, confiscata a te, per chi ti abbatte |
   | Pericoloso | 250 | due squadre, lo StarDock chiude i servizi |
   | Nemico pubblico | 500 | tre squadre pesanti, in ogni fascia |
 
@@ -211,7 +216,7 @@ testi o artwork della door proprietaria.
   caccia della sua nave (×0,7 … ×1,4) e lo inseguono lungo la rotta più breve.
   Le pattuglie non razziano: arrestano, e la nave è perduta. Arresto o
   abbattimento per la taglia riportano il colpevole sotto la soglia di
-  Ricercato. L'**ammenda** (pagina Fazioni, da ovunque) azzera la notorietà a
+  Ricercato, e una squadra lascia stare chi non è più ricercato. L'**ammenda** (pagina Fazioni, da ovunque) azzera la notorietà a
   400 cr per punto, moltiplicati per la recidiva. Tutto regolabile nella
   famiglia `legge`.
 
@@ -259,8 +264,11 @@ testi o artwork della door proprietaria.
   corporazioni, lavori d'Officina, reputazione, notorietà, consumabili e
   reperti; restano traguardi, ufficiali e moduli (che tornano in inventario).
   Con la **ripartenza totale** si azzerano anche moduli, ufficiali, progetti,
-  collezioni e corporazioni. L'universo si rigenera a scelta. Banditi e sospesi
-  non compaiono in classifica né nell'albo.
+  collezioni e corporazioni. L'universo si rigenera a scelta. Mentre si azzera
+  il gioco è fermo: il clock aspetta e le pagine rispondono «Fine stagione in
+  corso» (l'amministratore entra); se la chiusura si interrompe, il gioco resta
+  chiuso invece di riaprire a metà. Banditi e sospesi non compaiono in
+  classifica né nell'albo.
 
 - **Traguardi** — **109**, in sette categorie (commercio, combattimento,
   esplorazione, bottino, legge, sopravvivenza, carriera), a livelli bronzo /
@@ -290,7 +298,9 @@ testi o artwork della door proprietaria.
   campanella degli avvisi e badge senza refresh. Ogni evento si vede una volta
   sola: lo stream considera già visto ciò che esiste quando si apre, e la scheda
   ricorda cosa ha mostrato e da dove riprendere, così cambiare schermata non
-  ripresenta notifiche vecchie. Web App Manifest, service
+  ripresenta notifiche vecchie. Ogni comandante tiene aperti al massimo tre
+  stream (`live.stream_paralleli`): il quarto chiude il più vecchio, di solito
+  una pagina già lasciata, che si riaggancia se torna in primo piano. Web App Manifest, service
   worker (guscio offline) e mappa con pan e zoom touch. Il service worker
   richiede HTTPS.
 
@@ -402,6 +412,10 @@ Nessuna libreria di terze parti, nessun Composer.
    ```
    * * * * * /usr/bin/php /var/www/html/subspazio/bin/tick.php >> /var/www/html/subspazio/storage/logs/cron.log 2>&1
    ```
+
+   Se il codice è più nuovo dello schema (aggiornato senza `migrate`) il clock
+   non parte: annota «IN ATTESA: migrazioni non applicate» in
+   `storage/logs/tick.log` e riprende da solo dopo la migrazione.
 
 7. **Posta** — la verifica dell'indirizzo e il recupero password hanno bisogno
    di un SMTP funzionante. Valorizza `mail.transport => 'smtp'` con host,
@@ -528,13 +542,16 @@ php tests/run.php                # tutte
 php tests/run.php economica      # solo i file col nome che contiene "economica"
 ```
 
-Suite di integrazione senza dipendenze, 563 verifiche in 27 file: integrità
+Suite di integrazione senza dipendenze, 606 verifiche in 28 file: integrità
 economica, concorrenza, banca/contratti/Officina, combattimento, navigazione,
 nave e moduli, pianeti, porti, equipaggio, mondo, percorsi di gioco normali,
 universo, clock, sessioni e turni, difese, iscrizione e posta, immagini,
-configurazione, schema, notifiche in tempo reale, fasce di rischio, legge federale, bottino, e le regole decise per mercato nero, uccisioni e
+configurazione, schema, notifiche in tempo reale, fasce di rischio, legge federale, bottino, il quarto audit, e le regole decise per mercato nero, uccisioni e
 stagioni. Ogni correzione ha una prova costruita per fallire sul codice di
-prima. Le prove di concorrenza lanciano processi separati con una barriera
+prima. Quando la gara sta nel database, la prova fa la prima richiesta a mano
+in una transazione aperta (blocca la riga e la cambia) e lancia la seconda in
+un processo separato, confermando solo quando quella aspetta: l'intreccio è
+sempre lo stesso, senza affidarsi al caso. Le prove di concorrenza lanciano processi separati con una barriera
 comune (`tests/_corsa.php`): due richieste dello stesso giocatore nello stesso
 istante sono un caso reale, non teorico.
 
