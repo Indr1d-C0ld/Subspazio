@@ -101,6 +101,132 @@ final class Season
     }
 
     /**
+     * Ripartenza da zero per una revisione nuova del gioco (13/10/2026): non
+     * una fine di stagione ma un azzeramento di tutto cio' che si e' giocato,
+     * storia compresa. Galassia nuova; via progressi, ricchezza, moduli,
+     * ufficiali, corporazioni, pianeti, traguardi, codex, reputazione,
+     * statistiche di carriera, albo d'oro, radio, notiziario e registri; la
+     * numerazione riparte dalla Stagione 1. Restano gli account, il nome del
+     * comandante, l'aspetto (colore, stemma, motto, registro della nave), il
+     * tema grafico e il registro di amministrazione, oltre alle definizioni
+     * del gioco (traguardi, codex, ricette, incontri, offerte delle fazioni).
+     *
+     * Irreversibile: dalla console solo con --conferma, dopo una copia del
+     * database. Mai dalle prove. Stesso lucchetto e stessa manutenzione della
+     * chiusura di stagione.
+     *
+     * @return array<string,mixed>
+     */
+    public static function ripartenza(int $actorUserId): array
+    {
+        $lock = @fopen(rtrim((string) ($GLOBALS['__project_root'] ?? dirname(__DIR__, 2)), '/') . '/storage/tick.lock', 'c');
+        if ($lock === false) {
+            return ['ok' => false, 'error' => 'Non riesco ad aprire storage/tick.lock (permessi): nulla e\' stato azzerato.'];
+        }
+        $preso = false;
+        for ($i = 0; $i < 60 && !($preso = flock($lock, LOCK_EX | LOCK_NB)); $i++) {
+            usleep(500000);
+        }
+        if (!$preso) {
+            fclose($lock);
+            return ['ok' => false, 'error' => 'Il clock e\' al lavoro: riprova fra un minuto.'];
+        }
+        GameConfig::set('game.status', 'manutenzione');
+        try {
+            $esito = self::azzeraTutto($actorUserId);
+            GameConfig::set('game.status', 'active');
+            return $esito;
+        } finally {
+            flock($lock, LOCK_UN);
+            fclose($lock);
+        }
+    }
+
+    /** @return array<string,mixed> */
+    private static function azzeraTutto(int $actorUserId): array
+    {
+        $prima = [
+            'stagioni'  => (int) Database::first('SELECT COUNT(*) c FROM seasons')['c'],
+            'traguardi' => (int) Database::first('SELECT COUNT(*) c FROM player_achievements')['c'],
+            'comandanti' => (int) Database::first('SELECT COUNT(*) c FROM players')['c'],
+        ];
+
+        // Galassia nuova: il generatore svuota da solo cio' che e' legato ai
+        // numeri di settore (pianeti, caccia e mine schierati, scoperte, note)
+        // e riporta tutti allo StarDock; i porti, i loro scambi e il mercato.
+        $u = (new UniverseGenerator([
+            'sectors'         => GameConfig::int('universe.sectors', 1000),
+            'fedspace_max'    => GameConfig::int('universe.fedspace_max', 10),
+            'stardock_sector' => GameConfig::int('universe.stardock_sector', 1),
+            'warp_density'    => GameConfig::float('universe.warp_density', 3.2),
+        ]))->generate(true);
+        // il generatore dichiara il gioco «active» appena finito: qui
+        // l'azzeramento e' ancora a meta'
+        GameConfig::set('game.status', 'manutenzione');
+        $porti = PortGenerator::generate(true);
+        $dock = (int) (Database::first('SELECT id FROM sectors WHERE is_stardock = 1 LIMIT 1')['id'] ?? 1);
+
+        $pdo = Database::pdo();
+        $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
+        foreach ([
+            // partita: ricchezza, possessi, equipaggio, imprese in corso
+            'bank_accounts', 'contracts', 'craft_jobs', 'crew_pending', 'crimini', 'corp_alliances', 'corp_members',
+            'corporations', 'officers', 'recruit_candidates', 'away_missions', 'away_mission_log', 'player_items',
+            'ship_modules', 'ship_limpets', 'player_progetti', 'player_collezioni', 'player_consumabili',
+            'player_reperti', 'player_encounters', 'npcs', 'events',
+            // storia: traguardi, scoperte, reputazione, carriera, albo, registri
+            'player_achievements', 'player_codex', 'player_reputation', 'faction_log', 'player_stats',
+            'season_results', 'seasons', 'combat_log', 'trade_log', 'move_log', 'ship_log',
+            // comunicazioni: radio, notiziario, avvisi
+            'messages', 'msg_state', 'fednews', 'alerts', 'live_streams',
+        ] as $t) {
+            $pdo->exec("TRUNCATE TABLE {$t}");
+        }
+        $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
+        // DELETE, non TRUNCATE: la numerazione degli eventi live deve
+        // proseguire, o le pagine aperte non ricevono piu' notifiche.
+        $pdo->exec('DELETE FROM live_events');
+
+        Database::run('INSERT INTO seasons (number, name) VALUES (1, ?)', ['Stagione 1']);
+        GameConfig::set('season.number', '1');
+        GameConfig::set('combat.bounty_mult', '1');
+
+        $startShip = GameConfig::str('player.start_ship', 'merchant_cruiser');
+        $type = Database::first('SELECT * FROM ship_types WHERE ckey = ?', [$startShip])
+            ?? Database::first('SELECT * FROM ship_types ORDER BY sort_order LIMIT 1');
+        Database::run(
+            'UPDATE players SET sector_id = ?, credits = ?, turns = ?, turns_reset_on = ?, experience = 0, alignment = 0,
+             corp_id = NULL, deaths = 0, total_warps = 0, last_move_at = NULL, bounty = 0, notorieta = 0, notorieta_at = NULL,
+             kills = 0, port_busts = 0, protected_until = DATE_ADD(NOW(), INTERVAL ? HOUR), tregua_npc_until = NULL,
+             last_death_at = NULL, rating = 0, salvage = 0, crystals = 0, components = 0, onboarding_state = 0,
+             last_digest_at = NULL, titolo = NULL',
+            [$dock, GameConfig::int('player.start_credits', 1000), TurnManager::perDay(), TurnManager::gameDay(),
+                GameConfig::int('newbie.protect_hours', 48)]
+        );
+        Database::run(
+            "UPDATE ships SET type_key = ?, sector_id = ?, holds_total = ?, hold_ore = 0, hold_organics = 0,
+             hold_equipment = 0, hold_colonists = 0, fighters = ?, shields = ?, destroyed = 0, mines_armid = 0,
+             mines_limpet = 0, probes = 0, genesis = 0, escape_pod = 1, dev_scanner = 'none', dev_transwarp = 0,
+             dev_cloak = 0, mining_laser = 0, eps_shields = 2, eps_weapons = 2, eps_engines = 2, eps_sensors = 2,
+             cloaked = 0, cloak_carica = 8, cloak_carica_at = NULL, soccorso = 0",
+            [(string) $type['ckey'], $dock, max(GameConfig::int('player.start_holds', 20), (int) $type['base_holds']),
+                (int) $type['base_fighters'], (int) $type['base_shields']]
+        );
+        Database::run("UPDATE ships SET name = COALESCE(CONCAT('SS ', (SELECT handle FROM players p WHERE p.ship_id = ships.id)), name)");
+        Database::run('INSERT IGNORE INTO player_visited_sectors (player_id, sector_id) SELECT id, ? FROM players', [$dock]);
+        Leaderboard::recalcAll();
+        GameConfig::forget();
+
+        Admin::audit($actorUserId, 'game.ripartenza', ['prima' => $prima, 'universe' => $u, 'ports' => $porti['ports'] ?? null]);
+        // dopo l'azzeramento della radio, o lo cancellerebbe
+        Radio::system('RIPARTENZA — SubSpazio riparte da zero con la Stagione 1: galassia nuova, tutti allo StarDock con la '
+            . 'nave iniziale e 1.000 crediti. Restano nome e aspetto del comandante; tutto il resto si conquista di nuovo. '
+            . 'Buona rotta, comandanti.');
+
+        return ['ok' => true, 'prima' => $prima, 'universe' => $u, 'ports' => $porti];
+    }
+
+    /**
      * Si puo' chiudere la stagione $numero? Null se si', altrimenti il motivo.
      * A parte da close() perche' le prove la verifichino senza mai chiudere
      * nulla: il 09/10 una prova che chiamava close() su una copia del codice

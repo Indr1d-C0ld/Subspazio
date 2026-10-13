@@ -16,6 +16,11 @@ $prefisso = app_url_prefix();
 if ($prefisso !== '') {
     $percorso = str_starts_with($percorso, $prefisso) ? (substr($percorso, strlen($prefisso)) ?: '/') : '/';
 }
+// Un indirizzo col front controller esplicito (…/index.php/gioco) dava
+// «/index.php/gioco», che il ritorno rifiuta: si tornava alla home.
+if (str_starts_with($percorso, '/index.php')) {
+    $percorso = substr($percorso, strlen('/index.php')) ?: '/';
+}
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
     $percorso = '/';
 }

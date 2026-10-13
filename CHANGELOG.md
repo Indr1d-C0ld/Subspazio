@@ -4,6 +4,39 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-13 — Ripartenza da zero: nuova revisione, Stagione 1
+
+- **[src/Game/Season.php](src/Game/Season.php)** — `ripartenza()`: per una
+  revisione nuova, oltre la chiusura di stagione. Stesso lucchetto del clock e
+  stessa manutenzione; galassia e porti nuovi; svuota partita e storia
+  (traguardi, codex, reputazione e registro delle fazioni, contatori di
+  carriera, albo d'oro e stagioni, radio, notiziario, avvisi, registri) e
+  riparte dalla Stagione 1, con tutti ai primi passi e senza titoli. Restano
+  account, nome, colore, stemma, motto e registro della nave, tema grafico,
+  registro di amministrazione e le definizioni del gioco. L'annuncio in radio
+  va in onda dopo lo svuotamento.
+- **[bin/console.php](bin/console.php)** — `revisione:ripartenza --conferma`
+  (senza `--conferma` spiega e non fa nulla).
+- **[db/migrations/0069_comunicato_ripartenza.sql](db/migrations/0069_comunicato_ripartenza.sql)** —
+  il comunicato della ripartenza e delle novità, fino al 20/10.
+- **[src/Controllers/HomeController.php](src/Controllers/HomeController.php)**,
+  **[views/home.php](views/home.php)** — riquadro «Nuova revisione: si riparte
+  tutti da zero» per il primo mese della Stagione 1, poi sparisce da solo.
+- **[views/layout.php](views/layout.php)** — trovato nel browser: scegliendo
+  il tema dal piè di pagina di un indirizzo con `index.php` si tornava alla
+  home. Il percorso di ritorno ora lo toglie.
+- **[tests/ripartenza.php](tests/ripartenza.php)** — 27 verifiche dal
+  sorgente (l'operazione non si chiama mai dalle prove): ogni tabella che
+  punta a un comandante viene svuotata, così una tabella nuova non resta
+  indietro; la storia va via, le definizioni restano.
+- **[tests/occultamento.php](tests/occultamento.php)** — sceglie una rotta a
+  doppio senso: nella galassia nuova la prima trovata era a senso unico e il
+  salto di ritorno non partiva. **[tests/mondo.php](tests/mondo.php)** — la
+  verifica sul vincolo della chiusura guarda dentro `chiudi()`.
+- **README.md**, **docs/roadmap.md**, **tests/README.md** — la ripartenza, la
+  console, come provare le operazioni che azzerano su una copia del database
+  in un container. Suite: 709 verifiche.
+
 ## 2026-10-09 — La guida racconta le correzioni del sesto audit
 
 - **[views/game/guide.php](views/game/guide.php)** — oltre a quanto già

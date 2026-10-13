@@ -26,9 +26,12 @@ return static function (): void {
 
     Esito::sezione('Riserva — ogni salto occultato consuma una carica');
 
-    // un settore della Cintura con almeno un vicino fuori dalla Federazione
+    // un settore della Cintura con almeno un vicino fuori dalla Federazione,
+    // e una rotta a doppio senso: la prova torna indietro (con la galassia del
+    // 13/10 la prima rotta trovata era a senso unico e il ritorno non partiva)
     $da = Database::first(
         'SELECT w.from_sector a, w.to_sector b FROM warps w JOIN sectors s ON s.id = w.from_sector JOIN sectors t ON t.id = w.to_sector
+           JOIN warps r ON r.from_sector = w.to_sector AND r.to_sector = w.from_sector
           WHERE s.band = 1 AND t.band BETWEEN 1 AND 2 LIMIT 1'
     );
     [$p, $s] = Finti::comandante(0, [], (int) $da['a']);

@@ -52,6 +52,7 @@ distinzione al centro dei test sull'integrità economica.
 | `integrita_economica.php` | Reperti 01 e 02 dell'audit: addebiti con guardia di capienza, scambi tutto-o-niente, confisca limitata al saldo reale, guardia sui nomi di colonna |
 | `percorsi_normali.php` | Non-regressione: cantiere, mercato nero, porto in acquisto e vendita, i task del tick toccati dalla correzione |
 | `temi.php` | Temi grafici: catalogo, fogli e caratteri coerenti (con la licenza accanto), ritorno solo a pagine interne, scelta sull'account e nel cookie, il tema più scelto e l'avviso sui temi nel notiziario, gli aiuti che elencano i temi dal catalogo |
+| `ripartenza.php` | Ripartenza da zero (13/10/2026), solo dal sorgente: ogni tabella che punta a un comandante viene svuotata (dalla ripartenza o dal generatore), la storia va via e le definizioni restano, Stagione 1, nome e aspetto intatti, annuncio dopo lo svuotamento della radio |
 | `sesto_audit.php` | Sesto audit (09/10/2026): notiziario intero in radio, avvisi di servizio corretti (taglie, moduli guasti, ammenda), al più due comunicati e quelli scaduti tolti dalla plancia, omicidio contato anche su capsule e navi di soccorso, mercantile già sparito che non costa nulla, abilità usata una volta per ricarica, stive guaste, `chiusuraAmmessa` in sola lettura (dentro una transazione annullata), annuncio di fine stagione dopo l'azzeramento |
 | `quinto_audit.php` | Quinto audit (09/10/2026): niente premio per l'aggressore su nave di soccorso, attacco respinto che non brucia Nucleo e occultamento, hangar guasto, doppio «accendi», stalli rilanciati solo dentro le transazioni, stagione gia' chiusa, stream morti |
 | `quarto_audit.php` | Quarto audit (09/10/2026): gare su NPC, potenziamenti, navi, consumabili e arresti; taglie confiscate; ingaggi del clock su righe rilette; hangar, affissi, occultamento, fasce, traguardi, stream, migrazioni in attesa |
@@ -67,6 +68,14 @@ mai l'operazione. Il 09/10/2026 una prova che chiamava `Season::close` con un
 parametro di sicurezza nuovo e' stata lanciata, per controprova, su una copia
 del codice di prima: quel codice il parametro non lo conosceva, PHP l'ha
 ignorato, e la stagione in corso e' stata chiusa davvero (poi riaperta).
+
+Le operazioni che azzerano si provano su una **copia**: un MariaDB usa e getta
+in un container (`docker run mariadb:11`), caricato con l'ultimo dump del
+repo privato, e `SUBSPAZIO_CONFIG` che punta a una configurazione uguale a
+quella vera ma col database del container. Prima di lanciarle, controllare
+`SELECT @@hostname`: deve essere il container. Un container in UTC sposta di
+due ore `NOW()` rispetto a PHP e fa fallire le prove sul tempo: `SET GLOBAL
+time_zone = '+02:00'` (o l'ora legale del momento).
 
 Quando la corsa sta nel database (un lucchetto, una riga cambiata fra lettura
 e scrittura) la fotografia non basta. `quarto_audit.php` fa la prima richiesta

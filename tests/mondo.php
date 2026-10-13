@@ -42,7 +42,9 @@ return static function (): void {
         Esito::sezione('Stagioni — si chiudono una volta sola (statica)');
         $s = $sorgente('src/Game/Season.php');
         Esito::verifica('la chiusura si reclama con il vincolo sullo stato',
-            str_contains($s, "WHERE id = ? AND status = 'active'") && strpos($s, "AND status = 'active'") < strpos($s, 'Leaderboard::recalcAll()'));
+            // dentro chiudi(): la ripartenza (13/10) ha un suo recalcAll prima
+            str_contains($c = substr($s, (int) strpos($s, 'private static function chiudi')), "WHERE id = ? AND status = 'active'")
+            && strpos($c, "AND status = 'active'") < strpos($c, 'Leaderboard::recalcAll()'));
 
         Esito::sezione('Rapporto di rientro — solo a chi rientra davvero');
 

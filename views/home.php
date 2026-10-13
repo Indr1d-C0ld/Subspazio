@@ -36,6 +36,21 @@
   <?php endif; ?>
 </section>
 
+<?php if (!empty($stats['ripartenza'])): ?>
+<section class="panel roadmap" id="ripartenza">
+  <h2><span class="sec-ic">🚀</span> Nuova revisione: si riparte tutti da zero</h2>
+  <p>Dal <?= e(date('j', strtotime($stats['ripartenza']))) ?> ottobre SubSpazio riparte con la <strong>Stagione 1</strong> e una galassia
+    mai vista: tutti allo StarDock con la nave iniziale e 1.000 crediti, classifica, traguardi, statistiche e albo d'oro
+    azzerati. Chi c'era tiene nome e aspetto del comandante; chi arriva adesso parte alla pari.</p>
+  <ul>
+    <li><strong>Sei temi grafici</strong> per la plancia, da scegliere anche qui sotto.</li>
+    <li><strong>Taglie che paga il ricercato</strong>, confiscate dai suoi crediti a bordo e in banca; capsule e navi di soccorso abbattute non valgono premi.</li>
+    <li><strong>Combattimento più pulito</strong>: un attacco arrivato tardi è respinto senza costi, anche contro un mercantile, e le abilità degli ufficiali partono una volta per ricarica.</li>
+    <li><strong>Moduli guasti</strong> che si riparano anche da soli e non bloccano l'officina; un notiziario quotidiano con i comunicati della Federazione.</li>
+  </ul>
+</section>
+<?php endif; ?>
+
 <section class="grid">
   <div class="card">
     <span class="k">Stagione</span>

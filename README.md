@@ -4,6 +4,10 @@ Reinterpretazione web, multiutente e persistente della classica *door* per BBS
 **TradeWars 2002**: rotte commerciali, flotte, pianeti e corporazioni in un
 universo a settori con un clock interno.
 
+Dal **13 ottobre 2026** il gioco gira su una revisione nuova ed è ripartito da
+zero: galassia nuova, **Stagione 1**, classifica, traguardi e albo d'oro
+azzerati per tutti.
+
 ## Il gioco in breve
 
 Si parte allo StarDock di Sol con una Merchant Cruiser, mille crediti e un
@@ -321,7 +325,12 @@ testi o artwork della door proprietaria.
   se la chiusura si interrompe, il gioco resta chiuso invece di riaprire a
   metà. Il modulo del pannello indica la stagione da chiudere: un doppio invio
   non chiude anche quella appena aperta. Banditi e sospesi non compaiono in
-  classifica né nell'albo.
+  classifica né nell'albo. Per una revisione nuova c'è la **ripartenza da
+  zero** (dalla console, `revisione:ripartenza --conferma`): galassia nuova,
+  Stagione 1, e va via anche la storia (traguardi, contatori di carriera,
+  codex, reputazione, albo d'oro, radio, notiziario, registri); restano
+  account, nome e aspetto dei comandanti e tema grafico, e tutti rifanno i
+  primi passi. Usata il 13/10/2026.
 
 - **Traguardi** — **109**, in sette categorie (commercio, combattimento,
   esplorazione, bottino, legge, sopravvivenza, carriera), a livelli bronzo /
@@ -644,7 +653,7 @@ php tests/run.php                # tutte
 php tests/run.php economica      # solo i file col nome che contiene "economica"
 ```
 
-Suite di integrazione senza dipendenze, 682 verifiche in 31 file: integrità
+Suite di integrazione senza dipendenze, 709 verifiche in 32 file: integrità
 economica, concorrenza, banca/contratti/Officina, combattimento, navigazione,
 nave e moduli, pianeti, porti, equipaggio, mondo, percorsi di gioco normali,
 universo, clock, sessioni e turni, difese, iscrizione e posta, immagini,
@@ -662,7 +671,10 @@ quello configurato, ma creano e distruggono solo righe sintetiche col prefisso
 `__test_`, e ripuliscono anche in caso di errore. Da non lanciare mentre è in
 corso una sessione di gioco affollata: aprono transazioni su tabelle vive.
 E nessuna prova chiama le operazioni che azzerano il gioco (chiusura di
-stagione, Big Bang): si provano le regole che le governano, mai l'operazione.
+stagione, Big Bang, ripartenza): si provano le regole che le governano, o si
+legge il sorgente, mai l'operazione. Per provarle davvero c'è la copia: un
+MariaDB usa e getta in un container, caricato con un dump, e
+`SUBSPAZIO_CONFIG` che punta a una configurazione col database del container.
 La regola ha un motivo concreto: il 9 ottobre 2026 una prova lanciata per
 controprova su una versione precedente del codice ha chiuso davvero la
 stagione in corso (poi riaperta).
@@ -680,6 +692,8 @@ stagione in corso (poi riaperta).
 | `ports:generate [--force]` · `universe:stats` | economia |
 | `economy:drift` · `bank:accrue` | passi manuali di simulazione |
 | `config:get [chiave]` · `config:set <chiave> <valore>` | configurazione di gioco |
+| `season:close --conferma [--rigenera] [--totale]` | chiude la stagione e azzera i comandanti (irreversibile) |
+| `revisione:ripartenza --conferma` | riparte da zero, storia compresa: Stagione 1 e galassia nuova (irreversibile) |
 
 ## Struttura
 

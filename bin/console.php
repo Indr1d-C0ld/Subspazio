@@ -231,6 +231,26 @@ try {
             }
             break;
 
+        case 'revisione:ripartenza':
+            // Azzera TUTTO, storia compresa, e riparte dalla Stagione 1 con una
+            // galassia nuova (Season::ripartenza). Irreversibile: solo con
+            // --conferma, e dopo una copia del database.
+            if (!in_array('--conferma', $args, true)) {
+                out('Uso: php bin/console.php revisione:ripartenza --conferma');
+                out('  azzera progressi, traguardi, statistiche, albo, radio e registri; galassia nuova, Stagione 1');
+                out('  restano account, nome e aspetto dei comandanti, tema grafico, registro di amministrazione');
+                exit(1);
+            }
+            $res = \App\Game\Season::ripartenza(0);
+            if (empty($res['ok'])) {
+                out('ERRORE: ' . ($res['error'] ?? '?'));
+                exit(1);
+            }
+            out('Ripartenza fatta. Prima: ' . json_encode($res['prima']));
+            out('Universo: ' . json_encode($res['universe']));
+            out('Porti: ' . json_encode($res['ports']));
+            break;
+
         case 'ports:generate':
             $pstats = PortGenerator::generate(in_array('--force', $args, true));
             foreach ($pstats as $k => $v) {
@@ -324,6 +344,7 @@ try {
             out('  user:list                       elenca gli utenti');
             out('  config:get [chiave]             legge la configurazione di gioco');
             out('  config:set <chiave> <valore>    scrive un valore di configurazione');
+            out('  revisione:ripartenza --conferma azzera tutto e riparte dalla Stagione 1 (irreversibile)');
     }
 } catch (\Throwable $e) {
     fwrite(STDERR, 'ERRORE: ' . $e->getMessage() . "\n");
