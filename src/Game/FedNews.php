@@ -314,7 +314,8 @@ final class FedNews
      *
      * @return list<string>
      */
-    private static function cronacaRipartenza(string $dal): string
+    /** La cronaca del mese della ripartenza: notiziario e pagina iniziale. */
+    public static function cronacaRipartenza(string $dal): string
     {
         $giorno = max(1, (int) floor((time() - (int) strtotime($dal)) / 86400) + 1);
         $n = Database::first(

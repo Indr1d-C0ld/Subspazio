@@ -6,7 +6,8 @@ universo a settori con un clock interno.
 
 Dal **13 ottobre 2026** il gioco gira su una revisione nuova ed è ripartito da
 zero: galassia nuova, **Stagione 1**, classifica, traguardi e albo d'oro
-azzerati per tutti.
+azzerati per tutti. Per il primo mese la pagina iniziale lo annuncia, con la
+cronaca della galassia nuova (comandanti già partiti, traguardi sbloccati).
 
 ## Il gioco in breve
 
@@ -655,7 +656,7 @@ php tests/run.php                # tutte
 php tests/run.php economica      # solo i file col nome che contiene "economica"
 ```
 
-Suite di integrazione senza dipendenze, 726 verifiche in 32 file: integrità
+Suite di integrazione senza dipendenze, 729 verifiche in 32 file: integrità
 economica, concorrenza, banca/contratti/Officina, combattimento, navigazione,
 nave e moduli, pianeti, porti, equipaggio, mondo, percorsi di gioco normali,
 universo, clock, sessioni e turni, difese, iscrizione e posta, immagini,

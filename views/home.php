@@ -39,15 +39,27 @@
 <?php if (!empty($stats['ripartenza'])): ?>
 <section class="panel roadmap" id="ripartenza">
   <h2><span class="sec-ic">🚀</span> Nuova revisione: si riparte tutti da zero</h2>
-  <p>Dal <?= e(date('j', strtotime($stats['ripartenza']))) ?> ottobre SubSpazio riparte con la <strong>Stagione 1</strong> e una galassia
-    mai vista: tutti allo StarDock con la nave iniziale e 1.000 crediti, classifica, traguardi, statistiche e albo d'oro
-    azzerati. Chi c'era tiene nome e aspetto del comandante; chi arriva adesso parte alla pari.</p>
+  <?php
+    $mesi = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+    $tRip = (int) strtotime($stats['ripartenza']);
+  ?>
+  <p>Dal <?= e(date('j', $tRip) . ' ' . $mesi[(int) date('n', $tRip) - 1]) ?> SubSpazio riparte con la <strong>Stagione 1</strong> e una galassia
+    mai vista: tutti allo StarDock con la nave iniziale e <?= e(number_format(\App\Game\GameConfig::int('player.start_credits', 1000), 0, ',', '.')) ?> crediti,
+    classifica, traguardi, statistiche e albo d'oro azzerati. Chi c'era tiene nome e aspetto del comandante; chi arriva adesso parte alla pari.</p>
+  <?php if (!empty($stats['cronaca'])): ?>
+    <p class="hint">📡 <?= e($stats['cronaca']) ?></p>
+  <?php endif; ?>
   <ul>
     <li><strong>Sei temi grafici</strong> per la plancia, da scegliere anche qui sotto.</li>
     <li><strong>Taglie che paga il ricercato</strong>, confiscate dai suoi crediti a bordo e in banca; capsule e navi di soccorso abbattute non valgono premi.</li>
     <li><strong>Combattimento più pulito</strong>: un attacco arrivato tardi è respinto senza costi, anche contro un mercantile, e le abilità degli ufficiali partono una volta per ricarica.</li>
     <li><strong>Moduli guasti</strong> che si riparano anche da soli e non bloccano l'officina; un notiziario quotidiano con i comunicati della Federazione.</li>
   </ul>
+  <?php if ($user !== null && ($user['status'] ?? '') === 'active'): ?>
+    <p class="hint">Tutte le regole, in breve, nella <a href="<?= e(url('/gioco/guida')) ?>">guida di gioco</a>.</p>
+  <?php elseif ($user === null && ($stats['registration'] ?? 'verify') !== 'closed'): ?>
+    <p class="hint">È il momento giusto per <a href="<?= e(url('/registrati')) ?>">iscriversi</a>: nessuno ha vantaggi da recuperare.</p>
+  <?php endif; ?>
 </section>
 <?php endif; ?>
 
@@ -79,7 +91,7 @@
     <li><strong>Equipaggio</strong> — ufficiali con sei ruoli, abilità attive, lealtà e missioni a terra con esiti dal trionfo al disastro.</li>
     <li><strong>Pianeti e corporazioni</strong> — siluri Genesi, sette tipi di mondo, coloni, Citadel e cannone Quasar; corporazioni con cassa e pianeti condivisi, alleanze.</li>
     <li><strong>Fazioni</strong> — quattro potenze con reputazione a cinque livelli, rivalità, empori e cacciatori di taglie.</li>
-    <li><strong>Stagioni e traguardi</strong> — classifica e albo d'oro a ogni stagione; oltre cento traguardi a livelli, alcuni segreti, con contatori di carriera che restano e titoli onorifici da mostrare accanto al nome.</li>
+    <li><strong>Stagioni e traguardi</strong> — classifica e albo d'oro a ogni stagione; oltre cento traguardi a livelli, alcuni segreti, con contatori di carriera che restano e titoli onorifici da mostrare accanto al nome. Una stagione azzera ricchezza e flotte, non la storia; quando il gioco cambia revisione si riparte invece tutti da zero, come il 13 ottobre 2026.</li>
     <li><strong>Sempre in contatto</strong> — notifiche e mappa in tempo reale, radio a canali, il notiziario della Federazione con i suoi comunicati, giornale di bordo e rapporto di rientro; si gioca dal telefono come dal computer, anche come app installata.</li>
     <li><strong>La tua plancia</strong> — sei temi grafici ispirati alla fantascienza: dalla plancia LCARS della Flotta Stellare al terminale a fosfori della Nostromo, dall'HUD arancione di un abitacolo al vetro delle navi della Cintura, fino alle insegne al neon di una città sotto la pioggia. Cambiano colori, caratteri, forme e mappa stellare; il gioco resta lo stesso.</li>
   </ul>

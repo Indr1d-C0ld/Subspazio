@@ -31,6 +31,8 @@ final class HomeController
             // Ripartenza da zero (13/10/2026): la pagina lo dice per il primo
             // mese della Stagione 1, poi il riquadro sparisce da solo.
             $stats['ripartenza'] = \App\Game\Season::ripartenzaRecente();
+            // la stessa cronaca del notiziario: come va la galassia nuova
+            $stats['cronaca'] = $stats['ripartenza'] !== null ? \App\Game\FedNews::cronacaRipartenza($stats['ripartenza']) : null;
         } catch (\Throwable) {
             // il layout gestira' la modalita' "setup incompleto"
         }

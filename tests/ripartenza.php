@@ -117,6 +117,20 @@ return static function (): void {
     Esito::verifica('e nel notiziario «un\'impennata» ha il suo apostrofo',
         str_contains((string) file_get_contents($radice . '/src/Game/Events.php'), "\"un'impennata\""));
 
+    Esito::sezione('Ripartenza — nella pagina iniziale');
+
+    $home = (string) file_get_contents($radice . '/views/home.php');
+    Esito::verifica('la home racconta la stessa cronaca del notiziario',
+        str_contains((string) file_get_contents($radice . '/src/Controllers/HomeController.php'), 'FedNews::cronacaRipartenza(')
+        && str_contains($home, "\$stats['cronaca']"));
+    // la guida e' riservata a chi ha fatto l'accesso: a un ospite il link
+    // portava alla pagina d'accesso
+    $i = strpos($home, "url('/gioco/guida')");
+    Esito::verifica('il link alla guida solo a chi e\' in plancia, agli ospiti l\'iscrizione',
+        $i !== false && strrpos(substr($home, 0, $i), "=== 'active'") !== false && str_contains($home, "nessuno ha vantaggi da recuperare"));
+    Esito::verifica('la data della ripartenza col suo mese, non «ottobre» scritto a mano',
+        str_contains($home, "\$mesi[(int) date('n', \$tRip) - 1]"));
+
     Esito::verifica('dalla console solo con --conferma',
         str_contains((string) file_get_contents($radice . '/bin/console.php'), "case 'revisione:ripartenza':"));
 };

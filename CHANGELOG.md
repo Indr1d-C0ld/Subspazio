@@ -4,6 +4,23 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-13 — La presentazione racconta la ripartenza
+
+- **[views/home.php](views/home.php)** — il riquadro «Nuova revisione: si
+  riparte tutti da zero» mostra la cronaca della galassia nuova (la stessa del
+  notiziario: giorno, comandanti partiti dallo StarDock, traguardi), la data
+  col suo mese vero (era «ottobre» scritto a mano) e i crediti di partenza
+  dalla configurazione; il link alla guida solo a chi è in plancia (la guida
+  chiede l'accesso), agli ospiti l'invito a iscriversi. «Stagioni e
+  traguardi»: una stagione azzera ricchezza e flotte, non la storia; una
+  revisione nuova fa ripartire tutti da zero, come il 13 ottobre 2026.
+- **[src/Controllers/HomeController.php](src/Controllers/HomeController.php)**,
+  **[src/Game/FedNews.php](src/Game/FedNews.php)** — `cronacaRipartenza()`
+  pubblica, usata da notiziario e home.
+- **[tests/ripartenza.php](tests/ripartenza.php)** — tre verifiche sulla
+  pagina iniziale. Suite: 729 verifiche.
+- **README.md** — l'annuncio in home.
+
 ## 2026-10-13 — Il notiziario racconta la ripartenza
 
 - **[src/Game/FedNews.php](src/Game/FedNews.php)** — nel primo mese della
