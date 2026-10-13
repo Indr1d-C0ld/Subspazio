@@ -81,9 +81,10 @@ final class Events
             [$factor, $region['id'], $c]
         );
         $lbl = Economy::label($c);
-        $word = $dir > 0 ? 'impennata' : 'crollo';
+        // «un'impennata» col suo apostrofo («un impennata» finiva nel notiziario)
+        $word = $dir > 0 ? "un'impennata" : 'un crollo';
         return self::record('market_shock', "Shock di mercato: {$lbl}",
-            "Nella regione {$region['name']} il prezzo di {$lbl} subisce un {$word}.", 6,
+            "Nella regione {$region['name']} il prezzo di {$lbl} subisce {$word}.", 6,
             ['region' => (int) $region['id'], 'commodity' => $c, 'factor' => $factor]);
     }
 

@@ -89,6 +89,34 @@ return static function (): void {
         Esito::verifica("«{$k}» parla della ripartenza", str_contains($aiuto($k), 'riparte') || str_contains($aiuto($k), 'ripartenza'), $aiuto($k));
     }
 
+    Esito::sezione('Ripartenza — nel notiziario');
+
+    $componi = static fn (): array => (new ReflectionMethod(\App\Game\FedNews::class, 'compose'))->invoke(null);
+    $cronaca = static fn (array $t): string => (string) (array_values(array_filter($t, static fn ($x) => str_starts_with($x, 'Stagione 1, giorno')))[0] ?? '');
+    $pdo->beginTransaction();
+    try {
+        Database::run("UPDATE seasons SET started_at = NOW() - INTERVAL 2 DAY - INTERVAL 1 HOUR WHERE status = 'active'");
+        $numero = (int) (Database::first("SELECT number FROM seasons WHERE status = 'active' LIMIT 1")['number'] ?? 0);
+        $riga = $cronaca($componi());
+        Esito::verifica('nel mese della ripartenza racconta la galassia nuova, giorno per giorno',
+            $numero !== 1 || (str_starts_with($riga, 'Stagione 1, giorno 3 dalla ripartenza:') && str_contains($riga, 'StarDock')), $riga);
+        Database::run("UPDATE seasons SET started_at = NOW() - INTERVAL 31 DAY WHERE status = 'active'");
+        Esito::uguale('dopo un mese la notizia sparisce', '', $cronaca($componi()));
+    } finally {
+        $pdo->rollBack();
+    }
+    $avvisi = (new ReflectionMethod(\App\Game\FedNews::class, 'avvisiDiServizio'))->invoke(null);
+    Esito::verifica('un avviso di servizio spiega cosa azzera una stagione e cosa una ripartenza',
+        array_filter($avvisi, static fn ($a) => str_contains($a, 'chiusura di stagione') && str_contains($a, 'ripartenza da zero')
+            && str_contains($a, 'albo d\'oro restano')) !== []);
+    // Dopo la ripartenza tutti hanno il rating di partenza: il notiziario
+    // incoronava «in vetta» il primo a caso. (Dal sorgente: la prova non tocca
+    // i comandanti veri per metterli a pari merito.)
+    $fednews = (string) file_get_contents($radice . '/src/Game/FedNews.php');
+    Esito::verifica('a pari merito nessuno e\' «in vetta»', str_contains($fednews, "(int) \$top['rating'] > \$minimo"));
+    Esito::verifica('e nel notiziario «un\'impennata» ha il suo apostrofo',
+        str_contains((string) file_get_contents($radice . '/src/Game/Events.php'), "\"un'impennata\""));
+
     Esito::verifica('dalla console solo con --conferma',
         str_contains((string) file_get_contents($radice . '/bin/console.php'), "case 'revisione:ripartenza':"));
 };

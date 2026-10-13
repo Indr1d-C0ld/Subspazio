@@ -4,6 +4,22 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-13 — Il notiziario racconta la ripartenza
+
+- **[src/Game/FedNews.php](src/Game/FedNews.php)** — nel primo mese della
+  Stagione 1 (`Season::ripartenzaRecente()`, la regola di home e guida) le
+  notizie si aprono con la cronaca della ripartenza: giorno, comandanti che
+  hanno già lasciato lo StarDock, traguardi sbloccati. Avviso di servizio
+  nuovo su cosa azzera una chiusura di stagione e cosa una ripartenza da zero.
+  «In vetta alla classifica» tace quando tutti sono a pari merito: dopo la
+  ripartenza tutti avevano il rating di partenza e il notiziario incoronava il
+  primo a caso.
+- **[src/Game/Events.php](src/Game/Events.php)** — «subisce un'impennata»
+  col suo apostrofo (era «un impennata»); corretto anche l'evento in corso.
+- **[tests/ripartenza.php](tests/ripartenza.php)** — cronaca nel mese della
+  ripartenza e sparita dopo (dentro una transazione annullata), avviso sulle
+  stagioni, pari merito, apostrofo. Suite: 726 verifiche.
+
 ## 2026-10-13 — L'aiuto contestuale racconta la ripartenza
 
 - **[src/Game/Help.php](src/Game/Help.php)** — ogni voce dice cosa le fa una

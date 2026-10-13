@@ -132,6 +132,12 @@ final class FedNews
         $h = self::comunicati();
         $hrs = self::intervalHours();
 
+        // 0) il mese della ripartenza (13/10/2026): come va la galassia nuova.
+        // Stessa regola di home e guida, poi sparisce da sola.
+        if (($ripartenza = Season::ripartenzaRecente()) !== null) {
+            $h[] = self::cronacaRipartenza($ripartenza);
+        }
+
         // 1) mercato: evento attivo più recente
         $ev = Database::first(
             "SELECT title, body FROM events
@@ -224,7 +230,11 @@ final class FedNews
         // vincere la stagione e comparire qui come comandante di vertice.
         $top = Database::first("SELECT p.handle, p.rating FROM players p JOIN users u ON u.id = p.user_id
                                  WHERE p.rating > 0 AND u.status = 'active' ORDER BY p.rating DESC, p.experience DESC LIMIT 1");
-        if ($top !== null) {
+        // A pari merito non c'e' una vetta: dopo una ripartenza tutti hanno
+        // il rating di partenza, e il notiziario incoronava il primo a caso.
+        $minimo = (int) (Database::first("SELECT MIN(p.rating) AS m FROM players p JOIN users u ON u.id = p.user_id
+                                           WHERE p.rating > 0 AND u.status = 'active'")['m'] ?? 0);
+        if ($top !== null && (int) $top['rating'] > $minimo) {
             $h[] = "In vetta alla classifica dei comandanti: {$top['handle']} (rating " . number_format((int) $top['rating'], 0, ',', '.') . ').';
         }
 
@@ -304,11 +314,37 @@ final class FedNews
      *
      * @return list<string>
      */
+    private static function cronacaRipartenza(string $dal): string
+    {
+        $giorno = max(1, (int) floor((time() - (int) strtotime($dal)) / 86400) + 1);
+        $n = Database::first(
+            "SELECT COUNT(*) AS tutti, COALESCE(SUM(p.total_warps > 0), 0) AS partiti
+               FROM players p JOIN users u ON u.id = p.user_id WHERE u.status = 'active'"
+        ) ?? ['tutti' => 0, 'partiti' => 0];
+        $tutti = (int) $n['tutti'];
+        $partiti = (int) $n['partiti'];
+        $traguardi = (int) (Database::first(
+            "SELECT COUNT(*) AS c FROM player_achievements a JOIN players p ON p.id = a.player_id
+               JOIN users u ON u.id = p.user_id WHERE u.status = 'active'"
+        )['c'] ?? 0);
+        $testa = "Stagione 1, giorno {$giorno} dalla ripartenza: ";
+        if ($partiti === 0) {
+            return $testa . 'nessun comandante ha ancora lasciato lo StarDock. La galassia nuova aspetta.';
+        }
+        return $testa . ($partiti === 1 ? 'un comandante' : "{$partiti} comandanti") . " su {$tutti} "
+            . ($partiti === 1 ? 'ha' : 'hanno') . ' già lasciato lo StarDock, '
+            . ($traguardi === 0 ? 'e nessun traguardo è ancora stato sbloccato.'
+                : ($traguardi === 1 ? 'con il primo traguardo già sbloccato.' : "con {$traguardi} traguardi già sbloccati."));
+    }
+
     private static function avvisiDiServizio(): array
     {
         $temi = array_column(\App\Core\Temi::CATALOGO, 'nome');
         return [
             'la protezione novizio resta attiva ' . GameConfig::int('newbie.protect_hours', 48) . ' ore dopo la registrazione.',
+            'a ogni chiusura di stagione si riparte allo StarDock con crediti, navi, pianeti e reputazione azzerati, ma'
+                . ' traguardi, contatori di carriera, codex e albo d\'oro restano. Li azzera solo una ripartenza da zero per una'
+                . ' revisione nuova del gioco, come quella del 13 ottobre 2026, che ha aperto la Stagione 1.',
             'le taglie le paga chi le ha sulla testa. Chi abbatte un ricercato incassa la sua taglia, confiscata ai crediti a bordo'
                 . ' e poi alla banca del ricercato: da un ricercato al verde non si ricava nulla. Capsule e navi di soccorso abbattute'
                 . ' non valgono esperienza né moduli, ma i crediti a bordo si perdono come sempre e l\'omicidio di un onesto la'

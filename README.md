@@ -306,8 +306,10 @@ testi o artwork della door proprietaria.
   del gioco (eventi, cronaca di frontiera, l'ultima taglia riscossa, i
   ricercati più pericolosi con la loro taglia, nuove colonie, classifica, il
   tema grafico più scelto sulle plance) e chiuso da un avviso di servizio a
-  rotazione (protezione novizio, regola delle taglie, moduli guasti,
-  ammenda, temi grafici). In
+  rotazione (protezione novizio, stagioni e ripartenze, regola delle taglie,
+  moduli guasti, ammenda, temi grafici). Nel primo mese dopo una ripartenza
+  da zero racconta anche la galassia nuova: giorno, comandanti già partiti
+  dallo StarDock, traguardi sbloccati. In
   testa, finché non scadono, i **comunicati della Federazione**
   (`fednews.comunicato`, più testi separati da «|», fino a
   `fednews.comunicato_fino`), scritti dal pannello per ciò che i numeri non
@@ -653,7 +655,7 @@ php tests/run.php                # tutte
 php tests/run.php economica      # solo i file col nome che contiene "economica"
 ```
 
-Suite di integrazione senza dipendenze, 721 verifiche in 32 file: integrità
+Suite di integrazione senza dipendenze, 726 verifiche in 32 file: integrità
 economica, concorrenza, banca/contratti/Officina, combattimento, navigazione,
 nave e moduli, pianeti, porti, equipaggio, mondo, percorsi di gioco normali,
 universo, clock, sessioni e turni, difese, iscrizione e posta, immagini,
