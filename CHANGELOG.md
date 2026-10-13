@@ -4,6 +4,24 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-13 — L'aiuto contestuale racconta la ripartenza
+
+- **[src/Game/Help.php](src/Game/Help.php)** — ogni voce dice cosa le fa una
+  chiusura di stagione e cosa una ripartenza da zero:
+  - `plancia.primipassi`: ripartono per tutti, premio compreso;
+  - `plancia.notiziario`: comunicati anche sulle ripartenze, al più due, che
+    spariscono quando scadono;
+  - `classifica.comandanti` e `fazioni.reputazione`: ripartono da zero a ogni
+    stagione;
+  - `codex.home` e `traguardi.home`: restano fra le stagioni, li svuota solo
+    una ripartenza da zero (come il 13/10/2026);
+  - `albo.home`: banditi esclusi, si conta dalla Stagione 1 del 13/10/2026;
+  - `profilo.identita` e `profilo.immagini`: restano anche con una ripartenza.
+- **[tests/ripartenza.php](tests/ripartenza.php)** — nove verifiche: le
+  promesse dell'aiuto controllate sul sorgente (la chiusura non tocca
+  traguardi, codex e contatori, la ripartenza sì, la reputazione si azzera a
+  ogni chiusura) e le voci che parlano della ripartenza. Suite: 721 verifiche.
+
 ## 2026-10-13 — La guida racconta la ripartenza
 
 - **[views/game/guide.php](views/game/guide.php)** — in testa, per il primo

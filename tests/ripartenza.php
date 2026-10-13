@@ -73,6 +73,22 @@ return static function (): void {
         str_contains((string) file_get_contents($radice . '/src/Controllers/HomeController.php'), 'Season::ripartenzaRecente()')
         && str_contains((string) file_get_contents($radice . '/views/game/guide.php'), 'Season::ripartenzaRecente()'));
 
+    Esito::sezione('Ripartenza — l\'aiuto contestuale dice il vero');
+
+    // L'aiuto promette che traguardi, codex e contatori restano fra le
+    // stagioni e li svuota solo la ripartenza: lo si controlla sul sorgente.
+    $j = strpos($season, 'private static function chiudi');
+    $chiudi = $j === false ? '' : substr($season, $j);
+    foreach (['player_achievements' => 'traguardi', 'player_codex' => 'codex', 'player_stats' => 'contatori di carriera'] as $t => $cosa) {
+        Esito::verifica("{$cosa}: la chiusura di stagione non li tocca, la ripartenza si'",
+            !preg_match("/TRUNCATE[^;]*'{$t}'|'{$t}',|DELETE FROM {$t}\\b/", $chiudi) && str_contains($ripartenza, "'{$t}'"));
+    }
+    Esito::verifica('la reputazione si azzera a ogni chiusura', str_contains($chiudi, 'TRUNCATE TABLE player_reputation'));
+    $aiuto = static fn (string $k): string => (string) \App\Game\Help::get($k);
+    foreach (['plancia.primipassi', 'traguardi.home', 'albo.home', 'codex.home', 'profilo.identita'] as $k) {
+        Esito::verifica("«{$k}» parla della ripartenza", str_contains($aiuto($k), 'riparte') || str_contains($aiuto($k), 'ripartenza'), $aiuto($k));
+    }
+
     Esito::verifica('dalla console solo con --conferma',
         str_contains((string) file_get_contents($radice . '/bin/console.php'), "case 'revisione:ripartenza':"));
 };

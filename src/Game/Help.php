@@ -23,9 +23,9 @@ final class Help
         'plancia.giornale'      => 'Il registro di bordo: viaggi, combattimenti, incontri ed eventi che ti riguardano, dal più recente.',
         'plancia.rientro'       => 'Cosa è successo mentre eri via: turni ricaricati, colonie che hanno prodotto, lavori d\'officina finiti, contratti scaduti.',
         'plancia.prede'         => 'Le navi a cui hai agganciato una mina Limpet: ne vedi la posizione in tempo reale finché non raggiungono lo StarDock.',
-        'plancia.primipassi'    => 'Obiettivi guidati per iniziare: completandoli tutti ricevi una ricompensa una tantum.',
+        'plancia.primipassi'    => 'Obiettivi guidati per iniziare: completandoli tutti ricevi una ricompensa una tantum. Quando il gioco riparte da zero per una revisione nuova, come il 13 ottobre 2026, ripartono per tutti, premio compreso.',
         'plancia.incontro'      => 'Un evento di percorso: scegli come reagire: alcune opzioni fanno una prova di abilità di un ufficiale. Riparti senza scegliere e l\'occasione svanisce.',
-        'plancia.notiziario'    => 'Il bollettino della Federazione, composto dallo stato reale del gioco e aperto, quando serve, dai comunicati della Federazione (disservizi, regole cambiate). Versione integrale nella Radio.',
+        'plancia.notiziario'    => 'Il bollettino della Federazione, composto dallo stato reale del gioco e aperto, quando serve, dai comunicati della Federazione (disservizi, regole cambiate, ripartenze del gioco): al più due, e spariscono quando scadono. Versione integrale nella Radio.',
         'plancia.sonda'         => 'Lancia una sonda in un settore adiacente per vederne contenuto e pericoli senza entrarci.',
         'plancia.armi'          => 'Attacchi, assalti ai porti e dispiegamento di caccia e mine nel settore. Vietato in spazio Federazione. Chi abbatte un ricercato incassa la sua taglia, confiscata a lui (crediti a bordo, poi banca): da uno al verde non si ricava nulla. Capsule e navi di soccorso abbattute non valgono esperienza, moduli né guadagni di reputazione, nemmeno quando sono loro ad attaccarti: i crediti a bordo li perdono comunque, e la Federazione l\'omicidio lo conta. Vicino a Sol la scorta di un mercantile respinge chi la aggredisce, senza razziarlo.',
         'plancia.occultamento'  => 'Il dispositivo ti toglie dai sensori, ma con una riserva di energia (una carica per salto, che si ricarica col tempo: saltare non azzera la ricarica in corso) e senza garanzie: ogni aggancio può scoprirti, più facilmente lontano da Sol. Qualunque interazione col settore (commercio, pianeti, relitti, estrazione, scansione) lo fa cadere.',
@@ -71,23 +71,23 @@ final class Help
 
         // --- Meta: radio, classifica, fazioni, codex, registro ---
         'radio.canali'          => 'Messaggistica: canale pubblico, notiziario della Federazione, canale di corp e messaggi privati. Il badge conta i non letti.',
-        'classifica.comandanti' => 'Graduatoria per rating: una formula che pesa esperienza, ricchezza, kill, pianeti e altro. Ricalcolata dal tick.',
+        'classifica.comandanti' => 'Graduatoria per rating: una formula che pesa esperienza, ricchezza, kill, pianeti e altro. Ricalcolata dal tick, riparte da zero a ogni stagione.',
         'classifica.corp'       => 'Le corporazioni ordinate per rating aggregato dei membri.',
-        'fazioni.reputazione'   => 'La tua reputazione con le 4 potenze (-100..+100, 5 livelli). Commercio, kill e assalti la muovono (abbattere capsule e navi di soccorso non fa guadagnare nulla, ma l\'omicidio di un onesto la Federazione lo conta); c\'è rivalità fra fazioni.',
+        'fazioni.reputazione'   => 'La tua reputazione con le 4 potenze (-100..+100, 5 livelli). Commercio, kill e assalti la muovono (abbattere capsule e navi di soccorso non fa guadagnare nulla, ma l\'omicidio di un onesto la Federazione lo conta); c\'è rivalità fra fazioni. Si azzera a ogni chiusura di stagione.',
         'fazioni.legge'         => 'Aggredire mercantili, porti, pianeti altrui, comandanti onesti o pattuglie alza la notorietà, che dimezza ogni giorno da sola e cresce più in fretta se sei recidivo. Sospetto, Ricercato (pattuglie e squadre federali ti cacciano, e chi ti abbatte incassa una taglia che paghi tu: confiscata dai crediti a bordo, poi dalla banca), Pericoloso (StarDock chiuso), Nemico pubblico. L\'ammenda azzera la notorietà, a caro prezzo; la taglia da uccisioni la ripulisce il mercato nero.',
         'fazioni.emporio'       => 'Merce e hardware riservati: sbloccati man mano che sali di livello con la fazione.',
         'codex.reperti'         => 'Reperti rari in tre collezioni: si vendono allo StarDock o si tengono per completare una collezione, che paga una volta sola. I progetti sbloccano ricette d\'Officina speciali.',
-        'codex.home'            => 'L\'enciclopedia di bordo: si popola studiando relitti, anomalie e reperti che incontri in giro.',
+        'codex.home'            => 'L\'enciclopedia di bordo: si popola studiando relitti, anomalie e reperti che incontri in giro. Resta fra una stagione e l\'altra: la svuota solo una ripartenza da zero.',
         'registro.spostamenti'  => 'Lo storico dei tuoi warp e i settori che frequenti di più, ricostruiti dai log di movimento.',
         'giornale.home'         => 'Il registro di bordo completo e paginato. Aprendolo, segni come letto.',
-        'traguardi.home'        => 'Oltre cento obiettivi permanenti, in sette categorie e a livelli (bronzo, argento, oro, platino), alcuni segreti. Si sbloccano coi contatori di carriera, che restano fra una stagione e l\'altra. I punti danno titoli onorifici da mostrare accanto al nome.',
-        'albo.home'             => 'L\'albo d\'oro: i comandanti che hanno chiuso in vetta le stagioni concluse.',
+        'traguardi.home'        => 'Oltre cento obiettivi permanenti, in sette categorie e a livelli (bronzo, argento, oro, platino), alcuni segreti. Si sbloccano coi contatori di carriera, che restano fra una stagione e l\'altra: li azzera solo una ripartenza da zero per una revisione nuova, come quella del 13 ottobre 2026. I punti danno titoli onorifici da mostrare accanto al nome.',
+        'albo.home'             => 'L\'albo d\'oro: i comandanti che hanno chiuso in vetta le stagioni concluse, banditi esclusi. Dalla ripartenza del 13 ottobre 2026 si conta dalla Stagione 1: l\'albo si riempie a ogni chiusura.',
 
         // --- Identità -------------------------------------------
-        'profilo.identita'      => 'Colore d\'accento, marca di flotta, motto e registro della nave: compaiono in plancia, classifica e liste.',
+        'profilo.identita'      => 'Colore d\'accento, marca di flotta, motto e registro della nave: compaiono in plancia, classifica e liste. Restano anche quando il gioco riparte da zero.',
         'profilo.tema'          => 'L\'aspetto dell\'interfaccia: {temi}. Cambia colori, caratteri, forme e mappa stellare, non il gioco. Vale per il tuo account su ogni dispositivo; la guida li descrive tutti.',
         'tema.selettore'        => 'Cambia subito l\'aspetto di tutte le schermate: {temi}. Anche prima di entrare; da comandante la scelta resta sul tuo account. Anteprime nel Profilo.',
-        'profilo.immagini'      => 'Avatar e logo di flotta. Scegli il file, poi sposta e ingrandisci nel riquadro per decidere l\'inquadratura: viene caricato quello che vedi. L\'immagine e\' subito pubblica.',
+        'profilo.immagini'      => 'Avatar e logo di flotta. Scegli il file, poi sposta e ingrandisci nel riquadro per decidere l\'inquadratura: viene caricato quello che vedi. L\'immagine e\' subito pubblica, e resta anche quando il gioco riparte da zero.',
     ];
 
     public static function get(string $key): ?string
