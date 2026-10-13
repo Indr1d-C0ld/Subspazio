@@ -54,6 +54,25 @@ return static function (): void {
     $annuncio = strpos($ripartenza, "Radio::system('RIPARTENZA");
     Esito::verifica('l\'annuncio in radio va in onda dopo lo svuotamento della radio',
         $annuncio !== false && $annuncio > (int) strpos($ripartenza, "'messages'"));
+    Esito::sezione('Ripartenza — home e guida la annunciano per un mese');
+
+    // Si sposta l'inizio della stagione solo dentro una transazione annullata.
+    $pdo = Database::pdo();
+    $pdo->beginTransaction();
+    try {
+        Database::run("UPDATE seasons SET started_at = NOW() - INTERVAL 2 DAY WHERE status = 'active'");
+        $numero = (int) (Database::first("SELECT number FROM seasons WHERE status = 'active' LIMIT 1")['number'] ?? 0);
+        Esito::verifica('nei primi giorni della Stagione 1 c\'e\' l\'annuncio',
+            $numero !== 1 || \App\Game\Season::ripartenzaRecente() !== null);
+        Database::run("UPDATE seasons SET started_at = NOW() - INTERVAL 31 DAY WHERE status = 'active'");
+        Esito::verifica('dopo un mese sparisce da solo', \App\Game\Season::ripartenzaRecente() === null);
+    } finally {
+        $pdo->rollBack();
+    }
+    Esito::verifica('home e guida leggono la stessa regola',
+        str_contains((string) file_get_contents($radice . '/src/Controllers/HomeController.php'), 'Season::ripartenzaRecente()')
+        && str_contains((string) file_get_contents($radice . '/views/game/guide.php'), 'Season::ripartenzaRecente()'));
+
     Esito::verifica('dalla console solo con --conferma',
         str_contains((string) file_get_contents($radice . '/bin/console.php'), "case 'revisione:ripartenza':"));
 };

@@ -4,6 +4,24 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-13 — La guida racconta la ripartenza
+
+- **[views/game/guide.php](views/game/guide.php)** — in testa, per il primo
+  mese della Stagione 1, l'avviso «Si riparte tutti da zero»: revisione nuova,
+  galassia mai vista, nave iniziale e crediti di partenza (dalla
+  configurazione), cosa è stato azzerato e cosa resta, i primi passi che
+  ripartono col loro premio. In «Meta», cosa azzera una chiusura di stagione
+  (e cosa resta), la ripartenza totale, e la ripartenza da zero di una
+  revisione nuova.
+- **[src/Game/Season.php](src/Game/Season.php)** — `ripartenzaRecente()`, in
+  sola lettura: la regola del mese di annuncio, una sola per home e guida.
+  **[src/Controllers/HomeController.php](src/Controllers/HomeController.php)**
+  la usa al posto della sua copia.
+- **[tests/ripartenza.php](tests/ripartenza.php)** — tre verifiche: annuncio
+  nei primi giorni, sparito dopo un mese (l'inizio della stagione si sposta
+  solo dentro una transazione annullata), stessa regola per home e guida.
+  Suite: 712 verifiche.
+
 ## 2026-10-13 — Ripartenza da zero: nuova revisione, Stagione 1
 
 - **[src/Game/Season.php](src/Game/Season.php)** — `ripartenza()`: per una

@@ -30,10 +30,7 @@ final class HomeController
             )['c'] ?? 0);
             // Ripartenza da zero (13/10/2026): la pagina lo dice per il primo
             // mese della Stagione 1, poi il riquadro sparisce da solo.
-            $s = Database::first("SELECT number, started_at FROM seasons WHERE status = 'active' ORDER BY number DESC LIMIT 1");
-            if ($s !== null && (int) $s['number'] === 1 && strtotime((string) $s['started_at']) > time() - 30 * 86400) {
-                $stats['ripartenza'] = (string) $s['started_at'];
-            }
+            $stats['ripartenza'] = \App\Game\Season::ripartenzaRecente();
         } catch (\Throwable) {
             // il layout gestira' la modalita' "setup incompleto"
         }

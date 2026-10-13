@@ -26,6 +26,20 @@ final class Season
         return $s;
     }
 
+    /**
+     * Inizio della Stagione 1 se e' cominciata da meno di un mese (la
+     * ripartenza del 13/10/2026), altrimenti null: home e guida lo annunciano
+     * finche' e' una novita'. Sola lettura, a differenza di current().
+     */
+    public static function ripartenzaRecente(): ?string
+    {
+        $s = Database::first("SELECT number, started_at FROM seasons WHERE status = 'active' ORDER BY number DESC LIMIT 1");
+        if ($s === null || (int) $s['number'] !== 1 || strtotime((string) $s['started_at']) <= time() - 30 * 86400) {
+            return null;
+        }
+        return (string) $s['started_at'];
+    }
+
     /** @return list<array<string,mixed>> */
     public static function hall(): array
     {

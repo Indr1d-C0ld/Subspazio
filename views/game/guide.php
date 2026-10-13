@@ -12,6 +12,13 @@ $sec = static function (string $icon, string $title, string $body, string $class
 <section class="panel">
   <h1><span class="sec-ic">📖</span> Guida rapida</h1>
   <p class="hint">Riferimento sintetico dei sistemi. Ogni voce rimanda alla pagina relativa.</p>
+  <?php if (($ripartenza = \App\Game\Season::ripartenzaRecente()) !== null): ?>
+    <p class="alert ok">🚀 <strong>Si riparte tutti da zero.</strong> Dal <?= e(date('j/m', strtotime($ripartenza))) ?> SubSpazio gira
+      su una revisione nuova: <strong>Stagione 1</strong>, galassia mai vista, tutti allo StarDock con la nave iniziale e
+      <?= e(number_format(\App\Game\GameConfig::int('player.start_credits', 1000), 0, ',', '.')) ?> crediti. Classifica,
+      traguardi, statistiche, codex, reputazione e albo d'oro sono azzerati. Chi c'era ha tenuto nome, aspetto e tema
+      grafico, chi arriva adesso parte alla pari, e per tutti i <strong>primi passi</strong> in plancia ripartono con il loro premio. Le regole sono quelle di questa guida (vedi «Meta»).</p>
+  <?php endif; ?>
 </section>
 
 <div class="guide-grid">
@@ -172,7 +179,12 @@ $sec = static function (string $icon, string $title, string $body, string $class
       '<p><strong>Stagioni</strong> con ladder e Albo d\'Oro, <strong>traguardi</strong>, <strong>corporazioni</strong> e alleanze, '
     . '<strong>contratti</strong> e taglie fra giocatori, <strong>radio</strong> subspaziale. '
     . 'Alla chiusura di una stagione il gioco si ferma per qualche istante («Fine stagione in corso»): basta ricaricare la pagina poco dopo, '
-    . 'e la radio annuncia il vincitore e la stagione nuova. '
+    . 'e la radio annuncia il vincitore e la stagione nuova. Si riparte allo StarDock: crediti, navi, pianeti, materiali, '
+    . 'tesori di corporazione e reputazione tornano a zero; restano i <strong>traguardi</strong>, i contatori di carriera, '
+    . 'l\'Albo d\'Oro, gli ufficiali e i moduli (in inventario), salvo una ripartenza totale che toglie anche moduli, ufficiali '
+    . 'e corporazioni. Per una <strong>revisione nuova</strong> del gioco, come il 13 ottobre 2026, si riparte invece da zero '
+    . 'davvero: Stagione 1, galassia nuova, e anche traguardi, statistiche, codex e Albo d\'Oro azzerati; restano solo nome, '
+    . 'aspetto del comandante e tema grafico. '
     . 'In testa al notiziario della Federazione trovi i <strong>comunicati</strong> su disservizi e regole cambiate, al più due '
     . 'per bollettino: quando scadono spariscono subito dalla plancia. In fondo, ogni giorno, un avviso di servizio ripassa una '
     . 'regola (taglie, moduli guasti, ammenda, temi). '
