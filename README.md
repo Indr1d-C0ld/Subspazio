@@ -6,7 +6,9 @@ universo a settori con un clock interno.
 
 Dal **13 ottobre 2026** il gioco gira su una revisione nuova ed è ripartito da
 zero: galassia nuova, **Stagione 1**, classifica, traguardi e albo d'oro
-azzerati per tutti. Per il primo mese la pagina iniziale lo annuncia, con la
+azzerati per tutti. Chi c'era ha tenuto nome, aspetto e tema grafico; tutti
+rifanno i primi passi, premio compreso, e chi arriva adesso parte alla pari.
+Per il primo mese pagina iniziale, guida e notiziario lo raccontano, con la
 cronaca della galassia nuova (comandanti già partiti, traguardi sbloccati).
 
 ## Il gioco in breve
@@ -38,8 +40,9 @@ verso l'esterno è una scommessa fra guadagno e rischio.
 - **Colonizzare** con i siluri Genesi, fortificare con Citadel e Quasar, unirsi
   in corporazioni e alleanze; costruire reputazione con quattro fazioni.
 - **Lasciare il segno**: stagioni con classifica e albo d'oro, oltre cento
-  traguardi a livelli (alcuni segreti) con contatori di carriera che restano, e
-  titoli onorifici accanto al nome.
+  traguardi a livelli (alcuni segreti) con contatori di carriera che restano
+  fra una stagione e l'altra, e titoli onorifici accanto al nome. Li azzera
+  solo una revisione nuova del gioco, come il 13 ottobre 2026.
 - **Scegliere la propria plancia** fra sei temi grafici ispirati alla
   fantascienza: Console, LCARS (la plancia di Star Trek: The Next Generation),
   il terminale MU/TH/UR di Alien, il Cockpit di Elite Dangerous, la Cintura di
@@ -57,7 +60,7 @@ testi o artwork della door proprietaria.
 - **Interfaccia:** plancia web su API JSON, aggiornamenti in tempo reale (SSE),
   responsive per telefono/tablet/desktop, sei temi grafici; predisposta come
   PWA (installazione, guscio offline e Web Push richiedono HTTPS)
-- **Stato:** in **beta testing**
+- **Stato:** in **beta testing**; nuova revisione dal 13 ottobre 2026, Stagione 1
 - **Licenza:** GPL-3.0-or-later
 
 ## Meccaniche di gioco
@@ -356,8 +359,8 @@ testi o artwork della door proprietaria.
   scaduti.
 
 - **Onboarding** — sette «primi passi» dedotti dai dati del giocatore, con una
-  ricompensa una tantum, e una pagina **Guida** di riferimento a tutti i
-  sistemi.
+  ricompensa una tantum (una ripartenza da zero li rimette a tutti, premio
+  compreso), e una pagina **Guida** di riferimento a tutti i sistemi.
 
 - **Realtime & PWA** — stream **SSE** (`/api/stream`) per mappa live, toast,
   campanella degli avvisi e badge senza refresh. Ogni evento si vede una volta
@@ -428,7 +431,9 @@ testi o artwork della door proprietaria.
   gioco con ripristino dei default, trigger manuale degli eventi, spawn e purga
   degli NPC, Big Bang (rigenerazione dell'universo), moderazione in-game (kick,
   sospensione, teletrasporto, rettifiche, editor del profilo altrui, rimozione
-  delle immagini), chiusura stagione, salute del clock, statistiche. Notifica
+  delle immagini), chiusura stagione, salute del clock, statistiche. La
+  ripartenza da zero per una revisione nuova sta solo nella console
+  (`revisione:ripartenza --conferma`), dopo una copia del database. Notifica
   e-mail all'amministratore per ogni nuova iscrizione — una notizia, non una
   richiesta da vagliare.
 
@@ -453,7 +458,9 @@ Il gioco ha un ritmo doppio:
 
 Stare offline non fa perdere nulla: al rientro in plancia il **rapporto di
 rientro** riassume cosa è maturato. Periodicamente una **stagione** si chiude
-con un soft-reset dei comandanti (traguardi e albo d'oro restano).
+con un soft-reset dei comandanti (traguardi e albo d'oro restano). Quando il
+gioco cambia revisione si riparte invece tutti da zero, storia compresa: è
+successo il 13 ottobre 2026, con la Stagione 1 su una galassia nuova.
 
 L'aspetto della plancia lo sceglie ciascuno: sei **temi grafici**, da provare
 già nella pagina iniziale, poi dal Profilo o dal menu «Tema» in fondo a ogni
@@ -761,13 +768,19 @@ deploy/                apache-subspazio.conf
   altro, quindi il browser di un giocatore non contatta nessuno fuori da
   SubSpazio. La scelta del tema passa da `POST /tema` (token CSRF come ogni
   form), il cookie `subspazio_tema` è HttpOnly e `SameSite=Lax`, e dopo la
-  scelta si torna solo a un percorso interno (con al più una query e un'ancora semplice):
+  scelta si torna solo a un percorso interno (con al più una query e un'ancora
+  semplice, anche da indirizzi col front controller esplicito, `…/index.php/…`):
   mai un indirizzo intero o «//altro-sito».
 - **Immagini caricate** ricodificate lato server con GD (EXIF e payload
   spogliati), MIME riconosciuto dal contenuto e non dal nome, limiti di
   dimensione e lato.
 - **Hardening** delle directory non pubbliche via `.htaccess`; i file caricati
   vivono fuori dal web e fuori da git.
+- **Operazioni che azzerano il gioco** (chiusura di stagione, ripartenza da
+  zero): prendono il lucchetto del clock e mettono il gioco in manutenzione,
+  si annotano nel registro di amministrazione, e la ripartenza si lancia solo
+  dalla console con `--conferma`. Si provano su una copia del database in un
+  container usa e getta, mai dalle prove sul database vero.
 - **I segreti vivono fuori dal DocumentRoot**; `db/setup.sql` nel repository
   contiene un placeholder.
 

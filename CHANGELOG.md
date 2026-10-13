@@ -4,6 +4,20 @@ Registro delle modifiche sincronizzate dal deployment live a questo repo.
 Ogni voce elenca i file toccati e cosa/perché è cambiato — stesso dettaglio
 riportato nel messaggio del commit corrispondente.
 
+## 2026-10-13 — Il README racconta la ripartenza
+
+- **README.md** (copia pubblica) — l'apertura dice cosa resta a chi c'era
+  (nome, aspetto, tema) e che tutti rifanno i primi passi; «Lasciare il segno»
+  e «Come si gioca» distinguono la chiusura di stagione dalla ripartenza da
+  zero di una revisione nuova; lo stato del progetto indica la Stagione 1 dal
+  13 ottobre 2026; onboarding e amministrazione citano la ripartenza (solo
+  dalla console); in «Sicurezza» le operazioni che azzerano il gioco
+  (lucchetto del clock, manutenzione, registro, `--conferma`, prove su una
+  copia) e il ritorno dopo la scelta del tema anche da indirizzi con
+  `index.php`.
+- **README.md** (progetto) — stato, console e avvio partita con
+  `revisione:ripartenza` e i punti di ripristino.
+
 ## 2026-10-13 — La presentazione racconta la ripartenza
 
 - **[views/home.php](views/home.php)** — il riquadro «Nuova revisione: si
